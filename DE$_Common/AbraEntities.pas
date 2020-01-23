@@ -16,7 +16,7 @@ type
     firmName : string[100];
     datumDokladu  : double;
     datumSplatnosti  : double;
-    //AccDocQueue_ID : string[10];
+    //AccDocQueue_ID : string[10];  aaa pokus
     //FirmOffice_ID : string[10];
     //DocUUID : string[26];
     documentType : string[2];
