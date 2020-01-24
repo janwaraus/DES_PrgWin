@@ -1018,6 +1018,18 @@ begin
     end;
   end;
 
+// 26.10.2019 datum vytvoøení faktury se uloží do tabulky DE$_EuroFree v databázi Abry
+  with qrAbra do begin
+    SQL.Text := 'UPDATE DE$_EuroFree SET'
+    + ' AccDate = ''' + FormatDateTime('dd.mm.yyyy hh:nn:ss.zzz', Date) + ''''
+    + ' WHERE Firm_Id = ''' + self.getFirmIdByCode(firmAbraCode) + ''''
+    + ' AND AccDate IS NULL'
+    + ' AND PayUDate = (SELECT MAX(PayUDate) FROM DE$_EuroFree'
+     + ' WHERE Firm_Id = ''' + self.getFirmIdByCode(firmAbraCode) + ''''
+     + ' AND AccDate IS NULL)';
+    ExecSQL;
+  end;
+
 end;
 
 function TDesU.vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
