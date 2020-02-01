@@ -774,7 +774,7 @@ begin
 
   DesU.dbAbra.Reconnect;
   //
-  //Memo2.Lines.Add('FirmId: ' + DesU.getFirmIdByCode(DesU.getAbracodeByContractNumber('20179001')));
+  //Memo2.Lines.Add('FirmId: ' + DesU.getFirmIdByCode(DesU.getAbracodeByContractNumber('20179001')));   iPlatbaZVypisu.nazevKlienta
   //DesU.getFirmIdByCode();
 end;
 
@@ -857,7 +857,7 @@ begin
   //if DesU.existujeVAbreDokladSPrazdnymVs() then exit;
 
   // naètení GPC na základì dialogu
-  NactiGpcDialog.InitialDir := 'J:\Eurosignal\HB\';
+  NactiGpcDialog.InitialDir := DesU.GPC_PATH; //'J:\Eurosignal\HB\';
   NactiGpcDialog.Filter := 'Bankovní výpisy (*.gpc)|*.gpc';
 	if NactiGpcDialog.Execute then
     nactiGpc(NactiGpcDialog.Filename);

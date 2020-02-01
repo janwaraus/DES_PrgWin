@@ -40,6 +40,7 @@ type
     function getPDParyAsText() : AnsiString;
     function getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : AnsiString;
     function getPDPar(currPlatba : TPlatbaZVypisu; currDoklad_ID: string) : TPlatbaDokladPar;
+    function getFirmIdKdyzNeniDoklad(currPlatba : TPlatbaZVypisu) : string;
   end;
 
 
@@ -312,7 +313,7 @@ begin
       end
     else //nenÌ Assigned(iPDPar.Doklad)
       if not(iPDPar.pdparTyp = 'VoipKredit') AND not(iPDPar.pdparTyp = 'InternetKredit') then  //tyto podmÌnky nejsou nutnÈ, Abra by Firm_ID p¯ebila hodnotou z fa
-        boRowAA['Firm_ID'] := '3Y90000101'; //aù je firma DES. jinak se tam d· jako default "drobn˝ n·kup" then
+        boRowAA['Firm_ID'] := getFirmIdKdyzNeniDoklad(iPDPar.Platba); //kdyû m· text platby na zaË·tku Abra kÛd, najde se firma. Jinak se d· '3Y90000101' (DES), aby tam nebyl default "drobn˝ n·kup"
 
 
     if iPDPar.pdparTyp = 'VoipKredit' then
@@ -439,6 +440,21 @@ begin
     (iPDPar.vazbaNaDoklad) then
       Result := iPDPar;
   end;
+end;
+
+function TParovatko.getFirmIdKdyzNeniDoklad(currPlatba : TPlatbaZVypisu) : string;
+var
+  platbaText, prvni2pismena : string;
+begin
+  Result := '';
+  platbaText := currPlatba.nazevKlienta;
+  prvni2pismena := copy(platbaText, 1, 2);
+  if (prvni2pismena = 'T0') or (prvni2pismena = 'M0') or (prvni2pismena = 'N0') then
+  begin
+    Result := DesU.getFirmIdByCode(Copy(platbaText, 1, Pos(' ', platbaText + ' ') - 1));
+  end
+  else
+    Result := '3Y90000101'; //aù je firma DES;
 end;
 
 

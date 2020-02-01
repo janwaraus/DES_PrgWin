@@ -301,7 +301,7 @@ object fmMain: TfmMain
       TabOrder = 0
     end
     object asgPredchoziPlatby: TAdvStringGrid
-      Left = 1
+      Left = 0
       Top = 28
       Width = 417
       Height = 183

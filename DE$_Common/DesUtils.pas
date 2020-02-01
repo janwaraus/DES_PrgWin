@@ -989,13 +989,13 @@ begin
   boAA['PricesWithVat'] := true;
 
 
-  // 1. øádek
+  // 1. øádek faktury
   boRowAA := boAA.addRow();
   boRowAA['Rowtype'] := 0;
   boRowAA['Text'] := ' ';
   boRowAA['Division_Id'] := self.getAbraDivisionId;
 
- //2. øádek
+  //2. øádek faktury
   boRowAA := boAA.addRow();
   boRowAA['Rowtype'] := 1;
   boRowAA['Totalprice'] := castka;
