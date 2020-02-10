@@ -1019,6 +1019,7 @@ begin
   end;
 
 // 26.10.2019 datum vytvoøení faktury se uloží do tabulky DE$_EuroFree v databázi Abry
+  dbAbra.ReadOnly := False;    // 8.2.2020
   with qrAbra do begin
     SQL.Text := 'UPDATE DE$_EuroFree SET'
     + ' AccDate = ''' + FormatDateTime('dd.mm.yyyy hh:nn:ss.zzz', Date) + ''''
@@ -1029,6 +1030,7 @@ begin
      + ' AND AccDate IS NULL)';
     ExecSQL;
   end;
+  dbAbra.ReadOnly := True;    // 8.2.2020
 
 end;
 
