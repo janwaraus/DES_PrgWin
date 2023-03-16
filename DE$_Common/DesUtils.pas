@@ -4,12 +4,9 @@ interface
 
 uses
   Winapi.Windows, Winapi.ShellApi, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
-  System.RegularExpressions,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  //Windows, Messages, SysUtils, Variants, Classes, Dialogs, Forms,
-  StrUtils,  IOUtils, IniFiles, ComObj, //, Grids, AdvObj, StdCtrls,
-  IdHTTP, Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset,
-  ZAbstractConnection, ZConnection, Superobject, AArray;
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, StrUtils,  IOUtils, IniFiles, ComObj, System.RegularExpressions,
+  IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
+  Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, Superobject, AArray;
 
 
 type
@@ -23,8 +20,6 @@ type
     qrAbraOC: TZQuery; //pro jednorázové servisní Open/Close použití
     dbVoip: TZConnection;
     qrVoip: TZQuery;
-
-
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string);
@@ -51,7 +46,6 @@ type
 
       abraValues : TAArray;
 
-
       function getAbraOLE() : variant;
       procedure abraOLELogout();
       function abraBoGet(abraBoName : string) : string;
@@ -76,7 +70,6 @@ type
       function abraBoUpdate_SoWebApi(jsonSO: ISuperObject; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
       procedure logJson_So(jsonSO: ISuperObject; header : string);
 
-
       function getAbraPeriodId(pYear : string) : string; overload;
       function getAbraPeriodId(pDate : double) : string; overload;
       function getAbraDocqueueId(code, documentType : string) : string;
@@ -97,10 +90,10 @@ type
       function existujeVAbreDokladSPrazdnymVs() : boolean;
 
       function sendGodsSms(telCislo, smsText : string) : string;
+      function sendSms(telCislo, smsText : string) : string;
 
       function getIniValue(iniGroup, iniItem : string) : string;
       function getQrVoip() : TZQuery;
-
 
     private
       function newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
@@ -108,9 +101,7 @@ type
   end;
 
 
-
-
-
+function odstranDiakritiku(textDiakritika : string) : string;
 function removeLeadingZeros(const Value: string): string;
 function LeftPad(value:integer; length:integer=8; pad:char='0'): string; overload;
 function LeftPad(value: string; length:integer=8; pad:char='0'): string; overload;
@@ -128,6 +119,8 @@ function FloatToStrFD (pFloat : extended) : string;
 function RandString(const stringsize: integer): string;
 procedure RunCMD(cmdLine: string; WindowMode: integer);
 
+function UlozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+// ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
 
 const
   Ap = chr(39);
@@ -989,13 +982,13 @@ begin
   boAA['PricesWithVat'] := true;
 
 
-  // 1. øádek faktury
+  // 1. øádek
   boRowAA := boAA.addRow();
   boRowAA['Rowtype'] := 0;
   boRowAA['Text'] := ' ';
   boRowAA['Division_Id'] := self.getAbraDivisionId;
 
-  //2. øádek faktury
+ //2. øádek
   boRowAA := boAA.addRow();
   boRowAA['Rowtype'] := 1;
   boRowAA['Totalprice'] := castka;
@@ -1019,7 +1012,6 @@ begin
   end;
 
 // 26.10.2019 datum vytvoøení faktury se uloží do tabulky DE$_EuroFree v databázi Abry
-  dbAbra.ReadOnly := False;    // 8.2.2020
   with qrAbra do begin
     SQL.Text := 'UPDATE DE$_EuroFree SET'
     + ' AccDate = ''' + FormatDateTime('dd.mm.yyyy hh:nn:ss.zzz', Date) + ''''
@@ -1030,7 +1022,6 @@ begin
      + ' AND AccDate IS NULL)';
     ExecSQL;
   end;
-  dbAbra.ReadOnly := True;    // 8.2.2020
 
 end;
 
@@ -1484,7 +1475,69 @@ begin
   if appMode >= 1 then begin
     if not DirectoryExists(PROGRAM_PATH + '\logy\') then
       Forcedirectories(PROGRAM_PATH + '\logy\');
-    appendToFile(PROGRAM_PATH + '\logy\SMS_odeslane.txt', formatdatetime('yy-mm-dd hh:nn:ss', Now) + ' - ' + telCislo + ' - '  + smsText + ' - '  + Result);
+    appendToFile(PROGRAM_PATH + '\logy\SMS_odeslane.txt', formatdatetime('dd.mm.yyyy hh:nn:ss', Now) + ' - ' + telCislo + ' - '  + smsText + ' - '  + Result);
+  end;
+
+end;
+
+{********************   SMSbrána ************}
+function TDesU.sendSms(telCislo, smsText: string): string;
+var
+  idHTTP: TIdHTTP;
+  SmsUrl,
+  SmsUN,
+  SmsPW,
+  sXMLResult,
+  sHTTPtext: string;
+  iErrOd,
+  iErrDo,
+  iResult: integer;
+begin
+  Result := '';
+
+  idHTTP := TidHTTP.Create;
+  idHTTP.IOHandler := TIdSSLIOHandlerSocketOpenSSL.Create;
+  SmsUrl := getIniValue('Preferences', 'SmsUrl');
+  SmsUN := getIniValue('Preferences', 'SmsUN');
+  SmsPW := getIniValue('Preferences', 'SmsPW');
+//  idHTTP.Request.BasicAuthentication := True;
+//  idHTTP.Request.Username := SmsUN;
+//  idHTTP.Request.Password := SmsPW;
+  idHTTP.ReadTimeout := Round (10 * 1000); // ReadTimeout je v milisekundách
+  idHTTP.Request.ContentType := 'text/plain';
+  idHTTP.Request.CharSet := 'ASCII';
+
+  sHTTPtext := SmsUrl + '?login=' + SmsUN + #38 + 'password=' + SmsPW + '&action=send_sms&delivery_report=0&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
+
+  try
+    try
+      if (SmsUrl <> '') AND (telCislo <> '') AND (smsText <> '') then sXMLResult := idHTTP.Get(sHTTPtext);
+    except
+      on E: Exception do begin
+        ShowMessage('Error on request: '#13#10 + E.Message);
+        Exit;
+      end;
+    end;
+
+// vrácené XML má mezi <err> a </err> èíslo (-1 až 12), 0 je OK
+    iErrOd := Pos('<err>', sXMLResult) + 5;
+    iErrDo := Pos('</err>', sXMLResult);
+    iResult := StrToInt(Copy(sXMLResult, iErrOd, iErrDo-iErrOd));
+    case iResult of
+      0: Result := 'OK';
+      2: Result := 'Bad username';
+      3: Result := 'Bad password';
+      9: Result := 'Low credit';
+      10: Result := 'Bad phone number';
+      11: Result := 'No message';
+      12: Result := 'Too long message ';
+    else
+      Result := 'Error number ' + IntToStr(iResult);
+    end;
+
+  finally
+    idHTTP.Free;
+    idHTTP.IOHandler.Free;
   end;
 
 end;
@@ -1493,6 +1546,18 @@ end;
 {***************************************************************************}
 {********************     General helper functions     *********************}
 {***************************************************************************}
+
+// pøedaný string vrátí bez háèku a èárek
+function odstranDiakritiku(textDiakritika : string) : string;
+var
+  s: string;
+  b: TBytes;
+begin
+  s := textDiakritika;
+  b := TEncoding.Unicode.GetBytes(s);
+  b := TEncoding.Convert(TEncoding.Unicode, TEncoding.ASCII, b);
+  Result := TEncoding.ASCII.GetString(b);
+end;
 
 // odstraní ze stringu nuly na zaèátku
 function removeLeadingZeros(const Value: string): string;
@@ -1769,6 +1834,41 @@ begin
   end;
 
   ShowWindowsErrorMessage(err);
+end;
+
+function UlozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+// ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
+var
+  CommId: integer;
+  SQLStr: string;
+begin
+  Result := '';
+  with DesU.qrZakos do try
+    Close;
+    SQL.Text := 'SELECT MAX(Id) FROM communications';
+    Open;
+    CommId := Fields[0].AsInteger + 1;
+    Close;
+    SQLStr := 'INSERT INTO communications ('
+    + ' Id,'
+    + ' Customer_id,'
+    + ' User_id,'
+    + ' Communication_type_id,'
+    + ' Content,'
+    + ' Created_at,'
+    + ' Updated_at) VALUES ('
+    + IntToStr(CommId) + ', '
+    + Customer_id + ', '
+    + '1, '                                        // admin
+    + Typ + ','
+    + Ap + Zprava + ApC
+    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
+    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;
+    SQL.Text := SQLStr;
+    ExecSQL;
+  except on E: exception do
+    Result := E.Message;
+  end;
 end;
 
 end.
