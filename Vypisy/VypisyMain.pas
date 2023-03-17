@@ -1,17 +1,13 @@
 unit VypisyMain;
-
 interface
-
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, IniFiles, Forms,
   Dialogs, StdCtrls, Grids, AdvObj, BaseGrid, AdvGrid, StrUtils,
   DB, ComObj, AdvEdit, DateUtils, Math, ExtCtrls,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
-  uTVypis, uTPlatbaZVypisu, uTParovatko;
-
+  uTVypis, uTPlatbaZVypisu, uTParovatko, AdvUtil;
 type
   TfmMain = class(TForm)
-
     btnNacti: TButton;
     btnZapisDoAbry: TButton;
     Memo1: TMemo;
@@ -19,9 +15,6 @@ type
     NactiGpcDialog: TOpenDialog;
     asgPredchoziPlatby: TAdvStringGrid;
     asgPredchoziPlatbyVs: TAdvStringGrid;
-    asgNalezeneDoklady: TAdvStringGrid;
-    lblNalezeneDoklady: TLabel;
-    chbVsechnyDoklady: TCheckBox;
     btnSparujPlatby: TButton;
     editPocetPredchPlateb: TEdit;
     btnReconnect: TButton;
@@ -49,7 +42,10 @@ type
     editHledej: TEdit;
     lblVypisPayuGpc: TLabel;
     lblVypisPayuInfo: TLabel;
-
+    pnBottom: TPanel;
+    lblNalezeneDoklady: TLabel;
+    asgNalezeneDoklady: TAdvStringGrid;
+    chbVsechnyDoklady: TCheckBox;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -92,7 +88,6 @@ type
       State: Boolean);
     procedure btnVypisPayUClick(Sender: TObject);
 
-
   public
     procedure nactiGpc(GpcFilename : string);
     procedure vyplnNacitaciButtony;
@@ -106,40 +101,30 @@ type
     procedure filtrujZobrazeniPlateb;
     procedure provedAkcePoZmeneVS;
     procedure Zprava(TextZpravy : string);
-
   end;
-
 var
   fmMain : TfmMain;
   Vypis : TVypis;
   currPlatbaZVypisu : TPlatbaZVypisu;
   Parovatko : TParovatko;
-
 implementation
-
 uses
-  AbraEntities, DesUtils, PrirazeniPNP, Superobject, Customers;
-
+  AbraEntities, DesUtils, Superobject, Customers, PrirazeniPNP;
 {$R *.dfm}
-
 procedure TfmMain.FormShow(Sender: TObject);
 begin
   //DesU.desUtilsInit('');
   //asgMain.CheckFalse := '0';
   //asgMain.CheckTrue := '1';
   vyplnNacitaciButtony;
-
   if DesU.appMode >= 3 then
   begin
     btnReconnect.Visible := true;
     btnSparujPlatby.Visible := true;
   end;
-
   //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
   DesU.existujeVAbreDokladSPrazdnymVs();
-
 end;
-
 
 procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
@@ -147,7 +132,6 @@ begin
     if assigned (Vypis.Platby) then
       Vypis.Platby.Free;
 end;
-
 procedure TfmMain.vyplnNacitaciButtony;
 var
   maxCisloVypisu : integer;
@@ -158,13 +142,11 @@ var
 begin
   fRok := IntToStr(SysUtils.CurrentYear);
   abraBankAccount := TAbraBankaccount.create();
-
   //Fio
   abraBankaccount.loadByNumber('2100098382/2010');
   maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
   hledanyGpcSoubor := 'Vypis_z_uctu-2100098382_' + fRok + '*-' + IntToStr(maxCisloVypisu + 1) + '.gpc';
   nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
-
   if nalezenyGpcSoubor = '' then begin //nenašel se
     lblVypisFioGpc.caption := hledanyGpcSoubor + ' nenalezen';
     btnVypisFio.Enabled := false;
@@ -172,7 +154,6 @@ begin
     lblVypisFioGpc.caption := nalezenyGpcSoubor;
     btnVypisFio.Enabled := true;
   end;
-
   lblVypisFioInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
     abraBankaccount.getPocetVypisu(fRok),
     abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
@@ -180,13 +161,11 @@ begin
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
 
-
   /// Fio Spoøicí
   abraBankaccount.loadByNumber('2800098383/2010');
   maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
   hledanyGpcSoubor := 'Vypis_z_uctu-2800098383_' + fRok + '*-' + IntToStr(maxCisloVypisu + 1) + '.gpc';
   nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
-
   if nalezenyGpcSoubor = '' then begin //nenašel se
     lblVypisFioSporiciGpc.caption := hledanyGpcSoubor + ' nenalezen';
     btnVypisFioSporici.Enabled := false;
@@ -194,7 +173,6 @@ begin
     lblVypisFioSporiciGpc.caption := nalezenyGpcSoubor;
     btnVypisFioSporici.Enabled := true;
   end;
-
   lblVypisFioSporiciInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
     abraBankaccount.getPocetVypisu(fRok),
     abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
@@ -202,14 +180,12 @@ begin
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
 
-
   /// ÈSOB
   abraBankaccount.loadByNumber('171336270/0300');
   maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
   //hledanyGpcSoubor := 'BB117641_171336270_' + fRok + '*_' + IntToStr(maxCisloVypisu + 1) + '.gpc'; //takhle to bylo do zmìny v létì 2018
   hledanyGpcSoubor := '171336270_' + fRok + '*_' + IntToStr(maxCisloVypisu + 1) + '_CZ.gpc';
   nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
-
   if nalezenyGpcSoubor = '' then begin //nenašel se
     lblVypisCsobGpc.caption := hledanyGpcSoubor + ' nenalezen';
     btnVypisCsob.Enabled := false;
@@ -217,14 +193,12 @@ begin
     lblVypisCsobGpc.caption := nalezenyGpcSoubor;
     btnVypisCsob.Enabled := true;
   end;
-
   lblVypisCsobInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
     abraBankaccount.getPocetVypisu(fRok),
     abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
     abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
-
   //Pay U
   abraBankaccount.loadByNumber('2389210008000000/0300');
   posledniDatum := abraBankaccount.getPosledniDatumVypisu(fRok);
@@ -238,12 +212,10 @@ begin
     lblVypisPayuGpc.caption := nalezenyGpcSoubor;
     btnVypisPayu.Enabled := true;
   end;
-
   lblVypisPayuInfo.Caption := format('Datum posledního výpisu %s', [
     FormatDateTime('dd.mm.yyyy', posledniDatum)
     ]);
 end;
-
 procedure TfmMain.nactiGpc(GpcFilename : string);
 var
   GpcInputFile : TextFile;
@@ -256,17 +228,16 @@ begin
     DesU.dbAbra.Reconnect;
     AssignFile(GpcInputFile, GpcFilename);
     Reset(GpcInputFile);
-
     Screen.Cursor := crHourGlass;
     asgMain.Visible := true;
     asgMain.ClearNormalCells;
+    asgMain.RowCount := 2;
     asgPredchoziPlatby.ClearNormalCells;
     asgPredchoziPlatbyVs.ClearNormalCells;
     asgNalezeneDoklady.ClearNormalCells;
     btnNacti.Enabled := false;
     lblHlavicka.Font.Color := $000000;
     Application.ProcessMessages;
-
     pocetPlatebGpc := 0;
     while not Eof(GpcInputFile) do
     begin
@@ -275,7 +246,6 @@ begin
         Inc(pocetPlatebGpc);
     end;
     CloseFile(GpcInputFile);
-
     Reset(GpcInputFile);
     Vypis := nil;
     i := 0;
@@ -284,7 +254,6 @@ begin
       lblHlavicka.Caption := '... naèítání ' + IntToStr(i) + '. z ' + IntToStr(pocetPlatebGpc);
       Application.ProcessMessages;
       ReadLn(GpcInputFile, GpcFileLine);
-
       if i = 0 then //první øádek musí být hlavièka výpisu
       begin
         Inc(i);
@@ -296,7 +265,6 @@ begin
           Break;
         end;
       end;
-
       if copy(GpcFileLine, 1, 3) = '075' then //radek vypisu zacina 075
       begin
         Inc(i);
@@ -306,7 +274,8 @@ begin
           //Dialogs.MessageDlg('dvakrat VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctu, mtInformation, [mbOK], 0);
           Memo1.Lines.Add('Dvojnásobná platba:  VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctuKZobrazeni);
           Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
-          Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
+
+          Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
 
         end else begin
           iPlatbaZVypisu.init(StrToInt(editPocetPredchPlateb.text));
@@ -315,10 +284,8 @@ begin
           Vypis.Platby.Add(iPlatbaZVypisu);
         end;
 
-
       end;
     end;
-
     if assigned(Vypis) then
       if (Vypis.Platby.Count > 0) then
       begin
@@ -335,7 +302,6 @@ begin
                         + ' Úè. zùst: ' + FloatToStr(ucetniZustatek);
         if Vypis.zustatekStary <> ucetniZustatek then
           lblHlavicka.Font.Color := $0000FF;
-
         if not Vypis.isNavazujeNaradu() then
           Dialogs.MessageDlg('Doklad è. '+ IntToStr(Vypis.poradoveCislo) + ' nenavazuje na øadu!', mtInformation, [mbOK], 0);
         //currPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[0]); //mùže být ale nemìlo by být potøeba
@@ -347,16 +313,13 @@ begin
     CloseFile(GpcInputFile);
     Screen.Cursor := crDefault;
   end;
-
 end;
-
 
 procedure TfmMain.vyplnPrichoziPlatby;
 var
   i : integer;
   iPlatbaZVypisu : TPlatbaZVypisu;
 begin
-
   with asgMain do
   begin
     Enabled := true;
@@ -364,7 +327,6 @@ begin
     ClearNormalCells;
     RowCount := Vypis.Platby.Count + 1;
     Row := 1;
-
     for i := 0 to Vypis.Platby.Count - 1 do
     begin
       RemoveButton(0, i+1);
@@ -382,20 +344,15 @@ begin
       //Cells[5, i+1] := Format('%8.2f', [iPlatbaZVypisu.getProcentoPredchozichPlatebNaStejnyVS]) + Format('%8.2f', [iPlatbaZVypisu.getProcentoPredchozichPlatebZeStejnehoUctu]) + iPlatbaZVypisu.nazevKlienta;
       Cells[5, i+1] := iPlatbaZVypisu.nazevKlienta;
       Cells[6, i+1] := DateToStr(iPlatbaZVypisu.Datum);
-
       vyplnVysledekParovaniPP(i);
-
     end;
   end;
-
 end;
-
 procedure TfmMain.vyplnVysledekParovaniPP(i : integer);
 var
   iPlatbaZVypisu : TPlatbaZVypisu;
 begin
   iPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[i]);
-
   case iPlatbaZVypisu.problemLevel of
     0: asgMain.Colors[2, i+1] := $AAFFAA;
     1: asgMain.Colors[2, i+1] := $CDFAFF;
@@ -403,44 +360,35 @@ begin
     3: asgMain.Colors[2, i+1] := $FFFACD;
     5: asgMain.Colors[2, i+1] := $BBBBFF;
   end;
-
   if iPlatbaZVypisu.rozdeleniPlatby > 0 then
     asgMain.Cells[8, i+1] := IntToStr (iPlatbaZVypisu.rozdeleniPlatby) + ' dìlení, ' + iPlatbaZVypisu.zprava
   else
     asgMain.Cells[8, i+1] := iPlatbaZVypisu.zprava;
-
   asgMain.RemoveCheckBox(7, i+1);
   if iPlatbaZVypisu.potrebaPotvrzeniUzivatelem then
     asgMain.AddCheckBox(7, i+1, iPlatbaZVypisu.jePotvrzenoUzivatelem, false);
 end;
-
 procedure TfmMain.filtrujZobrazeniPlateb;
 var
   i : integer;
   iPlatbaZVypisu : TPlatbaZVypisu;
   zobrazitRadek : boolean;
 begin
-
   for i := 0 to Vypis.Platby.Count - 1 do
   begin
     iPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[i]);
     zobrazitRadek := false;
-
     if iPlatbaZVypisu.problemLevel > 1 then
       zobrazitRadek := true;
-
     if chbZobrazitBezproblemove.Checked AND (iPlatbaZVypisu.problemLevel = 0) then
       zobrazitRadek := true;
-
     if chbZobrazitStandardni.Checked AND (iPlatbaZVypisu.problemLevel = 1) then
       zobrazitRadek := true;
-
     if iPlatbaZVypisu.debet then
       if chbZobrazitDebety.Checked then
         zobrazitRadek := true
       else
         zobrazitRadek := false;
-
     if zobrazitRadek then
       asgMain.RowHeights[i+1] := asgMain.DefaultRowHeight
     else
@@ -448,18 +396,15 @@ begin
   end;
 end;
 
-
 procedure TfmMain.sparujVsechnyPrichoziPlatby;
 var
   i : integer;
 begin
   asgMain.RowCount := Vypis.Platby.Count + 1;
-
   Parovatko := TParovatko.create(Vypis);
   for i := 0 to Vypis.Platby.Count - 1 do
     sparujPrichoziPlatbu(i);
 end;
-
 
 procedure TfmMain.sparujPrichoziPlatbu(i : integer);
 var
@@ -470,13 +415,11 @@ begin
   vyplnVysledekParovaniPP(i);
 end;
 
-
 procedure TfmMain.vyplnPredchoziPlatby;
 var
   i : integer;
   iPredchoziPlatba : TPredchoziPlatba;
 begin
-
   with asgPredchoziPlatby do begin
     Enabled := true;
     ClearNormalCells;
@@ -498,7 +441,6 @@ begin
     end else
        RowCount := 2;
   end;
-
   with asgPredchoziPlatbyVs do begin
     Enabled := true;
     ClearNormalCells;
@@ -508,7 +450,6 @@ begin
       RowCount := currPlatbaZVypisu.PredchoziPlatbyVsList.Count + 1;
       for i := 0 to RowCount - 2 do begin
         iPredchoziPlatba := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyVsList[i]);
-
         Cells[0, i+1] := iPredchoziPlatba.cisloUctuKZobrazeni;
         Cells[1, i+1] := format('%m', [iPredchoziPlatba.Castka]);
         if iPredchoziPlatba.Castka < 0 then asgPredchoziPlatbyVs.FontColors[1, i+1] := clRed;
@@ -520,16 +461,13 @@ begin
   end;
 end;
 
-
 procedure TfmMain.vyplnDoklady;
 var
   iDoklad : TDoklad;
   iPDPar : TPlatbaDokladPar;
   i : integer;
 begin
-
   //currPlatbaZVypisu.loadDokladyPodleVS(); //bylo v minulosti
-
   with asgNalezeneDoklady do begin
     Enabled := true;
     ClearNormalCells;
@@ -546,7 +484,6 @@ begin
         Cells[5, i+1] := format('%m', [iDoklad.CastkaDobropisovano]);
         Cells[6, i+1] := format('%m', [iDoklad.CastkaNezaplaceno]);
         Cells[7, i+1] := iDoklad.ID;
-
         iPDPar := Parovatko.getPDPar(currPlatbaZVypisu, iDoklad.ID);
         if Assigned(iPDPar) then begin
           Cells[8, i+1] := iPDPar.Popis; // + floattostr(iPDPar.CastkaPouzita);
@@ -555,23 +492,19 @@ begin
           else
             Colors[6, i+1] := $CDFAFF;
         end;
-
         if iDoklad.CastkaNezaplaceno = 0 then Colors[6, i+1] := $BBBBFF;
       end;
-
       chbVsechnyDoklady.Checked := currPlatbaZVypisu.vsechnyDoklady;
       if chbVsechnyDoklady.Checked then
         lblNalezeneDoklady.Caption := 'Doklady s VS ' +  currPlatbaZVypisu.VS
       else
         lblNalezeneDoklady.Caption := 'Doklady s VS ' +  currPlatbaZVypisu.VS;
-
     end else begin
       RowCount := 2;
       lblNalezeneDoklady.Caption := 'Žádné vystavené doklady s VS ' +  currPlatbaZVypisu.VS;
     end;
   end;
 end;
-
 
 procedure TfmMain.urciCurrPlatbaZVypisu();
 begin
@@ -580,18 +513,15 @@ begin
       currPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[asgMain.row - 1]);
 end;
 
-
 procedure TfmMain.btnZapisDoAbryClick(Sender: TObject);
 var
   vysledek  : string;
   casStart, dobaZapisu: double;
-
 begin
   if not Vypis.isNavazujeNaRadu() then
     if Dialogs.MessageDlg('Èíslo dokladu ' + IntToStr(Vypis.poradoveCislo)
         + ' nenavazuje na existující øadu. Opravdu zapsat do Abry?',
         mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Exit;
-
   Screen.Cursor := crHourGlass;
   btnZapisDoAbry.Enabled := False;
   casStart := Now;
@@ -601,27 +531,21 @@ begin
   finally
     Screen.Cursor := crDefault;
   end;
-
   Memo1.Lines.Add(vysledek);
   dobaZapisu := (Now - casStart) * 24 * 3600;
   Memo1.Lines.Add('Doba trvání: ' + floattostr(RoundTo(dobaZapisu, -2))
               + ' s (' + floattostr(RoundTo(dobaZapisu / 60, -2)) + ' min)');
-
   DesU.dbAbra.Reconnect;
   MessageDlg('Zápis do Abry dokonèen', mtInformation, [mbOk], 0);
   vyplnNacitaciButtony;
-
 end;
-
 
 procedure TfmMain.provedAkcePoZmeneVS;
 begin
   asgMain.Cells[2, asgMain.row] := currPlatbaZVypisu.VS;
   asgMain.RemoveButton(0, asgMain.row);
-
   if currPlatbaZVypisu.VS <> currPlatbaZVypisu.VS_orig then
     asgMain.AddButton(0, asgMain.row, 76, 16, currPlatbaZVypisu.VS_orig, haCenter, vaCenter);
-
   currPlatbaZVypisu.loadPredchoziPlatbyPodleVS(StrToInt(editPocetPredchPlateb.text));
   vyplnPredchoziPlatby;
   currPlatbaZVypisu.loadDokladyPodleVS();
@@ -632,20 +556,15 @@ begin
   Memo2.Lines.Add(Parovatko.getPDParyPlatbyAsText(currPlatbaZVypisu));
 end;
 
-
-
 {*********************** akce Input elementù **********************************}
-
 procedure TfmMain.asgMainClick(Sender: TObject);
 begin
   urciCurrPlatbaZVypisu();
   vyplnPredchoziPlatby;
   vyplnDoklady;
-
   Memo2.Clear;
   Memo2.Lines.Add(Parovatko.getPDParyPlatbyAsText(currPlatbaZVypisu));
 end;
-
 
 procedure TfmMain.asgMainCellsChanged(Sender: TObject; R: TRect);
 begin
@@ -661,13 +580,11 @@ begin
      currPlatbaZVypisu.nazevKlienta := asgMain.Cells[5, asgMain.row]; //do pøíslušného objektu platby zapíšu zmìnìný text
   end;
 end;
-
 procedure TfmMain.asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
   State: Boolean);
 begin
   asgMain.row := ARow;
   urciCurrPlatbaZVypisu();
-
   currPlatbaZVypisu.jePotvrzenoUzivatelem := State;
   //Memo1.Lines.Add(BoolToStr(State,true));
 
@@ -680,7 +597,6 @@ begin
   currPlatbaZVypisu.VS := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyList[ARow - 1]).VS;
   provedAkcePoZmeneVS;
 end;
-
 procedure TfmMain.asgMainKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
@@ -692,7 +608,6 @@ begin
   end;
 end;
 
-
 procedure TfmMain.chbVsechnyDokladyClick(Sender: TObject);
 begin
   currPlatbaZVypisu.vsechnyDoklady := chbVsechnyDoklady.Checked;
@@ -700,12 +615,10 @@ begin
   vyplnDoklady;
 end;
 
-
 procedure TfmMain.btnSparujPlatbyClick(Sender: TObject);
 begin
   sparujVsechnyPrichoziPlatby;
 end;
-
 
 procedure TfmMain.Zprava(TextZpravy: string);
 // do listboxu a logfile uloží èas a text zprávy
@@ -717,7 +630,6 @@ begin
   Writeln (F, FormatDateTime('dd.mm.yy hh:nn  ', Now) + TextZpravy);
   CloseFile(F);  }
 end;
-
 procedure TfmMain.asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
   var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
@@ -728,7 +640,6 @@ begin
     //4: HAlign := taLeftJustify;
   end;
 end;
-
 procedure TfmMain.asgNalezeneDokladyGetAlignment(Sender: TObject; ARow,
   ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
@@ -739,7 +650,6 @@ begin
     //4: HAlign := taLeftJustify;
   end;
 end;
-
 procedure TfmMain.asgPredchoziPlatbyGetAlignment(Sender: TObject; ARow,
   ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
@@ -747,7 +657,6 @@ begin
     1..3: HAlign := taRightJustify;
   end;
 end;
-
 procedure TfmMain.asgPredchoziPlatbyVsGetAlignment(Sender: TObject; ARow,
   ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
@@ -755,15 +664,12 @@ begin
     0..2: HAlign := taRightJustify;
   end;
 end;
-
 procedure TfmMain.btnReconnectClick(Sender: TObject);
 var
   jsonstring,
   newIssuedInvoice : string;
 begin
-
   //Memo2.Lines.Add(DesU.vytvorFaZaVoipKredit('795532', 2561, 42914));
-
   {
   jsonstring := LoadFileToStr(DesU.PROGRAM_PATH + '!jsonin.txt');
   Memo2.Lines.Add(SO(jsonstring).AsJSon(true, true));
@@ -771,41 +677,33 @@ begin
   //Memo2.Lines.Add(SO(newIssuedInvoice).S['id']);
   Memo2.Lines.Add(newIssuedInvoice);
   }
-
   DesU.dbAbra.Reconnect;
   //
   //Memo2.Lines.Add('FirmId: ' + DesU.getFirmIdByCode(DesU.getAbracodeByContractNumber('20179001')));   iPlatbaZVypisu.nazevKlienta
   //DesU.getFirmIdByCode();
 end;
-
 procedure TfmMain.btnHledejClick(Sender: TObject);
 var
   hledejResult : TArrayOf2Int;
   newIssuedInvoice : string;
 begin
   hledejResult := Vypis.hledej(Trim(editHledej.Text));
-
   asgMain.row := hledejResult[0] + 1;
   asgMain.col := hledejResult[1];
 end;
-
-
 
 procedure TfmMain.chbZobrazitBezproblemoveClick(Sender: TObject);
 begin
   filtrujZobrazeniPlateb;
 end;
-
 procedure TfmMain.chbZobrazitDebetyClick(Sender: TObject);
 begin
   filtrujZobrazeniPlateb;
 end;
-
 procedure TfmMain.chbZobrazitStandardniClick(Sender: TObject);
 begin
   filtrujZobrazeniPlateb;
 end;
-
 
 
 procedure TfmMain.asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer;
@@ -816,7 +714,6 @@ begin
   end;
 end;
 
-
 procedure TfmMain.asgMainGetEditorType(Sender: TObject; ACol,
   ARow: Integer; var AEditor: TEditorType);
 begin
@@ -826,7 +723,6 @@ begin
   end;
 }
 end;
-
 procedure TfmMain.asgMainGetCellColor(Sender: TObject; ARow, ACol: Integer;
   AState: TGridDrawState; ABrush: TBrush; AFont: TFont);
 begin
@@ -837,13 +733,10 @@ begin
 end;
 
 
-
-
 procedure TfmMain.btnShowPrirazeniPnpFormClick(Sender: TObject);
 begin
   fmPrirazeniPnp.Show;
 end;
-
 procedure TfmMain.asgMainButtonClick(Sender: TObject; ACol, ARow: Integer);
 begin
   asgMain.row := ARow;
@@ -851,28 +744,23 @@ begin
   currPlatbaZVypisu.VS := currPlatbaZVypisu.VS_orig;
   provedAkcePoZmeneVS;
 end;
-
 procedure TfmMain.btnNactiClick(Sender: TObject);
 begin
   //if DesU.existujeVAbreDokladSPrazdnymVs() then exit;
-
   // naètení GPC na základì dialogu
   NactiGpcDialog.InitialDir := DesU.GPC_PATH; //'J:\Eurosignal\HB\';
   NactiGpcDialog.Filter := 'Bankovní výpisy (*.gpc)|*.gpc';
 	if NactiGpcDialog.Execute then
     nactiGpc(NactiGpcDialog.Filename);
 end;
-
 procedure TfmMain.btnVypisFioClick(Sender: TObject);
 begin
   nactiGpc(lblVypisFioGpc.caption);
 end;
-
 procedure TfmMain.btnVypisFioSporiciClick(Sender: TObject);
 begin
   nactiGpc(lblVypisFioSporiciGpc.caption);
 end;
-
 procedure TfmMain.btnVypisPayUClick(Sender: TObject);
 begin
   nactiGpc(lblVypisPayuGpc.caption);
@@ -882,7 +770,6 @@ procedure TfmMain.btnVypisCsobClick(Sender: TObject);
 begin
   nactiGpc(lblVypisCsobGpc.caption);
 end;
-
 procedure TfmMain.btnZavritVypisClick(Sender: TObject);
 begin
   asgMain.Visible := false;
@@ -894,11 +781,9 @@ begin
   DesU.dbAbra.Reconnect;
 end;
 
-
 procedure TfmMain.btnCustomersClick(Sender: TObject);
 begin
   fmCustomers.Show;
 end;
-
 
 end.

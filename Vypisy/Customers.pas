@@ -5,7 +5,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, StdCtrls, Forms, Math, IniFiles, Dialogs, Grids, BaseGrid, AdvGrid, AdvObj,
-  DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, VypisyMain;
+  DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, VypisyMain, AdvUtil;
 
 type
   TfmCustomers = class(TForm)

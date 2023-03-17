@@ -1,9 +1,9 @@
 object fmCustomers: TfmCustomers
   Left = 374
   Top = 132
-  Width = 650
-  Height = 134
   Caption = 'Z'#225'kazn'#237'ci v tabulce Customers'
+  ClientHeight = 95
+  ClientWidth = 651
   Color = clBtnFace
   Constraints.MinHeight = 134
   Constraints.MinWidth = 650
@@ -15,8 +15,8 @@ object fmCustomers: TfmCustomers
   OldCreateOrder = False
   OnShow = FormShow
   DesignSize = (
-    642
-    107)
+    651
+    95)
   PixelsPerInch = 96
   TextHeight = 13
   object lbJmeno: TLabel
@@ -77,7 +77,7 @@ object fmCustomers: TfmCustomers
     OnKeyUp = edPrijmeniKeyUp
   end
   object btNajdi: TButton
-    Left = 564
+    Left = 581
     Top = 11
     Width = 65
     Height = 21
@@ -91,17 +91,19 @@ object fmCustomers: TfmCustomers
     ParentFont = False
     TabOrder = 2
     OnClick = btNajdiClick
+    ExplicitLeft = 564
   end
   object asgCustomers: TAdvStringGrid
     Left = 0
     Top = 42
-    Width = 642
+    Width = 659
     Height = 65
     Cursor = crDefault
     Align = alCustom
     Anchors = [akLeft, akTop, akRight, akBottom]
     ColCount = 6
     DefaultRowHeight = 18
+    DrawingStyle = gdsClassic
     FixedCols = 0
     RowCount = 2
     Font.Charset = DEFAULT_CHARSET
@@ -211,6 +213,7 @@ object fmCustomers: TfmCustomers
     ShowDesignHelper = False
     SortSettings.DefaultFormat = ssAutomatic
     Version = '7.4.2.0'
+    ExplicitWidth = 642
     ColWidths = (
       185
       90
@@ -229,8 +232,10 @@ object fmCustomers: TfmCustomers
     OnKeyUp = edVSKeyUp
   end
   object dbMain: TZConnection
-    ControlsCodePage = cGET_ACP
-    AutoEncodeStrings = False
+    ControlsCodePage = cCP_UTF16
+    Catalog = ''
+    Properties.Strings = (
+      'controls_cp=GET_ACP')
     AfterConnect = dbMainAfterConnect
     HostName = 'test.iquest.cz'
     Port = 0
