@@ -16,7 +16,7 @@ type
     firmName : string[100];
     datumDokladu  : double;
     datumSplatnosti  : double;
-    //AccDocQueue_ID : string[10];  aaa pokus, pokus Zizkov
+    //AccDocQueue_ID : string[10];
     //FirmOffice_ID : string[10];
     //DocUUID : string[26];
     documentType : string[2];
@@ -192,6 +192,7 @@ begin
 end;
 
 function TAbraBankAccount.getExtPoradoveCisloMaxVypisu(pYear : string) : integer;
+// najdu externí poøadové èíslo (EXTERNALNUMBER) výpisu s nejvyšším èíslem (ORDNUMBER) pro daný bank. úèet a rok
 begin
   with DesU.qrAbraOC do begin
     SQL.Text := 'SELECT bs1.OrdNumber as MaxOrdNumber, bs1.EXTERNALNUMBER as MaxExtOrdNumber'

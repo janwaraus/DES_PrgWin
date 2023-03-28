@@ -45,6 +45,8 @@ type
     vsechnyDoklady: boolean;
     pocetNacitanychPP: integer;
 
+    ts01, ts02, ts03: double; // timestampy pro ladìní výkonu
+
     problemLevel: integer;
     rozdeleniPlatby: integer;
     castecnaUhrada: integer;
@@ -113,7 +115,7 @@ begin
 
   self.typZaznamu := copy(gpcLine, 1, 3);
   self.cisloUctuVlastni := removeLeadingZeros(copy(gpcLine, 4, 16));
-  self.cisloUctu := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4);
+  self.cisloUctu := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4); //formát vèetnì nul na zaèátku
   self.cisloDokladu := copy(gpcLine, 36, 13);
   self.castka := StrToInt(removeLeadingZeros(copy(gpcLine, 49, 12))) / 100;
   self.kodUctovani := copy(gpcLine, 61, 1);
@@ -150,12 +152,14 @@ begin
 
 
   self.cisloUctuKZobrazeni := removeLeadingZeros(self.cisloUctu);
-  if kredit AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('z BÚ');
-  if kredit AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('z SÚ');
+  if kredit AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('z FBÚ');
+  if kredit AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('z FSÚ');
+  if kredit AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('z FKonto');
   if kredit AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('z ÈSOB');
   if kredit AND (cisloUctuKZobrazeni = '2107333410/2700') then setZnamyPripad('z PayU');
-  if debet AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('na BÚ');
-  if debet AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('na SÚ');
+  if debet AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('na FBÚ');
+  if debet AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('na FSÚ');
+  if debet AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('na FKonto');
   if debet AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('na ÈSOB');
   if debet AND (cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ');
 
@@ -170,8 +174,12 @@ end;
 
 procedure TPlatbaZVypisu.init(pocetPredchozichPlateb : integer);
 begin
+  ts01 := Now;
   loadPredchoziPlatby(pocetPredchozichPlateb);
+    debugRozdilCasu(ts01, Now, ' - loadPredchoziPlatby');
+  ts01 := Now;
   loadDokladyPodleVS();
+    debugRozdilCasu(ts01, Now, ' - loadDokladyPodleVS');
 end;
 
 
@@ -186,21 +194,26 @@ begin
   self.pocetNacitanychPP := pocetPlateb;
   self.PredchoziPlatbyList := TList.Create;
 
+  ts01 := Now; //ts
   // posledních N plateb ze stejného èísla úètu
-  with qrAbra do begin //todo aby se pro cislo uctu Ceske Posty nic nevratilo
+  if self.cisloUctu <> '0000000160987123/0300' then // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
+  with qrAbra do begin
     SQL.Text := 'SELECT FIRST ' + IntToStr(self.pocetNacitanychPP) + ' bs.VarSymbol, bs.Firm_ID, bs.Amount, '
               + 'bs.Credit, bs.BankAccount, bs.DocDate$Date, firms.Name as FirmName '
               + 'FROM BankStatements2 bs '
               + 'JOIN Firms ON bs.Firm_ID = Firms.Id '
               + 'WHERE bs.BankAccount = ''' + self.cisloUctu  + ''' '
-              + 'AND bs.BankStatementRow_ID is null '
+              // + 'AND bs.BankStatementRow_ID is null ' // toto vyluèuje v Abøe rozdìlené platby, ovšem zaèalo to zpomalovat query a tìch rozdìlených není moc, takže to nevadí vynechat
               + 'ORDER BY DocDate$Date DESC';
     Open;
+
     while not Eof do begin
       self.PredchoziPlatbyList.Add(TPredchoziPlatba.create(qrAbra));
       Next;
     end;
     Close;
+    debugRozdilCasu(ts01, Now, ' -- loadPredchoziPlatbyPodleUctu'); //ts
+    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQL_PlatbyPodleUctu.txt', SQL.Text);
   end;
 end;
 
@@ -211,18 +224,20 @@ end;
 
 procedure TPlatbaZVypisu.loadPredchoziPlatbyPodleVS(pocetPlateb : integer);
 begin
+  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
+
   self.pocetNacitanychPP := pocetPlateb;
   self.PredchoziPlatbyVsList := TList.Create;
 
-  // posledních N plateb na stejný VS
-  if StrToIntDef(self.VS, 0) > 0 then
+  ts01 := Now; //ts
+  // posledních N plateb na stejný VS, VS musí být platný, tedy neprázdný a èíselný
   with qrAbra do begin
     SQL.Text := 'SELECT FIRST ' + IntToStr(self.pocetNacitanychPP) + ' bs.VarSymbol, bs.Firm_ID, bs.Amount, '
               + 'bs.Credit, bs.BankAccount, bs.DocDate$Date, firms.Name as FirmName '
               + 'FROM BankStatements2 bs '
               + 'JOIN Firms ON bs.Firm_ID = Firms.Id '
               + 'WHERE bs.VarSymbol = ''' + self.VS  + ''' '
-              + 'AND bs.BankStatementRow_ID is null '
+              // + 'AND bs.BankStatementRow_ID is null ' // toto vyluèuje v Abøe rozdìlené platby, ovšem zaèalo to zpomalovat query a tìch rozdìlených není moc, takže to nevadí vynechat
               + 'ORDER BY DocDate$Date DESC';
     Open;
     while not Eof do begin
@@ -230,6 +245,8 @@ begin
       Next;
     end;
     Close;
+    debugRozdilCasu(ts01, Now, ' -- loadPredchoziPlatbyPodleVS'); //ts
+    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQL_PlatbyPodleVS.txt', SQL.Text);
   end;
 end;
 
@@ -244,14 +261,15 @@ var
   SQLiiSelect, SQLiiJenNezaplacene, SQLiiOrder,
   SQLStr : string;
 begin
+  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
+
   self.DokladyList := TList.Create;
 
-  //if self.VS = '' then Exit; //pro platby bez VS konèíme. kdyby náhodou existoval doklad s prázným VS, aby se nepároval
-  
-
   with qrAbra do begin
+     ts01 := Now; //ts
 
     // cteni z IssuedInvoices (faktury)
+
     SQLiiSelect := 'SELECT ii.ID FROM ISSUEDINVOICES ii'
                  + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
 
@@ -263,12 +281,28 @@ begin
     else
       SQL.Text := SQLiiSelect + SQLiiJenNezaplacene + SQLiiOrder;
 
+    {
+    SQLiiSelect := 'SELECT ii.ID FROM DE$_NEZAPLACENE_II ii'
+                 + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
+
+    SQLiiJenNezaplacene :=  ' AND ii.dluh <> 0';
+    SQLiiOrder := ' order by ii.DocDate$Date DESC';
+
+    if self.vsechnyDoklady then
+      SQL.Text := SQLiiSelect +  SQLiiOrder
+    else
+      SQL.Text := SQLiiSelect + SQLiiJenNezaplacene + SQLiiOrder;
+    }
     Open;
     while not Eof do begin
       self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '03'));
       Next;
     end;
     Close;
+
+    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedI.txt', SQL.Text);
+    debugRozdilCasu(ts01, Now, ' -- cteni z IssuedInvoices (faktury)'); //ts
+    ts01 := Now; //ts
 
     // cteni z IssuedDInvoices (zalohove listy)
     SQLiiSelect := 'SELECT ii.ID FROM ISSUEDDINVOICES ii'
@@ -289,6 +323,9 @@ begin
     end;
     Close;
 
+    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedID.txt', SQL.Text);
+    debugRozdilCasu(ts01, Now, ' -- cteni z IssuedDInvoices (zalohove listy)'); //ts
+    ts01 := Now; //ts
 
     // když se nenajde nezaplacená faktura ani zálohový list, natáhnu 1 zaplacený abych mohl pøiøadit firmu
     if self.DokladyList.Count = 0 then begin
@@ -297,11 +334,19 @@ begin
                    + ' WHERE ii.VarSymbol = ''' + self.VS  + ''''
                    + ' order by ii.DocDate$Date DESC';
 
+      {
+      SQL.Text := 'SELECT FIRST 1 ii.ID FROM DE$_NEZAPLACENE_II ii'
+                   + ' WHERE ii.VarSymbol = ''' + self.VS  + ''''
+                   + ' order by ii.DocDate$Date DESC';
+      }
       Open;
       if not Eof then begin
         self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '03'));
       end;
       Close;
+
+      writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedIzapl.txt', SQL.Text);
+      debugRozdilCasu(ts01, Now, ' -- natáhnu 1 zaplacený'); //ts
 
     end;
   end;
@@ -336,7 +381,7 @@ begin
     SQL.Text := 'SELECT varsymbol, count(*) as pocet FROM'
               + ' (SELECT FIRST 7 VarSymbol, Firm_ID FROM BankStatements2'
               + ' WHERE BankAccount = ''' + self.cisloUctu  + ''''
-              + ' AND BankStatementRow_ID is null'
+              // + ' AND BankStatementRow_ID is null' // // toto vyluèuje v Abøe rozdìlené platby, ovšem zaèalo to zpomalovat query a tìch rozdìlených není moc, takže to nevadí vynechat
               + ' ORDER BY DocDate$Date DESC)'
 
               + ' GROUP BY VARSYMBOL'

@@ -15,10 +15,12 @@ object DesU: TDesU
   PixelsPerInch = 96
   TextHeight = 13
   object dbAbra: TZConnection
-    ControlsCodePage = cGET_ACP
+    ControlsCodePage = cCP_UTF16
+    ClientCodepage = 'UTF8'
     Catalog = ''
     Properties.Strings = (
-      'controls_cp=GET_ACP')
+      'controls_cp=GET_ACP'
+      'codepage=UTF8')
     ReadOnly = True
     HostName = ''
     Port = 0
@@ -36,7 +38,7 @@ object DesU: TDesU
     Top = 8
   end
   object dbZakos: TZConnection
-    ControlsCodePage = cGET_ACP
+    ControlsCodePage = cCP_UTF16
     Catalog = ''
     Properties.Strings = (
       'controls_cp=GET_ACP')
@@ -69,7 +71,7 @@ object DesU: TDesU
     Top = 8
   end
   object dbVoip: TZConnection
-    ControlsCodePage = cGET_ACP
+    ControlsCodePage = cCP_UTF16
     Catalog = ''
     Properties.Strings = (
       'controls_cp=GET_ACP')

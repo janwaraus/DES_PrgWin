@@ -21,7 +21,7 @@ object fmMain: TfmMain
   PixelsPerInch = 96
   TextHeight = 13
   object lblHlavicka: TLabel
-    Left = 112
+    Left = 115
     Top = 5
     Width = 15
     Height = 16
@@ -38,59 +38,82 @@ object fmMain: TfmMain
   end
   object lblVypisFioGpc: TLabel
     Left = 240
-    Top = 256
+    Top = 112
     Width = 69
     Height = 13
     Caption = 'lblVypisFioGpc'
   end
   object lblVypisFioInfo: TLabel
     Left = 240
-    Top = 288
+    Top = 147
     Width = 67
     Height = 13
     Caption = 'lblVypisFioInfo'
   end
   object lblVypisFioSporiciGpc: TLabel
     Left = 240
-    Top = 320
-    Width = 69
+    Top = 191
+    Width = 101
     Height = 13
-    Caption = 'lblVypisFioGpc'
+    Caption = 'lblVypisFioSporiciGpc'
   end
   object lblVypisFioSporiciInfo: TLabel
     Left = 240
-    Top = 352
-    Width = 67
+    Top = 225
+    Width = 99
     Height = 13
-    Caption = 'lblVypisFioInfo'
+    Caption = 'lblVypisFioSporiciInfo'
   end
   object lblVypisCsobInfo: TLabel
     Left = 240
-    Top = 416
+    Top = 366
     Width = 77
     Height = 13
     Caption = 'lblVypisCsobInfo'
   end
   object lblVypisCsobGpc: TLabel
-    Left = 238
-    Top = 386
+    Left = 233
+    Top = 331
     Width = 79
     Height = 13
     Caption = 'lblVypisCsobGpc'
   end
   object lblVypisPayuGpc: TLabel
     Left = 240
-    Top = 449
+    Top = 402
     Width = 79
     Height = 13
     Caption = 'lblVypisPayuGpc'
   end
   object lblVypisPayuInfo: TLabel
     Left = 242
-    Top = 480
+    Top = 433
     Width = 77
     Height = 13
     Caption = 'lblVypisPayuInfo'
+  end
+  object lblVypisFiokontoGpc: TLabel
+    Left = 240
+    Top = 265
+    Width = 96
+    Height = 13
+    Caption = 'lblVypisFiokontoGpc'
+  end
+  object lblVypisFiokontoInfo: TLabel
+    Left = 242
+    Top = 288
+    Width = 94
+    Height = 13
+    Caption = 'lblVypisFiokontoInfo'
+  end
+  object btnVypisFiokonto: TButton
+    Left = 128
+    Top = 260
+    Width = 97
+    Height = 25
+    Caption = 'Fiokonto v'#253'pis'
+    TabOrder = 8
+    OnClick = btnVypisFiokontoClick
   end
   object pnRight: TPanel
     Left = 932
@@ -142,8 +165,8 @@ object fmMain: TfmMain
     object asgPredchoziPlatby: TAdvStringGrid
       Left = 8
       Top = 35
-      Width = 431
-      Height = 104
+      Width = 433
+      Height = 110
       Cursor = crDefault
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
@@ -261,12 +284,12 @@ object fmMain: TfmMain
         28
         78
         82
-        64
-        177)
+        70
+        167)
     end
     object asgPredchoziPlatbyVs: TAdvStringGrid
       Left = 8
-      Top = 165
+      Top = 166
       Width = 431
       Height = 104
       Cursor = crDefault
@@ -332,7 +355,7 @@ object fmMain: TfmMain
         'Equal'
         'Not equal'
         'Clear')
-      FixedColWidth = 124
+      FixedColWidth = 134
       FixedRowHeight = 20
       FixedFont.Charset = DEFAULT_CHARSET
       FixedFont.Color = clWindowText
@@ -382,10 +405,10 @@ object fmMain: TfmMain
       SortSettings.DefaultFormat = ssAutomatic
       Version = '7.4.2.0'
       ColWidths = (
-        124
+        134
         82
         64
-        158)
+        143)
     end
     object editPocetPredchPlateb: TEdit
       Left = 423
@@ -434,7 +457,7 @@ object fmMain: TfmMain
       OnClick = btnNactiClick
     end
     object btnZapisDoAbry: TButton
-      Left = 8
+      Left = 10
       Top = 233
       Width = 91
       Height = 23
@@ -560,25 +583,25 @@ object fmMain: TfmMain
   end
   object btnVypisFio: TButton
     Left = 128
-    Top = 256
+    Top = 106
     Width = 97
     Height = 25
-    Caption = 'FIO v'#253'pis'
+    Caption = 'Fio v'#253'pis'
     TabOrder = 3
     OnClick = btnVypisFioClick
   end
   object btnVypisFioSporici: TButton
     Left = 128
-    Top = 320
+    Top = 186
     Width = 97
     Height = 25
-    Caption = 'FIO spo'#345#237'c'#237' v'#253'pis'
+    Caption = 'Fio spo'#345#237'c'#237' v'#253'pis'
     TabOrder = 4
     OnClick = btnVypisFioSporiciClick
   end
   object btnVypisCsob: TButton
-    Left = 126
-    Top = 386
+    Left = 128
+    Top = 332
     Width = 99
     Height = 25
     Caption = #268'SOB v'#253'pis'
@@ -587,7 +610,7 @@ object fmMain: TfmMain
   end
   object btnVypisPayU: TButton
     Left = 128
-    Top = 446
+    Top = 399
     Width = 97
     Height = 25
     Caption = 'PayU v'#253'pis'
@@ -597,9 +620,9 @@ object fmMain: TfmMain
   end
   object asgMain: TAdvStringGrid
     Left = 110
-    Top = 31
-    Width = 824
-    Height = 498
+    Top = 27
+    Width = 816
+    Height = 496
     Cursor = crDefault
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
@@ -728,13 +751,13 @@ object fmMain: TfmMain
     ColWidths = (
       80
       82
-      78
+      79
       22
       132
       135
       64
       22
-      195)
+      191)
   end
   object pnBottom: TPanel
     Left = -1
@@ -887,8 +910,8 @@ object fmMain: TfmMain
         110)
     end
     object chbVsechnyDoklady: TCheckBox
-      Left = 270
-      Top = 6
+      Left = 302
+      Top = 4
       Width = 103
       Height = 17
       Caption = 'v'#353'echny doklady'
@@ -897,7 +920,7 @@ object fmMain: TfmMain
     end
   end
   object NactiGpcDialog: TOpenDialog
-    Left = 156
-    Top = 166
+    Left = 188
+    Top = 142
   end
 end

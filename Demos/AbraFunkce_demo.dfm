@@ -39,7 +39,7 @@ object Form1: TForm1
   end
   object edit1: TEdit
     Left = 48
-    Top = 10
+    Top = 13
     Width = 401
     Height = 21
     TabOrder = 2

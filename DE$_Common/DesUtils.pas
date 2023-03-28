@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.ShellApi, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, StrUtils,  IOUtils, IniFiles, ComObj, System.RegularExpressions,
   IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
-  Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, Superobject, AArray;
+  Data.DB, Math, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, Superobject, AArray;
 
 
 type
@@ -117,6 +117,7 @@ procedure appendToFile(pFileName, pContent : string);
 function LoadFileToStr(const FileName: TFileName): ansistring;
 function FloatToStrFD (pFloat : extended) : string;
 function RandString(const stringsize: integer): string;
+procedure debugRozdilCasu(cas01, cas02 : double; textZpravy : string);
 procedure RunCMD(cmdLine: string; WindowMode: integer);
 
 function UlozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
@@ -202,6 +203,7 @@ begin
 
   if not dbAbra.Connected then try
     dbAbra.Connect;
+    // dbAbra.Reconnect; // tímto se vyøeší problém s Unicode (UTF-8/16), po reconnectu už bìží
   except on E: exception do
     begin
       Application.MessageBox(PChar('Nedá se pøipojit k databázi Abry, program ukonèen.' + ^M + E.Message), 'DesU DB Abra', MB_ICONERROR + MB_OK);
@@ -838,7 +840,8 @@ begin
   Result := cisloU;
   if cisloU = '/0000' then Result := '0';
   if cisloU = '2100098382/2010' then Result := 'DES Fio bìžný';
-  if cisloU = '2800098383/2010' then Result := 'DES Fio spoøící';
+  if cisloU = '2602372070/2010' then Result := 'DES Fio spoøící';
+  if cisloU = '2800098383/2010' then Result := 'DES Fiokonto';
   if cisloU = '171336270/0300' then Result := 'DES ÈSOB';
   if cisloU = '2107333410/2700' then Result := 'PayU';
   if cisloU = '160987123/0300' then Result := 'Èeská Pošta';
@@ -1011,6 +1014,7 @@ begin
     end;
   end;
 
+{ 24.3.2023 bylo zakomentováno, tabulka DE$_EuroFree se nepoužívá od cca 02-2023 
 // 26.10.2019 datum vytvoøení faktury se uloží do tabulky DE$_EuroFree v databázi Abry
   with qrAbra do begin
     SQL.Text := 'UPDATE DE$_EuroFree SET'
@@ -1022,7 +1026,7 @@ begin
      + ' AND AccDate IS NULL)';
     ExecSQL;
   end;
-
+}
 end;
 
 function TDesU.vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
@@ -1775,6 +1779,14 @@ end;
 function FloatToStrFD (pFloat : extended) : string;
 begin
   Result := AnsiReplaceStr(FloatToStr(pFloat), ',', '.');
+end;
+
+procedure debugRozdilCasu(cas01, cas02 : double; textZpravy : string);
+// do DebugString vypíše èasový rozdíl a zprávu
+begin
+  cas01 := cas01 * 24 * 3600;
+  cas02 := cas02 * 24 * 3600;
+  OutputDebugString(PChar('Trváxxní: ' + floattostr(RoundTo(cas02 - cas01, -2)) + ' s, ' + textZpravy));
 end;
 
 procedure RunCMD(cmdLine: string; WindowMode: integer);

@@ -192,6 +192,7 @@ begin
 end;
 
 function TVypis.prictiCastkuPokudDvojitaPlatba(pPlatbaZVypisu : TPlatbaZVypisu) : integer;
+// Pokud pøijde 2 a více plateb ze stejného úètu se stejným VS ve stejný den, seèteme je. Dále k nim pøistupujeme k tomu jako k jedné platbì.
 var
   i : integer;
   iPlatba : TPlatbaZVypisu;

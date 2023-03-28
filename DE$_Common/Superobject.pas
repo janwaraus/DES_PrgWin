@@ -956,17 +956,18 @@ var
   p: PSOChar;
 begin
   Result := FloatToStr(value);
-  if {$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}DecimalSeparator <> '.' then
-  begin
-    p := PSOChar(Result);
-    while p^ <> #0 do
-      if p^ <> SOChar({$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}DecimalSeparator) then
-      inc(p) else
-      begin
-        p^ := '.';
-        Exit;
-      end;
-  end;
+  
+  // if {$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}FormatSettings.DecimalSeparator <> '.' then
+  // begin
+  //   p := PSOChar(Result);
+  //   while p^ <> #0 do
+  //     if p^ <> SOChar({$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}FormatSettings.DecimalSeparator) then
+  //     inc(p) else
+  //     begin
+  //       p^ := '.';
+  //       Exit;
+  //     end;
+  // end;
 end;
 
 function CurrToJson(const value: Currency): SOString;
@@ -974,17 +975,17 @@ var
   p: PSOChar;
 begin
   Result := CurrToStr(value);
-  if {$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}DecimalSeparator <> '.' then
-  begin
-    p := PSOChar(Result);
-    while p^ <> #0 do
-      if p^ <> SOChar({$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}DecimalSeparator) then
-      inc(p) else
-      begin
-        p^ := '.';
-        Exit;
-      end;
-  end;
+  // if {$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}FormatSettings.DecimalSeparator <> '.' then
+  // begin
+  //   p := PSOChar(Result);
+  //   while p^ <> #0 do
+  //     if p^ <> SOChar({$if defined(NEED_FORMATSETTINGS)}FormatSettings.{$ifend}FormatSettings.DecimalSeparator) then
+  //     inc(p) else
+  //     begin
+  //       p^ := '.';
+  //       Exit;
+  //     end;
+  // end;
 end;
 
 function TryObjectToDate(const obj: ISuperObject; var dt: TDateTime): Boolean;

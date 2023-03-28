@@ -35,9 +35,20 @@ uses DesUtils, AbraEntities, Superobject, AArray;
 
 
 procedure TForm1.Button1Click(Sender: TObject);
+var
+  maxCisloVypisu : integer;
+  accountName : string;
+  abraBankaccount : TAbraBankaccount;
 begin
-  DesU.opravRadekVypisuPomociPDocument_ID('2UF2000101', '9M6E000101', 'KQ0U000101', '03');
-  Memo1.Lines.Add('Radek opraveeen:');
+  // DesU.opravRadekVypisuPomociPDocument_ID('2UF2000101', '9M6E000101', 'KQ0U000101', '03');
+  // Memo1.Lines.Add('Radek opraveeen:');
+  //DesU.dbAbra.Reconnect;
+  abraBankAccount := TAbraBankaccount.create();
+  abraBankaccount.loadByNumber('171336270/0300');
+  Memo1.Lines.Add('Poèet výpisù: ' + IntToStr(abraBankaccount.getPocetVypisu('2023')));
+  Memo1.Lines.Add('Jméno (s UTF8Decode): ' + UTF8Decode(abraBankaccount.name));
+  Memo1.Lines.Add('Jméno (bez úpravy): ' + abraBankaccount.name);
+
 end;
 
 procedure TForm1.FormShow(Sender: TObject);

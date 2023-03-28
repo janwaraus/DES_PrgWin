@@ -46,6 +46,9 @@ type
     lblNalezeneDoklady: TLabel;
     asgNalezeneDoklady: TAdvStringGrid;
     chbVsechnyDoklady: TCheckBox;
+    lblVypisFiokontoGpc: TLabel;
+    lblVypisFiokontoInfo: TLabel;
+    btnVypisFiokonto: TButton;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -81,6 +84,7 @@ type
     procedure asgMainButtonClick(Sender: TObject; ACol, ARow: Integer);
     procedure btnVypisFioClick(Sender: TObject);
     procedure btnVypisFioSporiciClick(Sender: TObject);
+    procedure btnVypisFiokontoClick(Sender: TObject);
     procedure btnVypisCsobClick(Sender: TObject);
     procedure btnZavritVypisClick(Sender: TObject);
     procedure btnCustomersClick(Sender: TObject);
@@ -101,6 +105,7 @@ type
     procedure filtrujZobrazeniPlateb;
     procedure provedAkcePoZmeneVS;
     procedure Zprava(TextZpravy : string);
+    procedure zpravaRozdilCasu(cas01, cas02 : double; TextZpravy : string);
   end;
 var
   fmMain : TfmMain;
@@ -142,6 +147,7 @@ var
 begin
   fRok := IntToStr(SysUtils.CurrentYear);
   abraBankAccount := TAbraBankaccount.create();
+
   //Fio
   abraBankaccount.loadByNumber('2100098382/2010');
   maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
@@ -162,9 +168,9 @@ begin
     ]);
 
   /// Fio Spoøicí
-  abraBankaccount.loadByNumber('2800098383/2010');
+  abraBankaccount.loadByNumber('2602372070/2010');
   maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
-  hledanyGpcSoubor := 'Vypis_z_uctu-2800098383_' + fRok + '*-' + IntToStr(maxCisloVypisu + 1) + '.gpc';
+  hledanyGpcSoubor := 'Vypis_z_uctu-2602372070_' + fRok + '*-' + IntToStr(maxCisloVypisu + 1) + '.gpc';
   nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
   if nalezenyGpcSoubor = '' then begin //nenašel se
     lblVypisFioSporiciGpc.caption := hledanyGpcSoubor + ' nenalezen';
@@ -174,6 +180,25 @@ begin
     btnVypisFioSporici.Enabled := true;
   end;
   lblVypisFioSporiciInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
+    abraBankaccount.getPocetVypisu(fRok),
+    abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
+    abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
+    DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
+    ]);
+
+  /// Fiokonto
+  abraBankaccount.loadByNumber('2800098383/2010');
+  maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+  hledanyGpcSoubor := 'Vypis_z_uctu-2800098383_' + fRok + '*-' + IntToStr(maxCisloVypisu + 1) + '.gpc';
+  nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
+  if nalezenyGpcSoubor = '' then begin //nenašel se
+    lblVypisFiokontoGpc.caption := hledanyGpcSoubor + ' nenalezen';
+    btnVypisFiokonto.Enabled := false;
+  end else begin
+    lblVypisFiokontoGpc.caption := nalezenyGpcSoubor;
+    btnVypisFiokonto.Enabled := true;
+  end;
+  lblVypisFiokontoInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
     abraBankaccount.getPocetVypisu(fRok),
     abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
     abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
@@ -216,6 +241,7 @@ begin
     FormatDateTime('dd.mm.yyyy', posledniDatum)
     ]);
 end;
+
 procedure TfmMain.nactiGpc(GpcFilename : string);
 var
   GpcInputFile : TextFile;
@@ -223,8 +249,10 @@ var
   iPlatbaZVypisu : TPlatbaZVypisu;
   i, pocetPlatebGpc, kontrolaDvojitaPlatba: integer;
   ucetniZustatek : currency;
+  casStart, casPolozkaStart, cas02, cas03: double;
 begin
   try
+    casStart := Now;
     DesU.dbAbra.Reconnect;
     AssignFile(GpcInputFile, GpcFilename);
     Reset(GpcInputFile);
@@ -251,6 +279,7 @@ begin
     i := 0;
     while not Eof(GpcInputFile) do
     begin
+      casPolozkaStart := Now;
       lblHlavicka.Caption := '... naèítání ' + IntToStr(i) + '. z ' + IntToStr(pocetPlatebGpc);
       Application.ProcessMessages;
       ReadLn(GpcInputFile, GpcFileLine);
@@ -270,21 +299,28 @@ begin
         Inc(i);
         iPlatbaZVypisu := TPlatbaZVypisu.Create(GpcFileLine);
         kontrolaDvojitaPlatba := Vypis.prictiCastkuPokudDvojitaPlatba(iPlatbaZVypisu);
+          //zpravaRozdilCasu(casPolozkaStart, Now, 'po kontrola dvojité platby');
         if kontrolaDvojitaPlatba > -1 then begin
           //Dialogs.MessageDlg('dvakrat VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctu, mtInformation, [mbOK], 0);
           Memo1.Lines.Add('Dvojnásobná platba:  VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctuKZobrazeni);
           Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
-
           Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
 
         end else begin
+          cas02 := Now;
           iPlatbaZVypisu.init(StrToInt(editPocetPredchPlateb.text));
+            //zpravaRozdilCasu(casPolozkaStart, Now, 'iPlatbaZVypisu.init od zaèátku procedury');
+            zpravaRozdilCasu(cas02, Now, 'iPlatbaZVypisu.init samotný');
           Parovatko.sparujPlatbu(iPlatbaZVypisu);
+            zpravaRozdilCasu(casPolozkaStart, Now, 'Parovatko.sparujPlatbu');
           iPlatbaZVypisu.automatickyOpravVS();
+            zpravaRozdilCasu(casPolozkaStart, Now, 'iPlatbaZVypisu.automatickyOpravVS');
           Vypis.Platby.Add(iPlatbaZVypisu);
+            zpravaRozdilCasu(casPolozkaStart, Now, 'Vypis.Platby.Add(iPlatbaZVypisu)');
         end;
 
       end;
+      zpravaRozdilCasu(casPolozkaStart, Now, 'zpracování položky výpisu');
     end;
     if assigned(Vypis) then
       if (Vypis.Platby.Count > 0) then
@@ -630,6 +666,19 @@ begin
   Writeln (F, FormatDateTime('dd.mm.yy hh:nn  ', Now) + TextZpravy);
   CloseFile(F);  }
 end;
+procedure TfmMain.zpravaRozdilCasu(cas01, cas02 : double; textZpravy : string);
+// do listboxu vypíše èasový rozdíl a zprávu
+begin
+  debugRozdilCasu(cas01, cas02, textZpravy);
+  cas01 := cas01 * 24 * 3600;
+  cas02 := cas02 * 24 * 3600;
+  //Memo1.Lines.Add('Èas1: ' + floattostr(RoundTo(cas01, -2)));
+  //Memo1.Lines.Add('Èas2: ' + floattostr(RoundTo(cas02, -2)));
+  Memo1.Lines.Add('Trvání: ' + floattostr(RoundTo(cas02 - cas01, -2))
+              + ' s, ' + textZpravy);
+
+end;
+
 procedure TfmMain.asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
   var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
@@ -685,7 +734,6 @@ end;
 procedure TfmMain.btnHledejClick(Sender: TObject);
 var
   hledejResult : TArrayOf2Int;
-  newIssuedInvoice : string;
 begin
   hledejResult := Vypis.hledej(Trim(editHledej.Text));
   asgMain.row := hledejResult[0] + 1;
@@ -760,6 +808,10 @@ end;
 procedure TfmMain.btnVypisFioSporiciClick(Sender: TObject);
 begin
   nactiGpc(lblVypisFioSporiciGpc.caption);
+end;
+procedure TfmMain.btnVypisFiokontoClick(Sender: TObject);
+begin
+  nactiGpc(lblVypisFiokontoGpc.caption);
 end;
 procedure TfmMain.btnVypisPayUClick(Sender: TObject);
 begin
