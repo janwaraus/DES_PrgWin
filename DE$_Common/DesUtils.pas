@@ -1786,7 +1786,7 @@ procedure debugRozdilCasu(cas01, cas02 : double; textZpravy : string);
 begin
   cas01 := cas01 * 24 * 3600;
   cas02 := cas02 * 24 * 3600;
-  OutputDebugString(PChar('Trváxxní: ' + floattostr(RoundTo(cas02 - cas01, -2)) + ' s, ' + textZpravy));
+  OutputDebugString(PChar('Trvání: ' + floattostr(RoundTo(cas02 - cas01, -2)) + ' s, ' + textZpravy));
 end;
 
 procedure RunCMD(cmdLine: string; WindowMode: integer);

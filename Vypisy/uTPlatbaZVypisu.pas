@@ -45,8 +45,6 @@ type
     vsechnyDoklady: boolean;
     pocetNacitanychPP: integer;
 
-    ts01, ts02, ts03: double; // timestampy pro ladìní výkonu
-
     problemLevel: integer;
     rozdeleniPlatby: integer;
     castecnaUhrada: integer;
@@ -174,12 +172,8 @@ end;
 
 procedure TPlatbaZVypisu.init(pocetPredchozichPlateb : integer);
 begin
-  ts01 := Now;
   loadPredchoziPlatby(pocetPredchozichPlateb);
-    debugRozdilCasu(ts01, Now, ' - loadPredchoziPlatby');
-  ts01 := Now;
   loadDokladyPodleVS();
-    debugRozdilCasu(ts01, Now, ' - loadDokladyPodleVS');
 end;
 
 
@@ -194,7 +188,6 @@ begin
   self.pocetNacitanychPP := pocetPlateb;
   self.PredchoziPlatbyList := TList.Create;
 
-  ts01 := Now; //ts
   // posledních N plateb ze stejného èísla úètu
   if self.cisloUctu <> '0000000160987123/0300' then // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
   with qrAbra do begin
@@ -212,8 +205,6 @@ begin
       Next;
     end;
     Close;
-    debugRozdilCasu(ts01, Now, ' -- loadPredchoziPlatbyPodleUctu'); //ts
-    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQL_PlatbyPodleUctu.txt', SQL.Text);
   end;
 end;
 
@@ -229,7 +220,6 @@ begin
   self.pocetNacitanychPP := pocetPlateb;
   self.PredchoziPlatbyVsList := TList.Create;
 
-  ts01 := Now; //ts
   // posledních N plateb na stejný VS, VS musí být platný, tedy neprázdný a èíselný
   with qrAbra do begin
     SQL.Text := 'SELECT FIRST ' + IntToStr(self.pocetNacitanychPP) + ' bs.VarSymbol, bs.Firm_ID, bs.Amount, '
@@ -245,8 +235,6 @@ begin
       Next;
     end;
     Close;
-    debugRozdilCasu(ts01, Now, ' -- loadPredchoziPlatbyPodleVS'); //ts
-    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQL_PlatbyPodleVS.txt', SQL.Text);
   end;
 end;
 
@@ -266,7 +254,6 @@ begin
   self.DokladyList := TList.Create;
 
   with qrAbra do begin
-     ts01 := Now; //ts
 
     // cteni z IssuedInvoices (faktury)
 
@@ -281,28 +268,12 @@ begin
     else
       SQL.Text := SQLiiSelect + SQLiiJenNezaplacene + SQLiiOrder;
 
-    {
-    SQLiiSelect := 'SELECT ii.ID FROM DE$_NEZAPLACENE_II ii'
-                 + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
-
-    SQLiiJenNezaplacene :=  ' AND ii.dluh <> 0';
-    SQLiiOrder := ' order by ii.DocDate$Date DESC';
-
-    if self.vsechnyDoklady then
-      SQL.Text := SQLiiSelect +  SQLiiOrder
-    else
-      SQL.Text := SQLiiSelect + SQLiiJenNezaplacene + SQLiiOrder;
-    }
     Open;
     while not Eof do begin
-      self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '03'));
+      self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '03')); // 03 je faktura vydaná
       Next;
     end;
     Close;
-
-    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedI.txt', SQL.Text);
-    debugRozdilCasu(ts01, Now, ' -- cteni z IssuedInvoices (faktury)'); //ts
-    ts01 := Now; //ts
 
     // cteni z IssuedDInvoices (zalohove listy)
     SQLiiSelect := 'SELECT ii.ID FROM ISSUEDDINVOICES ii'
@@ -318,14 +289,31 @@ begin
 
     Open;
     while not Eof do begin
-      self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '10'));
+      self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '10')); // 10 je vydaný zálohový list
       Next;
     end;
     Close;
 
-    writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedID.txt', SQL.Text);
-    debugRozdilCasu(ts01, Now, ' -- cteni z IssuedDInvoices (zalohove listy)'); //ts
-    ts01 := Now; //ts
+    { TODO dobropisy
+    // cteni z IssuedDInvoices (zalohove listy)
+    SQLiiSelect := 'SELECT ii.ID FROM ISSUEDDINVOICES ii'
+                 + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
+
+    SQLiiJenNezaplacene :=  ' AND (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT) <> 0';
+    SQLiiOrder := ' order by ii.DocDate$Date DESC';
+
+    if self.vsechnyDoklady then
+      SQL.Text := SQLiiSelect +  SQLiiOrder
+    else
+      SQL.Text := SQLiiSelect + SQLiiJenNezaplacene + SQLiiOrder;
+
+    Open;
+    while not Eof do begin
+      self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '61')); // 61 je typ dokladu dobropis faktur pøijatých (DD)
+      Next;
+    end;
+    Close;
+    }
 
     // když se nenajde nezaplacená faktura ani zálohový list, natáhnu 1 zaplacený abych mohl pøiøadit firmu
     if self.DokladyList.Count = 0 then begin
@@ -334,19 +322,11 @@ begin
                    + ' WHERE ii.VarSymbol = ''' + self.VS  + ''''
                    + ' order by ii.DocDate$Date DESC';
 
-      {
-      SQL.Text := 'SELECT FIRST 1 ii.ID FROM DE$_NEZAPLACENE_II ii'
-                   + ' WHERE ii.VarSymbol = ''' + self.VS  + ''''
-                   + ' order by ii.DocDate$Date DESC';
-      }
       Open;
       if not Eof then begin
         self.DokladyList.Add(TDoklad.create(FieldByName('ID').AsString, '03'));
       end;
       Close;
-
-      writeToFile(ExtractFilePath(ParamStr(0)) + '\log\debug\' + formatdatetime('yymmdd-hhnnss', Now) + '_SQLread_IssuedIzapl.txt', SQL.Text);
-      debugRozdilCasu(ts01, Now, ' -- natáhnu 1 zaplacený'); //ts
 
     end;
   end;

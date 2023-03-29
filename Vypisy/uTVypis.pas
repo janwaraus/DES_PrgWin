@@ -114,15 +114,6 @@ begin
       //payuProvizePP := iPlatba;
       payuProvize := payuProvize + iPlatba.castka;
       self.Platby.Delete(i);
-
-    { nemelo by byt potreba, duplicita
-    end
-    // debety dozadu
-    else if iPlatba.debet then
-    begin
-      self.Platby.Delete(i);
-      self.Platby.Add(iPlatba);
-      }
     end;
   end;
 

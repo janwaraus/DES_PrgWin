@@ -2,7 +2,7 @@ object fmMain: TfmMain
   Left = 141
   Top = 0
   Caption = 'Na'#269'ten'#237', oprava a ulo'#382'en'#237' bankovn'#237'ho v'#253'pisu'
-  ClientHeight = 675
+  ClientHeight = 676
   ClientWidth = 1379
   Color = clBtnFace
   Constraints.MinHeight = 714
@@ -17,7 +17,7 @@ object fmMain: TfmMain
   OnShow = FormShow
   DesignSize = (
     1379
-    675)
+    676)
   PixelsPerInch = 96
   TextHeight = 13
   object lblHlavicka: TLabel
@@ -119,9 +119,10 @@ object fmMain: TfmMain
     Left = 932
     Top = 0
     Width = 447
-    Height = 675
+    Height = 676
     Align = alRight
     TabOrder = 1
+    ExplicitHeight = 675
     object lblPrechoziPlatbyZUctu: TLabel
       Left = 10
       Top = 16
@@ -431,9 +432,10 @@ object fmMain: TfmMain
     Left = 0
     Top = 0
     Width = 109
-    Height = 675
+    Height = 676
     Align = alLeft
     TabOrder = 2
+    ExplicitHeight = 675
     object lbZobrazit: TLabel
       Left = 10
       Top = 75
@@ -622,7 +624,7 @@ object fmMain: TfmMain
     Left = 110
     Top = 27
     Width = 816
-    Height = 496
+    Height = 497
     Cursor = crDefault
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
@@ -748,6 +750,7 @@ object fmMain: TfmMain
     SearchFooter.MatchCaseCaption = 'Match case'
     SortSettings.DefaultFormat = ssAutomatic
     Version = '7.4.2.0'
+    ExplicitHeight = 496
     ColWidths = (
       80
       82

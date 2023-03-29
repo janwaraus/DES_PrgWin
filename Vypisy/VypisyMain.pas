@@ -299,9 +299,7 @@ begin
         Inc(i);
         iPlatbaZVypisu := TPlatbaZVypisu.Create(GpcFileLine);
         kontrolaDvojitaPlatba := Vypis.prictiCastkuPokudDvojitaPlatba(iPlatbaZVypisu);
-          //zpravaRozdilCasu(casPolozkaStart, Now, 'po kontrola dvojité platby');
         if kontrolaDvojitaPlatba > -1 then begin
-          //Dialogs.MessageDlg('dvakrat VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctu, mtInformation, [mbOK], 0);
           Memo1.Lines.Add('Dvojnásobná platba:  VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctuKZobrazeni);
           Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
           Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
@@ -309,14 +307,9 @@ begin
         end else begin
           cas02 := Now;
           iPlatbaZVypisu.init(StrToInt(editPocetPredchPlateb.text));
-            //zpravaRozdilCasu(casPolozkaStart, Now, 'iPlatbaZVypisu.init od zaèátku procedury');
-            zpravaRozdilCasu(cas02, Now, 'iPlatbaZVypisu.init samotný');
           Parovatko.sparujPlatbu(iPlatbaZVypisu);
-            zpravaRozdilCasu(casPolozkaStart, Now, 'Parovatko.sparujPlatbu');
           iPlatbaZVypisu.automatickyOpravVS();
-            zpravaRozdilCasu(casPolozkaStart, Now, 'iPlatbaZVypisu.automatickyOpravVS');
           Vypis.Platby.Add(iPlatbaZVypisu);
-            zpravaRozdilCasu(casPolozkaStart, Now, 'Vypis.Platby.Add(iPlatbaZVypisu)');
         end;
 
       end;
