@@ -35,6 +35,7 @@ type
 
     procedure frxReportGetValue(const ParName: string; var ParValue: Variant);
     procedure frxReportBeginDoc(Sender: TObject);
+    procedure QRCodeChange(Sender: TObject);
 
 
   public

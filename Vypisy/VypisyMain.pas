@@ -49,6 +49,7 @@ type
     lblVypisFiokontoGpc: TLabel;
     lblVypisFiokontoInfo: TLabel;
     btnVypisFiokonto: TButton;
+    lblVypisOverview: TLabel;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -139,7 +140,7 @@ begin
 end;
 procedure TfmMain.vyplnNacitaciButtony;
 var
-  maxCisloVypisu : integer;
+  maxCisloVypisu, i1, i2, i3 : integer;
   posledniDatum : double;
   fRok, nalezenyGpcSoubor, hledanyGpcSoubor,
   hledanePayuDatumVypisu : string;
@@ -160,12 +161,18 @@ begin
     lblVypisFioGpc.caption := nalezenyGpcSoubor;
     btnVypisFio.Enabled := true;
   end;
-  lblVypisFioInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
-    abraBankaccount.getPocetVypisu(fRok),
-    abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
-    abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
+    i1 := abraBankaccount.getPocetVypisu(fRok);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok);
+  lblVypisFioInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, fRok, i2, i3,
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisFioInfo.Font.Color := $008000
+  else
+    lblVypisFioInfo.Font.Color := $800000;
+
 
   /// Fio Spoøicí
   abraBankaccount.loadByNumber('2602372070/2010');
@@ -179,12 +186,17 @@ begin
     lblVypisFioSporiciGpc.caption := nalezenyGpcSoubor;
     btnVypisFioSporici.Enabled := true;
   end;
-  lblVypisFioSporiciInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
-    abraBankaccount.getPocetVypisu(fRok),
-    abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
-    abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
+    i1 := abraBankaccount.getPocetVypisu(fRok);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok);
+  lblVypisFioSporiciInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, fRok, i2, i3,
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisFioSporiciInfo.Font.Color := $008000
+  else
+    lblVypisFioSporiciInfo.Font.Color := $800000;
 
   /// Fiokonto
   abraBankaccount.loadByNumber('2800098383/2010');
@@ -198,12 +210,17 @@ begin
     lblVypisFiokontoGpc.caption := nalezenyGpcSoubor;
     btnVypisFiokonto.Enabled := true;
   end;
-  lblVypisFiokontoInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
-    abraBankaccount.getPocetVypisu(fRok),
-    abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
-    abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
+    i1 := abraBankaccount.getPocetVypisu(fRok);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok);
+  lblVypisFiokontoInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, fRok, i2, i3,
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisFiokontoInfo.Font.Color := $008000
+  else
+    lblVypisFiokontoInfo.Font.Color := $800000;
 
   /// ÈSOB
   abraBankaccount.loadByNumber('171336270/0300');
@@ -218,12 +235,18 @@ begin
     lblVypisCsobGpc.caption := nalezenyGpcSoubor;
     btnVypisCsob.Enabled := true;
   end;
-  lblVypisCsobInfo.Caption := format('Poèet výpisù: %d, max. èíslo výpisu: %d, externí èíslo: %d, datum %s', [
-    abraBankaccount.getPocetVypisu(fRok),
-    abraBankaccount.getPoradoveCisloMaxVypisu(fRok),
-    abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok),
+    i1 := abraBankaccount.getPocetVypisu(fRok);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(fRok);
+  lblVypisCsobInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, fRok, i2, i3,
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisCsobInfo.Font.Color := $008000
+  else
+    lblVypisCsobInfo.Font.Color := $0000A0;
+
   //Pay U
   abraBankaccount.loadByNumber('2389210008000000/0300');
   posledniDatum := abraBankaccount.getPosledniDatumVypisu(fRok);
@@ -237,9 +260,18 @@ begin
     lblVypisPayuGpc.caption := nalezenyGpcSoubor;
     btnVypisPayu.Enabled := true;
   end;
-  lblVypisPayuInfo.Caption := format('Datum posledního výpisu %s', [
-    FormatDateTime('dd.mm.yyyy', posledniDatum)
+    i1 := abraBankaccount.getPocetVypisu(fRok);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
+    // PayU nemá exrení èíslo výpisu, proto i3 nepotøebujeme
+  lblVypisPayuInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, datum posledního výpisu %s', [
+    i1, fRok, i2,
+    DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
     ]);
+  if (i1 = i2) then
+    lblVypisPayuInfo.Font.Color := $008000
+  else
+    lblVypisPayuInfo.Font.Color := $800000;
+
 end;
 
 procedure TfmMain.nactiGpc(GpcFilename : string);
@@ -266,6 +298,8 @@ begin
     btnNacti.Enabled := false;
     lblHlavicka.Font.Color := $000000;
     Application.ProcessMessages;
+
+    // spoèítáme poèet plateb v GPC, abnychom mohli sledovat progres naèítání
     pocetPlatebGpc := 0;
     while not Eof(GpcInputFile) do
     begin
@@ -275,6 +309,7 @@ begin
     end;
     CloseFile(GpcInputFile);
     Reset(GpcInputFile);
+
     Vypis := nil;
     i := 0;
     while not Eof(GpcInputFile) do
@@ -300,7 +335,7 @@ begin
         iPlatbaZVypisu := TPlatbaZVypisu.Create(GpcFileLine);
         kontrolaDvojitaPlatba := Vypis.prictiCastkuPokudDvojitaPlatba(iPlatbaZVypisu);
         if kontrolaDvojitaPlatba > -1 then begin
-          Memo1.Lines.Add('Dvojnásobná platba:  VS '+ iPlatbaZVypisu.VS + ' na cisle uctu ' + iPlatbaZVypisu.cisloUctuKZobrazeni);
+          Memo1.Lines.Add('Dvojnásobná (vícenásobná) platba z úètu è. ' + iPlatbaZVypisu.cisloUctuKZobrazeni + ' s VS ' + iPlatbaZVypisu.VS);
           Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
           Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
 
@@ -327,10 +362,18 @@ begin
         lblHlavicka.Caption := Vypis.abraBankaccount.name // + ', ' + Vypis.abraBankaccount.number
                         + ', è.' + IntToStr(Vypis.poradoveCislo) + ' (max è. ' + IntToStr(Vypis.maxExistujiciPoradoveCislo) + '). Plateb: '
                         + IntToStr(Vypis.Platby.Count)
-                        + ' Bank. zùst: ' + FloatToStr(Vypis.zustatekStary)
+                        + ' Bank. zùst: ' + FloatToStr(Vypis.zustatekPocatecni)
                         + ' Úè. zùst: ' + FloatToStr(ucetniZustatek);
-        if Vypis.zustatekStary <> ucetniZustatek then
+        if Vypis.zustatekPocatecni <> ucetniZustatek then
           lblHlavicka.Font.Color := $0000FF;
+        lblVypisOverview.Caption := 'Výpis k úètu ' + Vypis.cisloUctuVlastni + ' (' + Vypis.abraBankaccount.name + ')'
+                        + #13#10 + 'Výpis k ' + DateToStr(Vypis.datum) + ', poøadové èíslo ' + IntToStr(Vypis.poradoveCislo)
+                        + #13#10 + 'Poèáteèní zùstatek: ' + format('%m', [Vypis.zustatekPocatecni])
+                        + #13#10 + 'Koncový zùstatek: ' + format('%m', [Vypis.zustatekKoncovy])
+                        + #13#10 + 'Kreditní obrat ' + format('%m', [Vypis.obratKredit]) + ', debetní obrat ' + format('%m', [Vypis.obratDebet]);
+        if Vypis.cisloUctuVlastni = '2389210008000000' then
+          lblVypisOverview.Caption := lblVypisOverview.Caption + #13#10 + '(PayU výpis neuvádí poøadové èíslo)';
+
         if not Vypis.isNavazujeNaradu() then
           Dialogs.MessageDlg('Doklad è. '+ IntToStr(Vypis.poradoveCislo) + ' nenavazuje na øadu!', mtInformation, [mbOK], 0);
         //currPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[0]); //mùže být ale nemìlo by být potøeba
@@ -452,9 +495,17 @@ begin
   with asgPredchoziPlatby do begin
     Enabled := true;
     ClearNormalCells;
-    lblPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu '
-        + currPlatbaZVypisu.cisloUctuKZobrazeni;
-    if currPlatbaZVypisu.PredchoziPlatbyList.Count > 0 then
+    
+    if currPlatbaZVypisu.cisloUctuKZobrazeni = '' then
+      lblPrechoziPlatbyZUctu.Caption := 'Prázdný úèet protistrany, pøedchozí platby nenaèítáme'
+    else if currPlatbaZVypisu.cisloUctu = '0000000160987123/0300' then
+      lblPrechoziPlatbyZUctu.Caption := 'Pro Èeskou poštu pøedchozí platby nenaèítáme'
+    else if currPlatbaZVypisu.PredchoziPlatbyList.Count = 0 then
+      lblPrechoziPlatbyZUctu.Caption := 'Žádné pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni
+    else  
+      lblPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni;
+      
+    if (currPlatbaZVypisu.cisloUctuKZobrazeni <> '') and (currPlatbaZVypisu.PredchoziPlatbyList.Count > 0) then
     begin
       RowCount := currPlatbaZVypisu.PredchoziPlatbyList.Count + 1;
       for i := 0 to RowCount - 2 do begin
@@ -667,7 +718,7 @@ begin
   cas02 := cas02 * 24 * 3600;
   //Memo1.Lines.Add('Èas1: ' + floattostr(RoundTo(cas01, -2)));
   //Memo1.Lines.Add('Èas2: ' + floattostr(RoundTo(cas02, -2)));
-  Memo1.Lines.Add('Trvání: ' + floattostr(RoundTo(cas02 - cas01, -2))
+  Memo2.Lines.Add('Trvání: ' + floattostr(RoundTo(cas02 - cas01, -2))
               + ' s, ' + textZpravy);
 
 end;
@@ -823,6 +874,7 @@ begin
   asgPredchoziPlatbyVs.ClearNormalCells;
   asgNalezeneDoklady.ClearNormalCells;
   lblHlavicka.Caption := '';
+  lblVypisOverview.Caption := '';
   DesU.dbAbra.Reconnect;
 end;
 

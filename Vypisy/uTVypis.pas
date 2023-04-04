@@ -20,9 +20,9 @@ type
     abraBankaccount : TAbraBankaccount;
     poradoveCislo : integer;
     cisloUctuVlastni : string[16];
-    datum  : double; //pocatecni datum vypisu
-    datumZHlavicky  : double; //datum posledni platby, tedy konecne datum vypisu
-    zustatekStary, zustatekNovy : currency;
+    datum  : double; //datum vypisu se urci jako datum poslední platby, v metodì init()
+    datumZHlavicky  : double; //nemusí být správnì, pro PayU napø. není
+    zustatekPocatecni, zustatekKoncovy : currency;
     obratDebet, obratKredit  : currency;
     maxExistujiciPoradoveCislo : integer;
     maxExistujiciExtPoradoveCislo : integer;
@@ -49,12 +49,12 @@ begin
   self.Platby := TList.create;
   self.AbraBankAccount := TAbraBankaccount.create;
 
-  self.poradoveCislo := StrToInt(copy(gpcLine, 106, 3));
   self.cisloUctuVlastni := removeLeadingZeros(copy(gpcLine, 4, 16));
-  self.zustatekStary := StrToInt(copy(gpcLine, 46, 14)) / 100; //todo znamenko
-  self.zustatekNovy := StrToInt(copy(gpcLine, 61, 14)) / 100;
+  self.zustatekPocatecni := StrToInt(copy(gpcLine, 46, 14)) / 100; //pøípadnì TODO znaménko
+  self.zustatekKoncovy := StrToInt(copy(gpcLine, 61, 14)) / 100; //pøípadnì TODO znaménko
   self.obratDebet := StrToInt(copy(gpcLine, 76, 14)) / 100;
   self.obratKredit := StrToInt(copy(gpcLine, 91, 14)) / 100;
+  self.poradoveCislo := StrToInt(copy(gpcLine, 106, 3));
   self.datumZHlavicky := Str6digitsToDate(copy(gpcLine, 109, 6));
 end;
 
@@ -95,6 +95,7 @@ procedure TVypis.init();
 var
   i : integer;
   iPlatba, payuProvizePP : TPlatbaZVypisu;
+  scitatPayUProvize : boolean;
   payuProvize : currency;
 begin
 
@@ -103,26 +104,35 @@ begin
   self.datum := TPlatbaZVypisu(self.Platby[self.Platby.Count - 1]).Datum; //datum vypisu se urci jako datum poslední platby
   self.nactiMaxExistujiciPoradoveCislo();
 
-  payuProvize := 0;
-  for i := self.Platby.Count - 1 downto 0 do
-  begin
-    iPlatba := TPlatbaZVypisu(self.Platby[i]);
-
-    // seèíst PayU provize
-    if iPlatba.isPayuProvize then
+  if self.cisloUctuVlastni = '2389210008000000' then  
+  if Dialogs.MessageDlg('Seèíst PayU provize?',
+    mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
+  begin  
+    // pro každou platbu se podíváme, zda je PayU provize
+    payuProvize := 0;
+    for i := self.Platby.Count - 1 downto 0 do
     begin
-      //payuProvizePP := iPlatba;
-      payuProvize := payuProvize + iPlatba.castka;
-      self.Platby.Delete(i);
-    end;
-  end;
+      iPlatba := TPlatbaZVypisu(self.Platby[i]);
 
-  if payuProvize > 0 then
-  begin
-    payuProvizePP := TPlatbaZVypisu.Create(-payuProvize);
-    payuProvizePP.datum := self.datum;
-    payuProvizePP.nazevKlienta := formatdatetime('myy', payuProvizePP.datum) + ' suma provize';
-    self.Platby.Add(payuProvizePP);
+      // pokud je PayU provize, pøièteme èástku a platbu odstraníme
+      if iPlatba.isPayuProvize then
+      begin
+        payuProvize := payuProvize + iPlatba.castka;
+        self.Platby.Delete(i);
+      end;
+
+      if (AnsiContainsStr(iPlatba.nazevKlienta, 'ubscription fee')) then
+        iPlatba.nazevKlienta := formatdatetime('myy', iPlatba.datum) + ' suma provize'; // jedno za mìsíc si PayU strhává 199 Kè, oznaèí se také jako "MYY suma provize", aby se to v ABRA dalo jednoduše seèíst
+      
+    end;
+
+    if payuProvize > 0 then
+    begin
+      payuProvizePP := TPlatbaZVypisu.Create(-payuProvize);
+      payuProvizePP.datum := self.datum;
+      payuProvizePP.nazevKlienta := formatdatetime('myy', payuProvizePP.datum) + ' suma provize';
+      self.Platby.Add(payuProvizePP);
+    end;
   end;
 
 end;

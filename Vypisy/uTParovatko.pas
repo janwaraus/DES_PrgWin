@@ -304,7 +304,7 @@ begin
     if Assigned(iPDPar.Doklad) then
       if iPDPar.vazbaNaDoklad then //Doklad vyplnime jen pokud chceme vazbu (vazbaNaDoklad je true). Doklad máme naètený i v situaci kdy vazbu nechceme - kvùli Firm_ID
       begin
-        boRowAA['PDocumentType'] := iPDPar.Doklad.DocumentType;
+        boRowAA['PDocumentType'] := iPDPar.Doklad.DocumentType; // napø. 03, 10, 61
         boRowAA['PDocument_ID'] := iPDPar.Doklad.ID;
       end
       else
@@ -355,7 +355,7 @@ begin
   try begin
     newId := DesU.abraBoCreate(boAA, 'bankstatement');
     Result := Result + ' Èíslo nového výpisu je ' + newID;
-    DesU.abraOLELogout;
+    // DesU.abraOLELogout; // 29.3. pøesunuto do DesU.abraBoCreateOLE
   end;
   except on E: exception do
     begin

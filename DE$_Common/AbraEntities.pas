@@ -112,10 +112,14 @@ begin
       + ' D.Code || ''-'' || II.OrdNumber || ''/'' || substring(P.Code from 3 for 2) as CisloDokladu,'
       + ' ii.LOCALAMOUNT, ii.LOCALPAIDAMOUNT, firms.Name as FirmName, ';
 
-    if Document_Type = '10' then  //10 mají z8lohové listy (ZL)
+    if Document_Type = '10' then  //10 mají zálohové listy (ZL)
         SQL.Text := SQL.Text
         + ' 0 as LOCALCREDITAMOUNT, 0 as LOCALPAIDCREDITAMOUNT'
         + ' FROM ISSUEDDINVOICES ii'
+    else if Document_Type = '61' then
+        SQL.Text := SQL.Text
+        + ' 0 as LOCALCREDITAMOUNT, 0 as LOCALPAIDCREDITAMOUNT'
+        + ' FROM RECEIVEDCREDITNOTES ii'
     else
         SQL.Text := SQL.Text
         + ' ii.LOCALCREDITAMOUNT, ii.LOCALPAIDCREDITAMOUNT'

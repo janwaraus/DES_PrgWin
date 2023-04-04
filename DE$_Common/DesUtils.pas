@@ -604,6 +604,7 @@ begin
     Result := self.abraBoCreateWebApi(boAA, abraBoName)
   else
     Result := self.abraBoCreateOLE(boAA, abraBoName);
+    self.abraOLELogout;
 end;
 
 function TDesU.abraBoCreateWebApi(boAA: TAArray; abraBoName : string) : string;
@@ -838,13 +839,13 @@ end;
 function TDesU.prevedCisloUctuNaText(cisloU : string) : string;
 begin
   Result := cisloU;
-  if cisloU = '/0000' then Result := '0';
+  if cisloU = '/0000' then Result := ''; //toto je u PayU, jako èíslo úètu protistrany uvádí samé nuly - 0000000000000000/0000
   if cisloU = '2100098382/2010' then Result := 'DES Fio bìžný';
   if cisloU = '2602372070/2010' then Result := 'DES Fio spoøící';
   if cisloU = '2800098383/2010' then Result := 'DES Fiokonto';
   if cisloU = '171336270/0300' then Result := 'DES ÈSOB';
   if cisloU = '2107333410/2700' then Result := 'PayU';
-  if cisloU = '160987123/0300' then Result := 'Èeská Pošta';
+  if cisloU = '160987123/0300' then Result := 'Èeská pošta';
 end;
 
 
@@ -1565,6 +1566,7 @@ end;
 
 // odstraní ze stringu nuly na zaèátku
 function removeLeadingZeros(const Value: string): string;
+// ostraní nuly z øetìzce zleva. pokud je øetìzec složený pouze z nul, vrátí prázdný øetìzec.
 var
   i: Integer;
 begin

@@ -116,14 +116,13 @@ begin
   self.cisloUctu := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4); //formát vèetnì nul na zaèátku
   self.cisloDokladu := copy(gpcLine, 36, 13);
   self.castka := StrToInt(removeLeadingZeros(copy(gpcLine, 49, 12))) / 100;
-  self.kodUctovani := copy(gpcLine, 61, 1);
+  self.kodUctovani := copy(gpcLine, 61, 1); // 1 debet (odchozí položka), 2 kredit (pøíchozí položka), 4 storno položky debet, 5 storno položky kreditní
   self.VS := RemoveSpaces(removeLeadingZeros(copy(gpcLine, 62, 10)));
   //self.KSplnyPodleGpc := copy(gpcLine, 72, 10);
   self.KS := copy(gpcLine, 78, 4);
   self.SS := removeLeadingZeros(copy(gpcLine, 82, 10));
   //self.valuta := copy(gpcLine, 92, 6);
-  self.nazevKlienta := Trim(copy(gpcLine, 98, 20));
-  //self.nulaNavic := copy(gpcLine, 118, 1);
+  self.nazevKlienta := Trim(copy(gpcLine, 98, 20)); // název protistrany NEBO slovní popis položky
   //self.kodMeny := copy(gpcLine, 119, 4);
   self.Datum := Str6digitsToDate(copy(gpcLine, 123, 6));
 
@@ -150,16 +149,16 @@ begin
 
 
   self.cisloUctuKZobrazeni := removeLeadingZeros(self.cisloUctu);
-  if kredit AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('z FBÚ');
-  if kredit AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('z FSÚ');
-  if kredit AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('z FKonto');
+  if kredit AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('z Fio BÚ');
+  if kredit AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('z Fio Sp.Ú');
+  if kredit AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('z Fioonto');
   if kredit AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('z ÈSOB');
   if kredit AND (cisloUctuKZobrazeni = '2107333410/2700') then setZnamyPripad('z PayU');
-  if debet AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('na FBÚ');
-  if debet AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('na FSÚ');
-  if debet AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('na FKonto');
+  if debet AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('na Fio BÚ');
+  if debet AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('na Fio Sp.Ú');
+  if debet AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('na Fiokonto');
   if debet AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('na ÈSOB');
-  if debet AND (cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ');
+  if debet AND (cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
 
   cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(cisloUctuKZobrazeni);
 
@@ -189,7 +188,9 @@ begin
   self.PredchoziPlatbyList := TList.Create;
 
   // posledních N plateb ze stejného èísla úètu
-  if self.cisloUctu <> '0000000160987123/0300' then // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
+  if ( (self.cisloUctu <> '0000000160987123/0300') // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
+   and (self.cisloUctu <> '0000000000000000/0000') ) // èíslo úètu protistrany nulové, má to tak PayU
+  then
   with qrAbra do begin
     SQL.Text := 'SELECT FIRST ' + IntToStr(self.pocetNacitanychPP) + ' bs.VarSymbol, bs.Firm_ID, bs.Amount, '
               + 'bs.Credit, bs.BankAccount, bs.DocDate$Date, firms.Name as FirmName '
@@ -294,13 +295,13 @@ begin
     end;
     Close;
 
-    { TODO dobropisy
-    // cteni z IssuedDInvoices (zalohove listy)
-    SQLiiSelect := 'SELECT ii.ID FROM ISSUEDDINVOICES ii'
-                 + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
 
-    SQLiiJenNezaplacene :=  ' AND (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT) <> 0';
-    SQLiiOrder := ' order by ii.DocDate$Date DESC';
+    // cteni z ReceivedCreditNotes (Dobropis faktury pøijaté / došlé)
+    SQLiiSelect := 'SELECT rcn.ID FROM RECEIVEDCREDITNOTES rcn'
+                 + ' WHERE rcn.VarSymbol = ''' + self.VS  + '''';
+
+    SQLiiJenNezaplacene :=  ' AND (rcn.LOCALAMOUNT - rcn.LOCALPAIDAMOUNT) <> 0';
+    SQLiiOrder := ' order by rcn.DocDate$Date DESC';
 
     if self.vsechnyDoklady then
       SQL.Text := SQLiiSelect +  SQLiiOrder
@@ -313,7 +314,7 @@ begin
       Next;
     end;
     Close;
-    }
+
 
     // když se nenajde nezaplacená faktura ani zálohový list, natáhnu 1 zaplacený abych mohl pøiøadit firmu
     if self.DokladyList.Count = 0 then begin
@@ -428,8 +429,9 @@ end;
 function TPlatbaZVypisu.isPayuProvize() : boolean;
 begin
   if (self.kodUctovani = '1') //je to èistý debet, není to storno kreditu
-    AND (self.castka < 1000)
-    AND (self.cisloUctuVlastni = '2389210008000000') then
+    AND (self.cisloUctuVlastni = '2389210008000000')
+    AND (self.VS <> '') // VS prázdný
+    AND (self.castka < 1000) then // 2389210008000000 je èíslo úètu PayU
     result := true
   else
     result := false;
