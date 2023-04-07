@@ -23,21 +23,18 @@ type
     cisloUctuVlastni: string[16];
     cisloUctu: string[21];
     cisloUctuKZobrazeni: string[21];
-    cisloDokladu: string[13];
+    // cisloDokladu: string[13]; // 7.4.2023 není potøeba
     castka: currency;
     kodUctovani: string[1];
     VS: string[10];
     VS_orig: string[10];
-    plnyPodleGpcKS: string[10];
     KS: string[4];
     SS: string[10];
     valuta: string[6];
     nazevKlienta: string[255];
-    nulaNavic: string[1];
     kodMeny: string[4];
     Datum: double;
     kredit, debet: boolean;
-    //isInternetKredit, isVoipKredit: boolean;
     znamyPripad: boolean;
     potrebaPotvrzeniUzivatelem: boolean;
     jePotvrzenoUzivatelem: boolean;
@@ -49,9 +46,9 @@ type
     rozdeleniPlatby: integer;
     castecnaUhrada: integer;
 
-    PredchoziPlatbyList : TList;
-    PredchoziPlatbyVsList : TList;
-    DokladyList : TList;
+    PredchoziPlatbyList : TList; // list pro objekty TPredchoziPlatba
+    PredchoziPlatbyVsList : TList; // list pro objekty TPredchoziPlatba
+    DokladyList : TList; // list pro objekty TDoklad
     
     constructor create(castka : currency); overload;
     constructor create(gpcLine : string); overload;
@@ -72,7 +69,7 @@ type
     function getPocetPredchozichPlatebZeStejnehoUctu() : integer;
     function getProcentoPredchozichPlatebZeStejnehoUctu() : single;
     procedure setZnamyPripad(popis : string);
-    function isPayuProvize() : boolean;
+    // function isPayuProvize() : boolean;
   end;
 
 
@@ -114,11 +111,10 @@ begin
   self.typZaznamu := copy(gpcLine, 1, 3);
   self.cisloUctuVlastni := removeLeadingZeros(copy(gpcLine, 4, 16));
   self.cisloUctu := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4); //formát vèetnì nul na zaèátku
-  self.cisloDokladu := copy(gpcLine, 36, 13);
+  //self.cisloDokladu := copy(gpcLine, 36, 13); // 7.4.2023 není potøeba, je to "identifikátor transakce"
   self.castka := StrToInt(removeLeadingZeros(copy(gpcLine, 49, 12))) / 100;
   self.kodUctovani := copy(gpcLine, 61, 1); // 1 debet (odchozí položka), 2 kredit (pøíchozí položka), 4 storno položky debet, 5 storno položky kreditní
   self.VS := RemoveSpaces(removeLeadingZeros(copy(gpcLine, 62, 10)));
-  //self.KSplnyPodleGpc := copy(gpcLine, 72, 10);
   self.KS := copy(gpcLine, 78, 4);
   self.SS := removeLeadingZeros(copy(gpcLine, 82, 10));
   //self.valuta := copy(gpcLine, 92, 6);
@@ -216,10 +212,11 @@ end;
 
 procedure TPlatbaZVypisu.loadPredchoziPlatbyPodleVS(pocetPlateb : integer);
 begin
-  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
-
   self.pocetNacitanychPP := pocetPlateb;
   self.PredchoziPlatbyVsList := TList.Create;
+
+  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
+
 
   // posledních N plateb na stejný VS, VS musí být platný, tedy neprázdný a èíselný
   with qrAbra do begin
@@ -250,9 +247,9 @@ var
   SQLiiSelect, SQLiiJenNezaplacene, SQLiiOrder,
   SQLStr : string;
 begin
-  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
-
   self.DokladyList := TList.Create;
+
+  if StrToIntDef(self.VS, 0) = 0 then Exit; //pro platby bez (platného èíselného) VS konèíme
 
   with qrAbra do begin
 
@@ -426,6 +423,7 @@ begin
   self.znamyPripad := true;
 end;
 
+{
 function TPlatbaZVypisu.isPayuProvize() : boolean;
 begin
   if (self.kodUctovani = '1') //je to èistý debet, není to storno kreditu
@@ -436,6 +434,7 @@ begin
   else
     result := false;
 end;
+}
 
 {** class TPredchoziPlatba **}
 

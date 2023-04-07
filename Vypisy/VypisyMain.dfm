@@ -148,9 +148,8 @@ object fmMain: TfmMain
     object lblVypisOverview: TLabel
       Left = 16
       Top = 568
-      Width = 80
+      Width = 3
       Height = 13
-      Caption = 'lblVypisOverview'
     end
     object Memo1: TMemo
       Left = 0

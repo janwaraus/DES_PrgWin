@@ -20,11 +20,11 @@ type
     //FirmOffice_ID : string[10];
     //DocUUID : string[26];
     documentType : string[2]; // 60 typ dokladu dobopis fa vydaných (DO),  61 je typ dokladu dobropis faktur pøijatých (DD), 03 je faktura vydaná, 04 je faktura pøijatá, 10 je ZL
-    castka  : Currency;
+    castka  : Currency; // LocalAmount
     castkaZaplaceno  : Currency;
     castkaDobropisovano  : Currency;
     castkaNezaplaceno  : Currency;
-    cisloDokladu : string[20];
+    cisloDokladu : string[20]; // složené ABRA "lidské" èíslo dokladu
   //published
     //constructor create(qrAbra : TZQuery); overload;
     constructor create(Document_ID : string; Document_Type : string = '03'); //overload;

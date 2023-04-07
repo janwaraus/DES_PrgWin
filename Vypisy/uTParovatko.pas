@@ -27,7 +27,7 @@ type
     Vypis: TVypis;
     qrAbra: TZQuery;
     AbraOLE: variant;
-    listPlatbaDokladPar : TList;//<TPlatbaDokladPar>;
+    listPlatbaDokladPar : TList; //<TPlatbaDokladPar>;
     constructor create(Vypis: TVypis);
   published
     procedure sparujPlatbu(Platba : TPlatbaZVypisu);

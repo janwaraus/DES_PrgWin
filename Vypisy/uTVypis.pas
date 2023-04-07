@@ -19,7 +19,7 @@ type
     Platby : TList;
     abraBankaccount : TAbraBankaccount;
     poradoveCislo : integer;
-    cisloUctuVlastni : string[16];
+    cisloUctuVlastni : string[16]; // èíslo úètu bez nul na zaèátku a bez kódu banky
     datum  : double; //datum vypisu se urci jako datum poslední platby, v metodì init()
     datumZHlavicky  : double; //nemusí být správnì, pro PayU napø. není
     zustatekPocatecni, zustatekKoncovy : currency;
@@ -35,6 +35,7 @@ type
     procedure nactiMaxExistujiciPoradoveCislo();
     function isNavazujeNaRadu() : boolean;
     function prictiCastkuPokudDvojitaPlatba(pPlatbaZVypisu : TPlatbaZVypisu) : integer;
+    function isPayuProvize(pPlatbaZVypisu : TPlatbaZVypisu) : boolean;
     function hledej(needle : string) : TArrayOf2Int;
   end;
 
@@ -104,10 +105,11 @@ begin
   self.datum := TPlatbaZVypisu(self.Platby[self.Platby.Count - 1]).Datum; //datum vypisu se urci jako datum poslední platby
   self.nactiMaxExistujiciPoradoveCislo();
 
-  if self.cisloUctuVlastni = '2389210008000000' then  
+  // vyøešíme seètení PayU provizí
+  if self.cisloUctuVlastni = '2389210008000000' then
   if Dialogs.MessageDlg('Seèíst PayU provize?',
     mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
-  begin  
+  begin
     // pro každou platbu se podíváme, zda je PayU provize
     payuProvize := 0;
     for i := self.Platby.Count - 1 downto 0 do
@@ -115,15 +117,13 @@ begin
       iPlatba := TPlatbaZVypisu(self.Platby[i]);
 
       // pokud je PayU provize, pøièteme èástku a platbu odstraníme
-      if iPlatba.isPayuProvize then
+      if self.isPayuProvize(iPlatba) then
       begin
         payuProvize := payuProvize + iPlatba.castka;
         self.Platby.Delete(i);
       end;
-
       if (AnsiContainsStr(iPlatba.nazevKlienta, 'ubscription fee')) then
-        iPlatba.nazevKlienta := formatdatetime('myy', iPlatba.datum) + ' suma provize'; // jedno za mìsíc si PayU strhává 199 Kè, oznaèí se také jako "MYY suma provize", aby se to v ABRA dalo jednoduše seèíst
-      
+        iPlatba.nazevKlienta := formatdatetime('myy', iPlatba.datum) + ' suma provize'; // jedno za mìsíc si PayU strhává 199 Kè, oznaèí se také jako "MYY suma provize", aby se to v ABRA dalo jednoduše seèíst      
     end;
 
     if payuProvize > 0 then
@@ -135,6 +135,30 @@ begin
     end;
   end;
 
+end;
+
+function TVypis.isPayuProvize(pPlatbaZVypisu : TPlatbaZVypisu) : boolean;
+{ Výpis projede všechny svoje platby a dívá se, zda je zkoumaná platba (pPlatbaZVypisu) PayU provizí, 
+  a to tak, že se snaží nalézt platbu, která je pøíslušným kreditem k vstupní platbì (pPlatbaZVypisu), která musí být 
+  debetem v rozmezí 1-7% hledaného kreditu (uvažujeme PauY provizi v rozmezí 1-7%, v roce 2023 je 3%)
+}
+var
+  i : integer;
+  iPlatba : TPlatbaZVypisu;
+begin
+  Result := false;
+  for i := 0 to self.Platby.Count - 1 do
+  begin
+    iPlatba := TPlatbaZVypisu(self.Platby[i]);
+    if (pPlatbaZVypisu.kodUctovani = '1') //je to èistý debet, není to storno kreditu
+      AND(iPlatba.VS = pPlatbaZVypisu.VS) AND (iPlatba.kodUctovani = '2') // existuje jiná platba se stejným VS  a ta je kredit
+      AND(pPlatbaZVypisu.castka > iPlatba.castka * 0.01) AND (pPlatbaZVypisu.castka < iPlatba.castka * 0.07)  // èástka je vìtší než 1% a 7% kreditu. pokud není, nejedná se o provizi
+      // AND self.cisloUctuVlastni = '2389210008000000' // toto není nutné, funkce se volá jen na PayU výpisy. pro jistotu by se dalo dát, ale zase je to hardcode èísla úètu PayU...      
+    then begin
+      Result := true;
+      exit;
+    end;
+  end;
 end;
 
 procedure TVypis.setridit();
