@@ -318,25 +318,32 @@ begin
       lblHlavicka.Caption := '... naèítání ' + IntToStr(i) + '. z ' + IntToStr(pocetPlatebGpc);
       Application.ProcessMessages;
       ReadLn(GpcInputFile, GpcFileLine);
-      if i = 0 then //první øádek musí být hlavièka výpisu
+
+      // zpracuju první øádek GPC, musí to být hlavièka
+      if i = 0 then
       begin
         Inc(i);
         if copy(GpcFileLine, 1, 3) = '074' then begin
           Vypis := TVypis.Create(GpcFileLine);
-          Parovatko := TParovatko.create(Vypis);
+          Parovatko := TParovatko.Create(Vypis);
         end else begin
           MessageDlg('Neplatný GPC soubor, 1. øádek není hlavièka', mtInformation, [mbOk], 0);
           Break;
         end;
       end;
+
+      // zpracuju øádek výpisu s platbou
       if copy(GpcFileLine, 1, 3) = '075' then //radek vypisu zacina 075
       begin
         Inc(i);
+        // vytvoøím nový objekt PlatbaZVypisu
         iPlatbaZVypisu := TPlatbaZVypisu.Create(GpcFileLine);
+
+        // zkontroluju, zda není vícenásobná platba, pokud ano,
         kontrolaDvojitaPlatba := Vypis.prictiCastkuPokudDvojitaPlatba(iPlatbaZVypisu);
         if kontrolaDvojitaPlatba > -1 then begin
           Memo1.Lines.Add('Dvojnásobná (vícenásobná) platba z úètu è. ' + iPlatbaZVypisu.cisloUctuKZobrazeni + ' s VS ' + iPlatbaZVypisu.VS);
-          Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
+          // Parovatko.odparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]); // odpárujeme vždy v  sparujPlatbu, toto smazat až se ukáže, že vše je ok
           Parovatko.sparujPlatbu(Vypis.Platby[kontrolaDvojitaPlatba]);
 
         end else begin
@@ -376,7 +383,6 @@ begin
 
         if not Vypis.isNavazujeNaradu() then
           Dialogs.MessageDlg('Doklad è. '+ IntToStr(Vypis.poradoveCislo) + ' nenavazuje na øadu!', mtInformation, [mbOK], 0);
-        //currPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[0]); //mùže být ale nemìlo by být potøeba
         asgMainClick(nil);
       end;
   finally
@@ -403,8 +409,8 @@ begin
     begin
       RemoveButton(0, i+1);
       iPlatbaZVypisu := TPlatbaZVypisu(Vypis.Platby[i]);
-      if iPlatbaZVypisu.VS <> iPlatbaZVypisu.VS_orig then
-        AddButton(0, i+1, 76, 16, iPlatbaZVypisu.VS_orig, haCenter, vaCenter);
+      if iPlatbaZVypisu.VS <> iPlatbaZVypisu.VSOrig then
+        AddButton(0, i+1, 76, 16, iPlatbaZVypisu.VSOrig, haCenter, vaCenter);
       if (iPlatbaZVypisu.kredit) then
         Cells[1, i+1] := format('%m', [iPlatbaZVypisu.castka])
       else
@@ -420,6 +426,7 @@ begin
     end;
   end;
 end;
+
 procedure TfmMain.vyplnVysledekParovaniPP(i : integer);
 var
   iPlatbaZVypisu : TPlatbaZVypisu;
@@ -440,6 +447,7 @@ begin
   if iPlatbaZVypisu.potrebaPotvrzeniUzivatelem then
     asgMain.AddCheckBox(7, i+1, iPlatbaZVypisu.jePotvrzenoUzivatelem, false);
 end;
+
 procedure TfmMain.filtrujZobrazeniPlateb;
 var
   i : integer;
@@ -498,18 +506,18 @@ begin
     
     if currPlatbaZVypisu.cisloUctuKZobrazeni = '' then
       lblPrechoziPlatbyZUctu.Caption := 'Prázdný úèet protistrany, pøedchozí platby nenaèítáme'
-    else if currPlatbaZVypisu.cisloUctu = '0000000160987123/0300' then
+    else if currPlatbaZVypisu.cisloUctuSNulami = '0000000160987123/0300' then
       lblPrechoziPlatbyZUctu.Caption := 'Pro Èeskou poštu pøedchozí platby nenaèítáme'
-    else if currPlatbaZVypisu.PredchoziPlatbyList.Count = 0 then
+    else if currPlatbaZVypisu.PredchoziPlatbyUcetList.Count = 0 then
       lblPrechoziPlatbyZUctu.Caption := 'Žádné pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni
     else  
       lblPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni;
       
-    if (currPlatbaZVypisu.cisloUctuKZobrazeni <> '') and (currPlatbaZVypisu.PredchoziPlatbyList.Count > 0) then
+    if (currPlatbaZVypisu.cisloUctuKZobrazeni <> '') and (currPlatbaZVypisu.PredchoziPlatbyUcetList.Count > 0) then
     begin
-      RowCount := currPlatbaZVypisu.PredchoziPlatbyList.Count + 1;
+      RowCount := currPlatbaZVypisu.PredchoziPlatbyUcetList.Count + 1;
       for i := 0 to RowCount - 2 do begin
-        iPredchoziPlatba := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyList[i]);
+        iPredchoziPlatba := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyUcetList[i]);
         if iPredchoziPlatba.VS <> currPlatbaZVypisu.VS then
           AddButton(0,i+1,25,18,'<--',haCenter,vaCenter);
         Cells[1, i+1] := iPredchoziPlatba.VS;
@@ -624,8 +632,8 @@ procedure TfmMain.provedAkcePoZmeneVS;
 begin
   asgMain.Cells[2, asgMain.row] := currPlatbaZVypisu.VS;
   asgMain.RemoveButton(0, asgMain.row);
-  if currPlatbaZVypisu.VS <> currPlatbaZVypisu.VS_orig then
-    asgMain.AddButton(0, asgMain.row, 76, 16, currPlatbaZVypisu.VS_orig, haCenter, vaCenter);
+  if currPlatbaZVypisu.VS <> currPlatbaZVypisu.VSOrig then
+    asgMain.AddButton(0, asgMain.row, 76, 16, currPlatbaZVypisu.VSOrig, haCenter, vaCenter);
   currPlatbaZVypisu.loadPredchoziPlatbyPodleVS(StrToInt(editPocetPredchPlateb.text));
   vyplnPredchoziPlatby;
   currPlatbaZVypisu.loadDokladyPodleVS();
@@ -674,7 +682,7 @@ procedure TfmMain.asgPredchoziPlatbyButtonClick(Sender: TObject; ACol,
   ARow: Integer);
 begin
   urciCurrPlatbaZVypisu();
-  currPlatbaZVypisu.VS := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyList[ARow - 1]).VS;
+  currPlatbaZVypisu.VS := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyUcetList[ARow - 1]).VS;
   provedAkcePoZmeneVS;
 end;
 procedure TfmMain.asgMainKeyUp(Sender: TObject; var Key: Word;
@@ -683,7 +691,7 @@ begin
  //showmessage('Stisknuto: ' + IntToStr(Key));
   if Key = 27 then
   begin
-    currPlatbaZVypisu.VS := currPlatbaZVypisu.VS_orig;
+    currPlatbaZVypisu.VS := currPlatbaZVypisu.VSOrig;
     provedAkcePoZmeneVS;
   end;
 end;
@@ -833,7 +841,7 @@ procedure TfmMain.asgMainButtonClick(Sender: TObject; ACol, ARow: Integer);
 begin
   asgMain.row := ARow;
   urciCurrPlatbaZVypisu();
-  currPlatbaZVypisu.VS := currPlatbaZVypisu.VS_orig;
+  currPlatbaZVypisu.VS := currPlatbaZVypisu.VSOrig;
   provedAkcePoZmeneVS;
 end;
 procedure TfmMain.btnNactiClick(Sender: TObject);
@@ -868,6 +876,7 @@ begin
 end;
 procedure TfmMain.btnZavritVypisClick(Sender: TObject);
 begin
+  DesU.dbAbra.Reconnect;
   asgMain.Visible := false;
   asgMain.ClearNormalCells;
   asgPredchoziPlatby.ClearNormalCells;
@@ -875,7 +884,8 @@ begin
   asgNalezeneDoklady.ClearNormalCells;
   lblHlavicka.Caption := '';
   lblVypisOverview.Caption := '';
-  DesU.dbAbra.Reconnect;
+  Memo1.Clear;
+  Memo2.Clear;
 end;
 
 procedure TfmMain.btnCustomersClick(Sender: TObject);

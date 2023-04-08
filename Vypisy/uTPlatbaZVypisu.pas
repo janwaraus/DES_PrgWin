@@ -21,13 +21,14 @@ type
   public
     typZaznamu: string[3];
     cisloUctuVlastni: string[16];
-    cisloUctu: string[21];
+    cisloUctu: string[21]; //èíslo úètu i s kódem banky za lomítkem, bez úvodních nul
+    cisloUctuSNulami: string[21]; //formát vèetnì nul na zaèátku, celé èíslo úètu i s kódem banky za lomítkem
     cisloUctuKZobrazeni: string[21];
     // cisloDokladu: string[13]; // 7.4.2023 není potøeba
     castka: currency;
     kodUctovani: string[1];
     VS: string[10];
-    VS_orig: string[10];
+    VSOrig: string[10];
     KS: string[4];
     SS: string[10];
     valuta: string[6];
@@ -46,7 +47,7 @@ type
     rozdeleniPlatby: integer;
     castecnaUhrada: integer;
 
-    PredchoziPlatbyList : TList; // list pro objekty TPredchoziPlatba
+    PredchoziPlatbyUcetList : TList; // list pro objekty TPredchoziPlatba
     PredchoziPlatbyVsList : TList; // list pro objekty TPredchoziPlatba
     DokladyList : TList; // list pro objekty TDoklad
     
@@ -69,7 +70,6 @@ type
     function getPocetPredchozichPlatebZeStejnehoUctu() : integer;
     function getProcentoPredchozichPlatebZeStejnehoUctu() : single;
     procedure setZnamyPripad(popis : string);
-    // function isPayuProvize() : boolean;
   end;
 
 
@@ -99,7 +99,7 @@ begin
   if castka >= 0 then self.kredit := true else self.kredit := false;
   self.debet := not self.kredit;
 
-  self.PredchoziPlatbyList := TList.Create;
+  self.PredchoziPlatbyUcetList := TList.Create;
   self.PredchoziPlatbyVsList := TList.Create;
   self.DokladyList := TList.Create;
 end;
@@ -110,7 +110,7 @@ begin
 
   self.typZaznamu := copy(gpcLine, 1, 3);
   self.cisloUctuVlastni := removeLeadingZeros(copy(gpcLine, 4, 16));
-  self.cisloUctu := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4); //formát vèetnì nul na zaèátku
+  self.cisloUctuSNulami := copy(gpcLine, 20, 16) + '/' + copy(gpcLine, 74, 4); //formát vèetnì nul na zaèátku
   //self.cisloDokladu := copy(gpcLine, 36, 13); // 7.4.2023 není potøeba, je to "identifikátor transakce"
   self.castka := StrToInt(removeLeadingZeros(copy(gpcLine, 49, 12))) / 100;
   self.kodUctovani := copy(gpcLine, 61, 1); // 1 debet (odchozí položka), 2 kredit (pøíchozí položka), 4 storno položky debet, 5 storno položky kreditní
@@ -129,7 +129,7 @@ begin
   self.jePotvrzenoUzivatelem := true;
   self.pocetNacitanychPP := 5;
   self.vsechnyDoklady := false;
-  self.VS_orig := self.VS;
+  self.VSOrig := self.VS;
 
   if (self.kodUctovani = '1') OR (self.kodUctovani = '5') then self.kredit := false; //1 je debet, 5 je storno kreditu
   if (self.kodUctovani = '2') OR (self.kodUctovani = '4') then self.kredit := true; //2 je kredit, 4 je storno debetu
@@ -143,22 +143,23 @@ begin
     self.isVoipKredit := DesU.isVoipContract(self.VS);
   }
 
+  //self.cisloUctu := removeLeadingZeros(self.cisloUctuSNulami);
+  self.cisloUctu := DesU.odstranNulyZCislaUctu(self.cisloUctuSNulami);
 
-  self.cisloUctuKZobrazeni := removeLeadingZeros(self.cisloUctu);
-  if kredit AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('z Fio BÚ');
-  if kredit AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('z Fio Sp.Ú');
-  if kredit AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('z Fioonto');
-  if kredit AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('z ÈSOB');
-  if kredit AND (cisloUctuKZobrazeni = '2107333410/2700') then setZnamyPripad('z PayU');
-  if debet AND (cisloUctuKZobrazeni = '2100098382/2010') then setZnamyPripad('na Fio BÚ');
-  if debet AND (cisloUctuKZobrazeni = '2602372070/2010') then setZnamyPripad('na Fio Sp.Ú');
-  if debet AND (cisloUctuKZobrazeni = '2800098383/2010') then setZnamyPripad('na Fiokonto');
-  if debet AND (cisloUctuKZobrazeni = '171336270/0300') then setZnamyPripad('na ÈSOB');
-  if debet AND (cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
+  if kredit AND (self.cisloUctu = '2100098382/2010') then setZnamyPripad('z Fio BÚ');
+  if kredit AND (self.cisloUctu = '2602372070/2010') then setZnamyPripad('z Fio Sp.Ú');
+  if kredit AND (self.cisloUctu = '2800098383/2010') then setZnamyPripad('z Fioonto');
+  if kredit AND (self.cisloUctu = '171336270/0300') then setZnamyPripad('z ÈSOB');
+  if kredit AND (self.cisloUctu = '2107333410/2700') then setZnamyPripad('z PayU');
+  if debet AND (self.cisloUctu = '2100098382/2010') then setZnamyPripad('na Fio BÚ');
+  if debet AND (self.cisloUctu = '2602372070/2010') then setZnamyPripad('na Fio Sp.Ú');
+  if debet AND (self.cisloUctu = '2800098383/2010') then setZnamyPripad('na Fiokonto');
+  if debet AND (self.cisloUctu = '171336270/0300') then setZnamyPripad('na ÈSOB');
+  if debet AND (self.cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
 
-  cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(cisloUctuKZobrazeni);
+  self.cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(self.cisloUctu);
 
-  self.PredchoziPlatbyList := TList.Create;
+  self.PredchoziPlatbyUcetList := TList.Create;
   self.PredchoziPlatbyVsList := TList.Create;
   self.DokladyList := TList.Create;
 
@@ -181,24 +182,24 @@ end;
 procedure TPlatbaZVypisu.loadPredchoziPlatbyPodleUctu(pocetPlateb : integer);
 begin
   self.pocetNacitanychPP := pocetPlateb;
-  self.PredchoziPlatbyList := TList.Create;
+  self.PredchoziPlatbyUcetList := TList.Create;
 
   // posledních N plateb ze stejného èísla úètu
-  if ( (self.cisloUctu <> '0000000160987123/0300') // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
-   and (self.cisloUctu <> '0000000000000000/0000') ) // èíslo úètu protistrany nulové, má to tak PayU
+  if ( (self.cisloUctu <> '160987123/0300') // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
+   and (self.cisloUctu <> '') ) // èíslo úètu protistrany nulové, má to tak PayU
   then
   with qrAbra do begin
     SQL.Text := 'SELECT FIRST ' + IntToStr(self.pocetNacitanychPP) + ' bs.VarSymbol, bs.Firm_ID, bs.Amount, '
               + 'bs.Credit, bs.BankAccount, bs.DocDate$Date, firms.Name as FirmName '
               + 'FROM BankStatements2 bs '
               + 'JOIN Firms ON bs.Firm_ID = Firms.Id '
-              + 'WHERE bs.BankAccount = ''' + self.cisloUctu  + ''' '
+              + 'WHERE bs.BankAccount = ''' + self.cisloUctuSNulami  + ''' '
               // + 'AND bs.BankStatementRow_ID is null ' // toto vyluèuje v Abøe rozdìlené platby, ovšem zaèalo to zpomalovat query a tìch rozdìlených není moc, takže to nevadí vynechat
               + 'ORDER BY DocDate$Date DESC';
     Open;
 
     while not Eof do begin
-      self.PredchoziPlatbyList.Add(TPredchoziPlatba.create(qrAbra));
+      self.PredchoziPlatbyUcetList.Add(TPredchoziPlatba.create(qrAbra));
       Next;
     end;
     Close;
@@ -334,31 +335,32 @@ function TPlatbaZVypisu.automatickyOpravVS() : string;
 var
   pouzivanyVSvMinulosti : string;
 begin
-  Result := '';
-  if self.cisloUctuKZobrazeni = '/0000' then Exit;
+  Result := ''; // nepoužíváme
 
   if self.problemLevel = 5 then
   begin
     pouzivanyVSvMinulosti := getVSzMinulostiByBankAccount();
-    if pouzivanyVSvMinulosti <> '' then begin
-      self.VS := pouzivanyVSvMinulosti;
+    if (pouzivanyVSvMinulosti <> '') AND (pouzivanyVSvMinulosti <> self.VS) then begin
+      self.VS := pouzivanyVSvMinulosti; // pùvodní VS zùsttává v atributu VSOrig
       loadPredchoziPlatbyPodleVS();
       loadDokladyPodleVS;
     end;
   end;
-
 end;
 
 
 function TPlatbaZVypisu.getVSzMinulostiByBankAccount() : string;
+// Vezmu posledních 7 plateb z è. úètu a dívám se, jestli jsou mezi nimi alespoò 4 ze stejného VS. Když ano, vrátím tento VS, jinak vracím prázdný øetìzec.
 begin
   Result := '';
-  if self.cisloUctuKZobrazeni = '/0000' then Exit;
 
+  if ( (self.cisloUctu <> '160987123/0300') // 'Èeská pošta, nemá cenu naèítat
+   and (self.cisloUctu <> '') ) // èíslo úètu protistrany nulové, má to tak PayU
+  then
   with qrAbra do begin
     SQL.Text := 'SELECT varsymbol, count(*) as pocet FROM'
               + ' (SELECT FIRST 7 VarSymbol, Firm_ID FROM BankStatements2'
-              + ' WHERE BankAccount = ''' + self.cisloUctu  + ''''
+              + ' WHERE BankAccount = ''' + self.cisloUctuSNulami  + ''''
               // + ' AND BankStatementRow_ID is null' // // toto vyluèuje v Abøe rozdìlené platby, ovšem zaèalo to zpomalovat query a tìch rozdìlených není moc, takže to nevadí vynechat
               + ' ORDER BY DocDate$Date DESC)'
 
@@ -380,10 +382,10 @@ var
   i : integer;
 begin
   Result := 0;
-  if self.PredchoziPlatbyList.Count > 0 then
+  if self.PredchoziPlatbyUcetList.Count > 0 then
   begin
-    for i := 0 to PredchoziPlatbyList.Count - 1 do
-      if TPredchoziPlatba(self.PredchoziPlatbyList[i]).VS = self.VS then Inc(Result);
+    for i := 0 to PredchoziPlatbyUcetList.Count - 1 do
+      if TPredchoziPlatba(self.PredchoziPlatbyUcetList[i]).VS = self.VS then Inc(Result);
   end;
 end;
 
@@ -393,7 +395,7 @@ begin
   if getPocetPredchozichPlatebNaStejnyVS() < 3 then
     Result := 0
   else
-    Result := getPocetPredchozichPlatebNaStejnyVS() / PredchoziPlatbyList.Count;
+    Result := getPocetPredchozichPlatebNaStejnyVS() / PredchoziPlatbyUcetList.Count;
 end;
 
 
@@ -405,7 +407,7 @@ begin
   if self.PredchoziPlatbyVsList.Count > 0 then
   begin
     for i := 0 to PredchoziPlatbyVsList.Count - 1 do
-      if TPredchoziPlatba(self.PredchoziPlatbyVsList[i]).cisloUctu = self.cisloUctu then Inc(Result);
+      if TPredchoziPlatba(self.PredchoziPlatbyVsList[i]).cisloUctu = self.cisloUctuSNulami then Inc(Result);
   end;
 end;
 
@@ -423,18 +425,6 @@ begin
   self.znamyPripad := true;
 end;
 
-{
-function TPlatbaZVypisu.isPayuProvize() : boolean;
-begin
-  if (self.kodUctovani = '1') //je to èistý debet, není to storno kreditu
-    AND (self.cisloUctuVlastni = '2389210008000000')
-    AND (self.VS <> '') // VS prázdný
-    AND (self.castka < 1000) then // 2389210008000000 je èíslo úètu PayU
-    result := true
-  else
-    result := false;
-end;
-}
 
 {** class TPredchoziPlatba **}
 

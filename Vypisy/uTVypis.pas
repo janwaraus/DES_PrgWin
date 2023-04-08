@@ -28,7 +28,7 @@ type
     maxExistujiciExtPoradoveCislo : integer;
     searchIndex : integer;
 
-    constructor create(gpcLine : string);
+    constructor Create(gpcLine : string);
   published
     procedure init();
     procedure setridit();    
@@ -44,10 +44,10 @@ implementation
 uses
   DesUtils;
 
-constructor TVypis.create(gpcLine : string);
+constructor TVypis.Create(gpcLine : string);
 begin
   self.qrAbra := DesU.qrAbra;
-  self.Platby := TList.create;
+  self.Platby := TList.Create;
   self.AbraBankAccount := TAbraBankaccount.create;
 
   self.cisloUctuVlastni := removeLeadingZeros(copy(gpcLine, 4, 16));
@@ -171,7 +171,7 @@ begin
   for i := self.Platby.Count - 1 downto 0 do
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
-    if (iPlatba.problemLevel = 2) AND (iPlatba.VS = iPlatba.VS_orig) then begin
+    if (iPlatba.problemLevel = 2) AND (iPlatba.VS = iPlatba.VSOrig) then begin
       self.Platby.Delete(i);
       self.Platby.Add(iPlatba);
     end;
@@ -180,7 +180,7 @@ begin
   for i := self.Platby.Count - 1 downto 0 do
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
-    if (iPlatba.problemLevel = 3) AND (iPlatba.VS = iPlatba.VS_orig) then begin
+    if (iPlatba.problemLevel = 3) AND (iPlatba.VS = iPlatba.VSOrig) then begin
       self.Platby.Delete(i);
       self.Platby.Add(iPlatba);
     end;
@@ -189,7 +189,7 @@ begin
   for i := self.Platby.Count - 1 downto 0 do
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
-    if (iPlatba.problemLevel = 1) AND (iPlatba.VS = iPlatba.VS_orig) then begin
+    if (iPlatba.problemLevel = 1) AND (iPlatba.VS = iPlatba.VSOrig) then begin
       self.Platby.Delete(i);
       self.Platby.Add(iPlatba);
     end;
@@ -198,7 +198,7 @@ begin
   for i := self.Platby.Count - 1 downto 0 do
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
-    if (iPlatba.problemLevel = 0) AND (iPlatba.VS = iPlatba.VS_orig) then begin
+    if (iPlatba.problemLevel = 0) AND (iPlatba.VS = iPlatba.VSOrig) then begin
       self.Platby.Delete(i);
       self.Platby.Add(iPlatba);
     end;
@@ -217,7 +217,8 @@ begin
 end;
 
 function TVypis.prictiCastkuPokudDvojitaPlatba(pPlatbaZVypisu : TPlatbaZVypisu) : integer;
-// Pokud pøijde 2 a více plateb ze stejného úètu se stejným VS ve stejný den, seèteme je. Dále k nim pøistupujeme k tomu jako k jedné platbì.
+// Pokud pøijde 2 a více plateb ze stejného úètu se stejným VS ve stejný den, seèteme je. Dále k nim pøistupujeme k tomu jako k jedné platbì
+// návratová hodnota je poøadové èíslo (identifikace) již existující platby
 var
   i : integer;
   iPlatba : TPlatbaZVypisu;

@@ -24,6 +24,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string);
 
+    function odstranNulyZCislaUctu(cisloU : string) : string;
     function prevedCisloUctuNaText(cisloU : string) : string;
     function opravRadekVypisuPomociPDocument_ID(Vypis_ID, RadekVypisu_ID, PDocument_ID, PDocumentType : string) : string;
     procedure opravRadekVypisuPomociVS(Vypis_ID, RadekVypisu_ID, VS : string);
@@ -836,10 +837,16 @@ end;
 
 {*** ABRA data manipulating functions ***}
 
+function TDesU.odstranNulyZCislaUctu(cisloU : string) : string;
+begin
+  Result := removeLeadingZeros(cisloU);
+  if Result = '/0000' then Result := ''; //toto je u PayU, jako èíslo úètu protistrany uvádí samé nuly - 0000000000000000/0000
+end;
+
+
 function TDesU.prevedCisloUctuNaText(cisloU : string) : string;
 begin
   Result := cisloU;
-  if cisloU = '/0000' then Result := ''; //toto je u PayU, jako èíslo úètu protistrany uvádí samé nuly - 0000000000000000/0000
   if cisloU = '2100098382/2010' then Result := 'DES Fio bìžný';
   if cisloU = '2602372070/2010' then Result := 'DES Fio spoøící';
   if cisloU = '2800098383/2010' then Result := 'DES Fiokonto';

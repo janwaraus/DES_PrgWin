@@ -19,7 +19,7 @@ type
     CastkaPouzita : currency;
     Popis : string;
     vazbaNaDoklad : boolean;
-    pdparTyp : string;
+    pdparTyp : string; // speciální typy - "VoipKredit" nebo "InternetKredit"
   end;
 
   TParovatko = class
@@ -27,7 +27,7 @@ type
     Vypis: TVypis;
     qrAbra: TZQuery;
     AbraOLE: variant;
-    listPlatbaDokladPar : TList; //<TPlatbaDokladPar>;
+    listPlatbaDokladPar : TList; // list všech párù platba-doklad (objekty z TPlatbaDokladPar)
     constructor create(Vypis: TVypis);
   published
     procedure sparujPlatbu(Platba : TPlatbaZVypisu);
@@ -35,7 +35,6 @@ type
     procedure vytvorPDPar(Platba : TPlatbaZVypisu; Doklad : TDoklad;
                 Castka: currency; popis : string; vazbaNaDoklad : boolean; pdparTyp : string = '');
     function zapisDoAbry() : string;
-    function zapisDoAbry_AA() : string;
     function getUzSparovano(Doklad_ID : string) : currency;
     function getPDParyAsText() : AnsiString;
     function getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : AnsiString;
@@ -54,9 +53,9 @@ uses
 
 constructor TParovatko.create(Vypis: TVypis);
 begin
-  self.qrAbra := DesU.qrAbra;
-  //self.AbraOLE := DesU.getAbraOLE;
   self.Vypis := Vypis;
+
+  self.qrAbra := DesU.qrAbra;
   self.listPlatbaDokladPar := TList.Create();
 end;
 
@@ -72,14 +71,16 @@ procedure TParovatko.sparujPlatbu(Platba : TPlatbaZVypisu);
     Platba.potrebaPotvrzeniUzivatelem := false;
 
     if ((copy(Platba.VS, 5, 1) = '9') AND (copy(Platba.VS, 1, 2) = '20')) OR (Platba.SS = '8888') then
-      //self.isVoipKredit := true; //bylo, ale navíc kontrola na typ
+    { kreditní smlouva má na 5. místì èíslici 9, tedy VS je 20xx9xxxxx; nebo má SS 8888
+      pokud je VS ve VoIP formátu nebo je SS 8888 tak se podívám jestli je v dbZakos contract oznacen jako VoipContract
+      nedívám se tedy pro všechny záznamy kvùli šetøení èasu a možným chybám v dbZakos }
       vsPatriKreditniVoipSmlouve := DesU.isVoipKreditContract(Platba.VS);
 
     if not vsPatriKreditniVoipSmlouve then
       vsPatriKreditniSmlouve := DesU.isCreditContract(Platba.VS);
 
     if vsPatriKreditniVoipSmlouve OR vsPatriKreditniSmlouve then
-      Platba.potrebaPotvrzeniUzivatelem := true;
+      Platba.potrebaPotvrzeniUzivatelem := true; // v 8. sloupci StringGridu s platbami se nakonec objeví checkbox
 
     if Platba.potrebaPotvrzeniUzivatelem AND Platba.jePotvrzenoUzivatelem then
     begin
@@ -124,7 +125,7 @@ begin
   Platba.rozdeleniPlatby := 0;
   Platba.castecnaUhrada := 0;
 
-  self.odparujPlatbu(Platba); //není vlastnì už potøeba, protože vždy párujeme nanovo všechny Platby od zaèátku do konce
+  self.odparujPlatbu(Platba); // vždy smažeme všechny položky listPlatbaDokladPar, kde figuruje vstupní Platba (a zaèneme pak párovat nanovo)
 
   if Platba.DokladyList.Count > 0 then
     iDoklad := TDoklad(Platba.DokladyList[0]); //pokud je alespon 1 doklad, priradime si ho pro debety a kredity bez nezaplacenych dokladu
@@ -146,6 +147,7 @@ begin
       if TDoklad(Platba.DokladyList[i]).CastkaNezaplaceno <> 0 then
         nezaplaceneDoklady.Add(Platba.DokladyList[i]);
 
+    // pokud není žádný nezaplacený
     if (nezaplaceneDoklady.Count = 0) then
     begin
       if Platba.znamyPripad then
@@ -159,14 +161,13 @@ begin
       Exit;
     end;
 
-
     zbyvaCastka := Platba.Castka;
 
     for i := nezaplaceneDoklady.Count - 1 downto 0 do
     // begin existují nezaplacené doklady
     begin
       iDoklad := TDoklad(nezaplaceneDoklady[i]);
-      kNaparovani := iDoklad.CastkaNezaplaceno - getUzSparovano(iDoklad.ID);
+      kNaparovani := iDoklad.CastkaNezaplaceno - getUzSparovano(iDoklad.ID); // getUzSparovano se podívá na všechny pdPáry a zjistí, zda už je iDoklad hrazzený a jakou èástkou
 
       if (kNaparovani <> 0) then
       begin
@@ -222,6 +223,7 @@ end;
 
 
 procedure TParovatko.odparujPlatbu(currPlatba : TPlatbaZVypisu);
+// smažu všechny položky listPlatbaDokladPar, kde Platba je vtupní currPlatba
 var
   i : integer;
   iPDPar : TPlatbaDokladPar;
@@ -242,6 +244,7 @@ var
   iPDPar : TPlatbaDokladPar;
 begin
   iPDPar := TPlatbaDokladPar.Create();
+  // správnì by bylo vytvoøit poøádný konstruktor a nepøiøazovat hodnoty do iPDPar v této proceduøe
   iPDPar.Platba := Platba;
   iPDPar.Doklad := Doklad;
   if assigned(iPDPar.Doklad) then
@@ -255,14 +258,8 @@ begin
   self.listPlatbaDokladPar.Add(iPDPar);
 end;
 
+
 function TParovatko.zapisDoAbry() : string;
-begin
-  //Result := self.zapisDoAbryOLE_naprimo();
-  Result := self.zapisDoAbry_AA();
-end;
-
-
-function TParovatko.zapisDoAbry_AA() : string;
 var
   i, j : integer;
   iPDPar : TPlatbaDokladPar;
@@ -292,7 +289,7 @@ begin
     boRowAA['Amount'] := iPDPar.CastkaPouzita;
     //boRowAA['Credit'] := IfThen(iPDPar.Platba.Kredit,'1','0'); //pro WebApi nefungovalo dobøe
     boRowAA['Credit'] := iPDPar.Platba.Kredit;
-    boRowAA['BankAccount'] := iPDPar.Platba.cisloUctu;
+    boRowAA['BankAccount'] := iPDPar.Platba.cisloUctuSNulami;
     boRowAA['Text'] := Trim(iPDPar.popis + ' ' + iPDPar.Platba.nazevKlienta);
     boRowAA['SpecSymbol'] := iPDPar.Platba.SS;
     boRowAA['DocDate$DATE'] := iPDPar.Platba.Datum;
@@ -446,7 +443,6 @@ function TParovatko.getFirmIdKdyzNeniDoklad(currPlatba : TPlatbaZVypisu) : strin
 var
   platbaText, prvni2pismena : string;
 begin
-  Result := '';
   platbaText := currPlatba.nazevKlienta;
   prvni2pismena := copy(platbaText, 1, 2);
   if (prvni2pismena = 'T0') or (prvni2pismena = 'M0') or (prvni2pismena = 'N0') then
