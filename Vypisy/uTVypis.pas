@@ -107,8 +107,7 @@ begin
 
   // vyøešíme seètení PayU provizí
   if self.cisloUctuVlastni = '2389210008000000' then
-  if Dialogs.MessageDlg('Seèíst PayU provize?',
-    mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
+  {if Dialogs.MessageDlg('Seèíst PayU provize?', mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then}
   begin
     // pro každou platbu se podíváme, zda je PayU provize
     payuProvize := 0;

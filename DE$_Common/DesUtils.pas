@@ -296,8 +296,6 @@ begin
   if (isJsonPost) then begin
     idHTTP.Request.ContentType := 'application/json';
     idHTTP.Request.CharSet := 'utf-8';
-    //idHTTP.Request.CharSet := 'cp1250';
-
   end;
 
   Result := idHTTP;

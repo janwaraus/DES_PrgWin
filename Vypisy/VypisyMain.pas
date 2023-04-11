@@ -50,6 +50,8 @@ type
     lblVypisFiokontoInfo: TLabel;
     btnVypisFiokonto: TButton;
     lblVypisOverview: TLabel;
+    lblPomocPrg: TLabel;
+    lblZobrazit: TLabel;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -92,6 +94,7 @@ type
     procedure asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
       State: Boolean);
     procedure btnVypisPayUClick(Sender: TObject);
+    procedure destroyVypisyObjects();
 
   public
     procedure nactiGpc(GpcFilename : string);
@@ -132,12 +135,6 @@ begin
   DesU.existujeVAbreDokladSPrazdnymVs();
 end;
 
-procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  if assigned (Vypis) then
-    if assigned (Vypis.Platby) then
-      Vypis.Platby.Free;
-end;
 procedure TfmMain.vyplnNacitaciButtony;
 var
   maxCisloVypisu, i1, i2, i3 : integer;
@@ -288,14 +285,15 @@ begin
     DesU.dbAbra.Reconnect;
     AssignFile(GpcInputFile, GpcFilename);
     Reset(GpcInputFile);
+
     Screen.Cursor := crHourGlass;
+    btnNacti.Enabled := false;
     asgMain.Visible := true;
     asgMain.ClearNormalCells;
     asgMain.RowCount := 2;
     asgPredchoziPlatby.ClearNormalCells;
     asgPredchoziPlatbyVs.ClearNormalCells;
     asgNalezeneDoklady.ClearNormalCells;
-    btnNacti.Enabled := false;
     lblHlavicka.Font.Color := $000000;
     Application.ProcessMessages;
 
@@ -387,7 +385,22 @@ begin
       end;
   finally
     btnNacti.Enabled := true;
+    btnHledej.Enabled := true;
     btnZapisDoAbry.Enabled := true;
+    btnZavritVypis.Enabled := true;
+    lblZobrazit.Enabled := true;
+    chbZobrazitBezproblemove.Enabled := true;
+    chbZobrazitStandardni.Enabled := true;
+    chbZobrazitDebety.Enabled := true;
+    //lPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu';
+    lblPrechoziPlatbyZUctu.Enabled := true;
+    //lPrechoziPlatbySVs.Caption := 'Pøedchozí platby s VS';
+    lblPrechoziPlatbySVs.Enabled := true;
+    //lNalezeneDoklady.Caption := 'Doklady podle VS';
+    lblNalezeneDoklady.Enabled := true;
+    chbVsechnyDoklady.Enabled := false;
+    chbVsechnyDoklady.Checked := false;
+
     CloseFile(GpcInputFile);
     Screen.Cursor := crDefault;
   end;
@@ -584,9 +597,9 @@ begin
       end;
       chbVsechnyDoklady.Checked := currPlatbaZVypisu.vsechnyDoklady;
       if chbVsechnyDoklady.Checked then
-        lblNalezeneDoklady.Caption := 'Doklady s VS ' +  currPlatbaZVypisu.VS
+        lblNalezeneDoklady.Caption := 'Všechny doklady s VS ' +  currPlatbaZVypisu.VS
       else
-        lblNalezeneDoklady.Caption := 'Doklady s VS ' +  currPlatbaZVypisu.VS;
+        lblNalezeneDoklady.Caption := 'Nezaplacené doklady s VS ' +  currPlatbaZVypisu.VS;
     end else begin
       RowCount := 2;
       lblNalezeneDoklady.Caption := 'Žádné vystavené doklady s VS ' +  currPlatbaZVypisu.VS;
@@ -698,9 +711,14 @@ end;
 
 procedure TfmMain.chbVsechnyDokladyClick(Sender: TObject);
 begin
-  currPlatbaZVypisu.vsechnyDoklady := chbVsechnyDoklady.Checked;
-  currPlatbaZVypisu.loadDokladyPodleVS();
-  vyplnDoklady;
+  if assigned(currPlatbaZVypisu) then begin
+    currPlatbaZVypisu.vsechnyDoklady := chbVsechnyDoklady.Checked;
+    currPlatbaZVypisu.loadDokladyPodleVS();
+    vyplnDoklady;
+  end
+  else
+    chbVsechnyDoklady.Checked := false;
+
 end;
 
 procedure TfmMain.btnSparujPlatbyClick(Sender: TObject);
@@ -811,6 +829,8 @@ procedure TfmMain.asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer;
 begin
   case ACol of
     0..1: CanEdit := false;
+    3..4: CanEdit := false;
+    6..7: CanEdit := false;
   end;
 end;
 
@@ -874,23 +894,65 @@ procedure TfmMain.btnVypisCsobClick(Sender: TObject);
 begin
   nactiGpc(lblVypisCsobGpc.caption);
 end;
+
 procedure TfmMain.btnZavritVypisClick(Sender: TObject);
 begin
   DesU.dbAbra.Reconnect;
-  asgMain.Visible := false;
   asgMain.ClearNormalCells;
+  asgMain.Visible := false;
   asgPredchoziPlatby.ClearNormalCells;
   asgPredchoziPlatbyVs.ClearNormalCells;
   asgNalezeneDoklady.ClearNormalCells;
   lblHlavicka.Caption := '';
   lblVypisOverview.Caption := '';
+  btnHledej.Enabled := false;
+  btnZapisDoAbry.Enabled := false;
+  btnZavritVypis.Enabled := false;
+  lblZobrazit.Enabled := false;
+  chbZobrazitBezproblemove.Enabled := false;
+  chbZobrazitStandardni.Enabled := false;
+  chbZobrazitDebety.Enabled := false;
+  lblPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu';
+  lblPrechoziPlatbyZUctu.Enabled := false;
+  lblPrechoziPlatbySVs.Caption := 'Pøedchozí platby s VS';
+  lblPrechoziPlatbySVs.Enabled := false;
+  lblNalezeneDoklady.Caption := 'Doklady podle VS';
+  lblNalezeneDoklady.Enabled := false;
+  chbVsechnyDoklady.Enabled := false;
+  chbVsechnyDoklady.Checked := false;
   Memo1.Clear;
   Memo2.Clear;
+  destroyVypisyObjects();
 end;
 
 procedure TfmMain.btnCustomersClick(Sender: TObject);
 begin
   fmCustomers.Show;
+end;
+
+procedure TfmMain.destroyVypisyObjects();
+begin
+{
+  if assigned (currPlatbaZVypisu) then begin
+    currPlatbaZVypisu.Free;
+    currPlatbaZVypisu := nil
+  end;
+  if assigned (Parovatko) then begin
+    Parovatko.Free;
+    Parovatko := nil
+  end;
+  if assigned (Vypis) then begin
+    if assigned (Vypis.Platby) then
+      Vypis.Platby.Free;
+    Vypis.Free;
+    Vypis := nil;
+  end;
+  }
+end;
+
+procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  destroyVypisyObjects();
 end;
 
 end.

@@ -118,6 +118,7 @@ object fmMain: TfmMain
       Width = 136
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby z '#250#269'tu'
+      Enabled = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
@@ -138,6 +139,7 @@ object fmMain: TfmMain
       Width = 127
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby s VS'
+      Enabled = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
@@ -150,6 +152,12 @@ object fmMain: TfmMain
       Top = 568
       Width = 3
       Height = 13
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
     end
     object Memo1: TMemo
       Left = 0
@@ -441,15 +449,29 @@ object fmMain: TfmMain
     Height = 676
     Align = alLeft
     TabOrder = 2
-    object lbZobrazit: TLabel
+    object lblPomocPrg: TLabel
       Left = 10
+      Top = 365
+      Width = 91
+      Height = 13
+      Caption = 'Pomocn'#233' programy'
+    end
+    object lblZobrazit: TLabel
+      Left = 8
       Top = 75
       Width = 38
       Height = 13
       Caption = 'Zobrazit'
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
     end
     object btnNacti: TButton
-      Left = 13
+      Left = 10
       Top = 31
       Width = 91
       Height = 23
@@ -481,7 +503,7 @@ object fmMain: TfmMain
     end
     object btnSparujPlatby: TButton
       Left = 14
-      Top = 458
+      Top = 500
       Width = 75
       Height = 23
       Caption = 'Sp'#225'ruj platby'
@@ -491,7 +513,7 @@ object fmMain: TfmMain
     end
     object btnReconnect: TButton
       Left = 14
-      Top = 423
+      Top = 471
       Width = 75
       Height = 23
       Caption = 'Reconnect'
@@ -506,6 +528,13 @@ object fmMain: TfmMain
       Height = 17
       Caption = 'bezprobl'#233'mov'#233
       Checked = True
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       State = cbChecked
       TabOrder = 4
       OnClick = chbZobrazitBezproblemoveClick
@@ -517,6 +546,13 @@ object fmMain: TfmMain
       Height = 17
       Caption = 'debety'
       Checked = True
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       State = cbChecked
       TabOrder = 5
       OnClick = chbZobrazitDebetyClick
@@ -528,13 +564,20 @@ object fmMain: TfmMain
       Height = 17
       Caption = 'standardn'#237
       Checked = True
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       State = cbChecked
       TabOrder = 6
       OnClick = chbZobrazitStandardniClick
     end
     object btnShowPrirazeniPnpForm: TButton
       Left = 8
-      Top = 343
+      Top = 384
       Width = 91
       Height = 25
       Caption = 'P'#345'i'#345'azen'#237' PNP'
@@ -542,7 +585,7 @@ object fmMain: TfmMain
       Font.Color = clBlue
       Font.Height = -11
       Font.Name = 'MS Sans Serif'
-      Font.Style = [fsBold]
+      Font.Style = []
       ParentFont = False
       TabOrder = 7
       OnClick = btnShowPrirazeniPnpFormClick
@@ -553,6 +596,7 @@ object fmMain: TfmMain
       Width = 91
       Height = 23
       Caption = '&Zav'#345#237't v'#253'pis'
+      Enabled = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
@@ -563,8 +607,8 @@ object fmMain: TfmMain
       OnClick = btnZavritVypisClick
     end
     object btnCustomers: TButton
-      Left = 14
-      Top = 387
+      Left = 8
+      Top = 415
       Width = 75
       Height = 23
       Caption = 'Z'#225'kazn'#237'ci'
@@ -577,6 +621,13 @@ object fmMain: TfmMain
       Width = 63
       Height = 21
       Caption = 'hledej...'
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       TabOrder = 10
       OnClick = btnHledejClick
     end
@@ -585,6 +636,12 @@ object fmMain: TfmMain
       Top = 163
       Width = 94
       Height = 21
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       TabOrder = 11
     end
   end
@@ -594,6 +651,12 @@ object fmMain: TfmMain
     Width = 97
     Height = 25
     Caption = 'Fio v'#253'pis'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    Font.Style = []
+    ParentFont = False
     TabOrder = 3
     OnClick = btnVypisFioClick
   end
@@ -603,6 +666,12 @@ object fmMain: TfmMain
     Width = 97
     Height = 25
     Caption = 'Fio spo'#345#237'c'#237' v'#253'pis'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    Font.Style = []
+    ParentFont = False
     TabOrder = 4
     OnClick = btnVypisFioSporiciClick
   end
@@ -622,13 +691,19 @@ object fmMain: TfmMain
     Height = 25
     Caption = 'PayU v'#253'pis'
     Enabled = False
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    Font.Style = []
+    ParentFont = False
     TabOrder = 6
     OnClick = btnVypisPayUClick
   end
   object asgMain: TAdvStringGrid
     Left = 107
     Top = 26
-    Width = 819
+    Width = 822
     Height = 501
     Cursor = crDefault
     Anchors = [akLeft, akTop, akBottom]
@@ -778,6 +853,7 @@ object fmMain: TfmMain
       Width = 102
       Height = 13
       Caption = 'Doklady podle VS'
+      Enabled = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -12
@@ -917,17 +993,24 @@ object fmMain: TfmMain
         110)
     end
     object chbVsechnyDoklady: TCheckBox
-      Left = 817
+      Left = 824
       Top = 4
       Width = 103
       Height = 17
       Caption = 'v'#353'echny doklady'
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentFont = False
       TabOrder = 1
       OnClick = chbVsechnyDokladyClick
     end
   end
   object NactiGpcDialog: TOpenDialog
-    Left = 396
-    Top = 110
+    Left = 1140
+    Top = 574
   end
 end
