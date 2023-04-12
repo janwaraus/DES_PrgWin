@@ -32,7 +32,7 @@ type
     KS: string[4];
     SS: string[10];
     valuta: string[6];
-    nazevKlienta: string[255];
+    nazevProtistrany: string[255];
     kodMeny: string[4];
     Datum: double;
     kredit, debet: boolean;
@@ -78,7 +78,7 @@ type
     VS : string[10];
     Firm_ID  : string[10];
     Castka  : Currency;
-    cisloUctu : string[21];
+    cisloUctuSNulami : string[21];
     cisloUctuKZobrazeni : string[21];
     Datum  : double;
     FirmName : string;
@@ -118,7 +118,7 @@ begin
   self.KS := copy(gpcLine, 78, 4);
   self.SS := removeLeadingZeros(copy(gpcLine, 82, 10));
   //self.valuta := copy(gpcLine, 92, 6);
-  self.nazevKlienta := Trim(copy(gpcLine, 98, 20)); // název protistrany NEBO slovní popis položky
+  self.nazevProtistrany := Trim(copy(gpcLine, 98, 20)); // název protistrany NEBO slovní popis položky
   //self.kodMeny := copy(gpcLine, 119, 4);
   self.Datum := Str6digitsToDate(copy(gpcLine, 123, 6));
 
@@ -155,7 +155,7 @@ begin
   if debet AND (self.cisloUctu = '2602372070/2010') then setZnamyPripad('na Fio Sp.Ú');
   if debet AND (self.cisloUctu = '2800098383/2010') then setZnamyPripad('na Fiokonto');
   if debet AND (self.cisloUctu = '171336270/0300') then setZnamyPripad('na ÈSOB');
-  if debet AND (self.cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevKlienta, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
+  if debet AND (self.cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevProtistrany, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
 
   self.cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(self.cisloUctu);
 
@@ -407,7 +407,7 @@ begin
   if self.PredchoziPlatbyVsList.Count > 0 then
   begin
     for i := 0 to PredchoziPlatbyVsList.Count - 1 do
-      if TPredchoziPlatba(self.PredchoziPlatbyVsList[i]).cisloUctu = self.cisloUctuSNulami then Inc(Result);
+      if TPredchoziPlatba(self.PredchoziPlatbyVsList[i]).cisloUctuSNulami = self.cisloUctuSNulami then Inc(Result);
   end;
 end;
 
@@ -421,7 +421,7 @@ end;
 
 procedure TPlatbaZVypisu.setZnamyPripad(popis : string);
 begin
-  self.nazevKlienta := popis;
+  self.nazevProtistrany := popis;
   self.znamyPripad := true;
 end;
 
@@ -434,11 +434,11 @@ begin
   self.VS := RemoveSpaces(FieldByName('VarSymbol').AsString);
   self.Firm_ID := FieldByName('Firm_ID').AsString;
   self.castka := FieldByName('Amount').AsCurrency;
-  self.cisloUctu := FieldByName('BankAccount').AsString;
+  self.cisloUctuSNulami := FieldByName('BankAccount').AsString;
   self.Datum := FieldByName('DocDate$Date').asFloat;
   self.FirmName := FieldByName('FirmName').AsString;
 
-  self.cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(removeLeadingZeros(cisloUctu));
+  self.cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(DesU.odstranNulyZCislaUctu(cisloUctuSNulami));
 
   if (FieldByName('Credit').AsString = 'N') then
     self.Castka := - self.Castka;

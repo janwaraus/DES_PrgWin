@@ -433,7 +433,7 @@ begin
       Cells[3, i+1] := iPlatbaZVypisu.SS;
       Cells[4, i+1] := iPlatbaZVypisu.cisloUctuKZobrazeni;
       //Cells[5, i+1] := Format('%8.2f', [iPlatbaZVypisu.getProcentoPredchozichPlatebNaStejnyVS]) + Format('%8.2f', [iPlatbaZVypisu.getProcentoPredchozichPlatebZeStejnehoUctu]) + iPlatbaZVypisu.nazevKlienta;
-      Cells[5, i+1] := iPlatbaZVypisu.nazevKlienta;
+      Cells[5, i+1] := iPlatbaZVypisu.nazevProtistrany;
       Cells[6, i+1] := DateToStr(iPlatbaZVypisu.Datum);
       vyplnVysledekParovaniPP(i);
     end;
@@ -678,7 +678,7 @@ begin
   if asgMain.col = 5 then //zmìna textu (názvu klienta)
   begin
      //asgMain.Colors[asgMain.col, asgMain.row] := clMoneyGreen;
-     currPlatbaZVypisu.nazevKlienta := asgMain.Cells[5, asgMain.row]; //do pøíslušného objektu platby zapíšu zmìnìný text
+     currPlatbaZVypisu.nazevProtistrany := asgMain.Cells[5, asgMain.row]; //do pøíslušného objektu platby zapíšu zmìnìný text
   end;
 end;
 procedure TfmMain.asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
@@ -829,8 +829,8 @@ procedure TfmMain.asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer;
 begin
   case ACol of
     0..1: CanEdit := false;
-    3..4: CanEdit := false;
-    6..7: CanEdit := false;
+    3..6: CanEdit := false;
+    8: CanEdit := false;
   end;
 end;
 

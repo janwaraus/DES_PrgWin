@@ -121,15 +121,15 @@ begin
         payuProvize := payuProvize + iPlatba.castka;
         self.Platby.Delete(i);
       end;
-      if (AnsiContainsStr(iPlatba.nazevKlienta, 'ubscription fee')) then
-        iPlatba.nazevKlienta := formatdatetime('myy', iPlatba.datum) + ' suma provize'; // jedno za mìsíc si PayU strhává 199 Kè, oznaèí se také jako "MYY suma provize", aby se to v ABRA dalo jednoduše seèíst      
+      if (AnsiContainsStr(iPlatba.nazevProtistrany, 'ubscription fee')) then
+        iPlatba.nazevProtistrany := formatdatetime('myy', iPlatba.datum) + ' suma provize'; // jedno za mìsíc si PayU strhává 199 Kè, oznaèí se také jako "MYY suma provize", aby se to v ABRA dalo jednoduše seèíst
     end;
 
     if payuProvize > 0 then
     begin
       payuProvizePP := TPlatbaZVypisu.Create(-payuProvize);
       payuProvizePP.datum := self.datum;
-      payuProvizePP.nazevKlienta := formatdatetime('myy', payuProvizePP.datum) + ' suma provize';
+      payuProvizePP.nazevProtistrany := formatdatetime('myy', payuProvizePP.datum) + ' suma provize';
       self.Platby.Add(payuProvizePP);
     end;
   end;
@@ -166,6 +166,15 @@ var
   iPlatba : TPlatbaZVypisu;
 
 begin
+
+  for i := self.Platby.Count - 1 downto 0 do
+  begin
+    iPlatba := TPlatbaZVypisu(self.Platby[i]);
+    if (iPlatba.problemLevel = 5) AND (iPlatba.VS = iPlatba.VSOrig) then begin
+      self.Platby.Delete(i);
+      self.Platby.Add(iPlatba);
+    end;
+  end;
 
   for i := self.Platby.Count - 1 downto 0 do
   begin
@@ -216,7 +225,7 @@ begin
 end;
 
 function TVypis.prictiCastkuPokudDvojitaPlatba(pPlatbaZVypisu : TPlatbaZVypisu) : integer;
-// Pokud pøijde 2 a více plateb ze stejného úètu se stejným VS ve stejný den, seèteme je. Dále k nim pøistupujeme k tomu jako k jedné platbì
+// Pokud pøijde 2 a více plateb ze stejného úètu se stejným VS ve stejný den, seèteme je. Dále k nim pøistupujeme jako k jedné platbì
 // návratová hodnota je poøadové èíslo (identifikace) již existující platby
 var
   i : integer;
@@ -227,6 +236,9 @@ begin
   for i := 0 to self.Platby.Count - 1 do
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
+    if ( (iPlatba.cisloUctu <> '160987123/0300') // 'Èeská pošta, nemá cenu naèítat historii a navíc je to pomalé
+     and (iPlatba.cisloUctu <> '') ) // èíslo úètu protistrany nulové, má to tak PayU
+    then
     if (iPlatba.VS = pPlatbaZVypisu.VS) AND (iPlatba.cisloUctu = pPlatbaZVypisu.cisloUctu)
       AND (iPlatba.kredit = true) AND (iPlatba.znamyPripad = false)
       AND (pPlatbaZVypisu.kredit = true) AND (pPlatbaZVypisu.znamyPripad = false)
@@ -272,7 +284,7 @@ begin
     end;
 
 
-    if AnsiContainsStr(AnsiLowerCase(iPlatba.nazevKlienta), AnsiLowerCase(needle)) then begin
+    if AnsiContainsStr(AnsiLowerCase(iPlatba.nazevProtistrany), AnsiLowerCase(needle)) then begin
       Result[0] := self.searchIndex;
       Result[1] := 5;
       IncSearchIndex(self.searchIndex, self.Platby.Count);

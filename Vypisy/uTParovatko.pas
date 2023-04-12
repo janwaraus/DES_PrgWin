@@ -290,7 +290,7 @@ begin
     //boRowAA['Credit'] := IfThen(iPDPar.Platba.Kredit,'1','0'); //pro WebApi nefungovalo dobøe
     boRowAA['Credit'] := iPDPar.Platba.Kredit;
     boRowAA['BankAccount'] := iPDPar.Platba.cisloUctuSNulami;
-    boRowAA['Text'] := Trim(iPDPar.popis + ' ' + iPDPar.Platba.nazevKlienta);
+    boRowAA['Text'] := Trim(iPDPar.popis + ' ' + iPDPar.Platba.nazevProtistrany);
     boRowAA['SpecSymbol'] := iPDPar.Platba.SS;
     boRowAA['DocDate$DATE'] := iPDPar.Platba.Datum;
     boRowAA['AccDate$DATE'] := iPDPar.Platba.Datum;
@@ -443,7 +443,7 @@ function TParovatko.getFirmIdKdyzNeniDoklad(currPlatba : TPlatbaZVypisu) : strin
 var
   platbaText, prvni2pismena : string;
 begin
-  platbaText := currPlatba.nazevKlienta;
+  platbaText := currPlatba.nazevProtistrany;
   prvni2pismena := copy(platbaText, 1, 2);
   if (prvni2pismena = 'T0') or (prvni2pismena = 'M0') or (prvni2pismena = 'N0') then
   begin
