@@ -36,8 +36,8 @@ type
                 Castka: currency; popis : string; vazbaNaDoklad : boolean; pdparTyp : string = '');
     function zapisDoAbry() : string;
     function getUzSparovano(Doklad_ID : string) : currency;
-    function getPDParyAsText() : AnsiString;
-    function getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : AnsiString;
+    function getPDParyAsText() : string;
+    function getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : string;
     function getPDPar(currPlatba : TPlatbaZVypisu; currDoklad_ID: string) : TPlatbaDokladPar;
     function getFirmIdKdyzNeniDoklad(currPlatba : TPlatbaZVypisu) : string;
   end;
@@ -93,7 +93,7 @@ procedure TParovatko.sparujPlatbu(Platba : TPlatbaZVypisu);
       else if vsPatriKreditniSmlouve then
       begin
         vytvorPDPar(Platba, nil, Castka, 'kredit Internet |' , false, 'InternetKredit');
-        Platba.zprava := 'Inet kredit ' + FloatToStr(Castka) + ' Kè';
+        Platba.zprava := 'Internet kredit ' + FloatToStr(Castka) + ' Kè';
         Platba.problemLevel := 3;
       end;
     end
@@ -106,7 +106,7 @@ procedure TParovatko.sparujPlatbu(Platba : TPlatbaZVypisu);
         Platba.problemLevel := 1;
       end else begin
         vytvorPDPar(Platba, Doklad, Castka, 'pøepl. | ' + Platba.VS + ' |', false);
-        Platba.zprava := 'neznámý pøep. ' + FloatToStr(Castka) + ' Kè';
+        Platba.zprava := 'neznámý pøepl. ' + FloatToStr(Castka) + ' Kè';
         Platba.problemLevel := 5;
       end;
     end;
@@ -210,9 +210,9 @@ begin
     end;
 
     if (Platba.getPocetPredchozichPlatebZeStejnehoUctu() = 0)
-      AND (Platba.PredchoziPlatbyVsList.Count > 3) then
+      AND (Platba.PredchoziPlatbyVsList.Count > 1) then
     begin
-      Platba.zprava := 'nový/neznámý úèet - ' + Platba.zprava;
+      Platba.zprava := 'neznámý úèet - ' + Platba.zprava;
       Platba.problemLevel := 2;
     end;
 
@@ -309,9 +309,8 @@ begin
         boRowAA['Firm_ID'] := iPDPar.Doklad.Firm_ID;
       end
     else //není Assigned(iPDPar.Doklad)
-      if not(iPDPar.pdparTyp = 'VoipKredit') AND not(iPDPar.pdparTyp = 'InternetKredit') then  //tyto podmínky nejsou nutné, Abra by Firm_ID pøebila hodnotou z fa
+      if not(iPDPar.pdparTyp = 'VoipKredit') AND not(iPDPar.pdparTyp = 'InternetKredit') then  //tyto podmínky nejsou nutné, Abra by Firm_ID pøebila hodnotou z fa, nicménì s VoipKredit a InternetKredit pracujeme v algoritmu níže a párujeme na faktury, tedy Firm_ID nebudeme zasílat
         boRowAA['Firm_ID'] := getFirmIdKdyzNeniDoklad(iPDPar.Platba); //když má text platby na zaèátku Abra kód, najde se firma. Jinak se dá '3Y90000101' (DES), aby tam nebyl default "drobný nákup"
-
 
     if iPDPar.pdparTyp = 'VoipKredit' then
     begin
@@ -382,7 +381,7 @@ begin
 end;
 
 
-function TParovatko.getPDParyAsText() : AnsiString;
+function TParovatko.getPDParyAsText() : string;
 var
   i : integer;
   iPDPar : TPlatbaDokladPar;
@@ -394,14 +393,14 @@ begin
   for i := 0 to listPlatbaDokladPar.Count - 1 do
   begin
     iPDPar := TPlatbaDokladPar(listPlatbaDokladPar[i]);
-    Result := Result + 'VS: ' + iPDPar.Platba.VS + ' ';
+    Result := Result + 'VS: ' + iPDPar.Platba.VS + ' | ';
     if iPDPar.vazbaNaDoklad AND Assigned(iPDPar.Doklad) then
-      Result := Result + 'Na doklad ' + iPDPar.Doklad.ID + ' napárováno ' + FloatToStr(iPDPar.CastkaPouzita) + ' Kè ';
-    Result := Result + ' | ' + iPDPar.Popis + sLineBreak;
+      Result := Result + 'Na doklad ' + iPDPar.Doklad.CisloDokladu + ' napárováno ' + FloatToStr(iPDPar.CastkaPouzita) + ' Kè | ';
+    Result := Result + iPDPar.Popis + sLineBreak;
   end;
 end;
 
-function TParovatko.getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : AnsiString;
+function TParovatko.getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : string;
 var
   i : integer;
   iPDPar : TPlatbaDokladPar;
@@ -413,14 +412,14 @@ begin
   begin
     iPDPar := TPlatbaDokladPar(listPlatbaDokladPar[i]);
     if iPDPar.Platba = currPlatba then begin
-      Result := Result + 'VS: ' + iPDPar.Platba.VS + ' ';
+      Result := Result + 'VS: ' + iPDPar.Platba.VS + ' | ';
       if iPDPar.vazbaNaDoklad AND Assigned(iPDPar.Doklad) then
-        Result := Result + 'Na doklad ' + iPDPar.Doklad.ID + ' napárováno ' + FloatToStr(iPDPar.CastkaPouzita) + ' Kè ';
-      Result := Result + ' | ' + iPDPar.Popis + sLineBreak;
+        Result := Result + 'Na doklad ' + iPDPar.Doklad.CisloDokladu + ' napárováno ' + FloatToStr(iPDPar.CastkaPouzita) + ' Kè | ';
+      Result := Result + iPDPar.Popis;
+      Result := Result.Trim.TrimRight(['|']) + sLineBreak;
     end;
   end;
 end;
-
 
 function TParovatko.getPDPar(currPlatba : TPlatbaZVypisu; currDoklad_ID: string) : TPlatbaDokladPar;
 var
