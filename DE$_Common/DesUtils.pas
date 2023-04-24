@@ -110,6 +110,7 @@ function Str6digitsToDate(datum : string) : double;
 function IndexByName(DataObject: variant; Name: ShortString): integer;
 function pocetRadkuTxtSouboru(SName: string): integer;
 function RemoveSpaces(const s: string): string;
+function KeepOnlyNumbers(const S: string): string;
 function destilujTelCislo(telCislo: string): string;
 function destilujMobilCislo(telCislo: string): string;
 function FindInFolder(sFolder, sFile: string; bUseSubfolders: Boolean): string;
@@ -1328,6 +1329,7 @@ begin
   with DesU.qrZakos do begin
     SQL.Text := 'SELECT co.id FROM contracts co  '
               + ' WHERE co.number = ''' + cnumber + ''''
+             // + ' AND co.credit = 1' kredit
               + ' AND co.tariff_id = 2'; //je to kreditni Voip
     Open;
     if not Eof then
@@ -1650,6 +1652,16 @@ begin
   end;
 
   SetLength(Result, p);
+end;
+
+function KeepOnlyNumbers(const S: string): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 1 to Length(S) do
+    if CharInSet(S[i], ['0'..'9']) then
+      Result := Result + S[i];
 end;
 
 function destilujTelCislo(telCislo: string): string;

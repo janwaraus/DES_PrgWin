@@ -52,11 +52,11 @@ type
     lblVypisOverview: TLabel;
     lblPomocPrg: TLabel;
     lblZobrazit: TLabel;
+    lblHlavickaVpravo: TLabel;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
               var HAlign: TAlignment; var VAlign: TVAlignment);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure asgMainClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure chbVsechnyDokladyClick(Sender: TObject);
@@ -94,7 +94,8 @@ type
     procedure asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
       State: Boolean);
     procedure btnVypisPayUClick(Sender: TObject);
-    procedure destroyVypisyObjects();
+    procedure asgMainCellValidate(Sender: TObject; ACol, ARow: Integer;
+      var Value: string; var Valid: Boolean);
 
   public
     procedure nactiGpc(GpcFilename : string);
@@ -125,11 +126,15 @@ begin
   //DesU.desUtilsInit('');
   //asgMain.CheckFalse := '0';
   //asgMain.CheckTrue := '1';
+  lblHlavicka.Caption := '';
+  lblHlavickaVpravo.Caption := '';
+  lblVypisOverview.Caption := '';
   vyplnNacitaciButtony;
   if DesU.appMode >= 3 then
   begin
     btnReconnect.Visible := true;
     btnSparujPlatby.Visible := true;
+    memo2.Visible := true;
   end;
   //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
   DesU.existujeVAbreDokladSPrazdnymVs();
@@ -294,7 +299,8 @@ begin
     asgPredchoziPlatby.ClearNormalCells;
     asgPredchoziPlatbyVs.ClearNormalCells;
     asgNalezeneDoklady.ClearNormalCells;
-    lblHlavicka.Font.Color := $000000;
+    lblHlavicka.Font.Color := $660000;
+    lblHlavickaVpravo.Font.Color := $666666;
     Application.ProcessMessages;
 
     // spoèítáme poèet plateb v GPC, abnychom mohli sledovat progres naèítání
@@ -366,11 +372,15 @@ begin
         ucetniZustatek := Vypis.abraBankaccount.getZustatek(Vypis.datum);  //zadáváme poèáteèní datum výpisu, dostaneme poèáteèní stav bank. úètu k tomuto datu
         lblHlavicka.Caption := Vypis.abraBankaccount.name // + ', ' + Vypis.abraBankaccount.number
                         + ', è.' + IntToStr(Vypis.poradoveCislo) + ' (max è. ' + IntToStr(Vypis.maxExistujiciPoradoveCislo) + '). Plateb: '
-                        + IntToStr(Vypis.Platby.Count)
-                        + ' Bank. zùst: ' + FloatToStr(Vypis.zustatekPocatecni)
-                        + ' Úè. zùst: ' + FloatToStr(ucetniZustatek);
+                        + IntToStr(Vypis.Platby.Count);
         if Vypis.zustatekPocatecni <> ucetniZustatek then
-          lblHlavicka.Font.Color := $0000FF;
+        begin
+          lblHlavickaVpravo.Caption := ' Bank. zùst: ' + format('%m', [Vypis.zustatekPocatecni])
+                        + ' (úè. zùst: ' + format('%m', [ucetniZustatek]) + ')';
+          lblHlavickaVpravo.Font.Color := $0000FF;
+          Dialogs.MessageDlg('Pozor, poèáteèní zùstatek výpisu se neshoduje s úèetním zùstatkem v ABRA.', mtInformation, [mbOK], 0);
+        end else
+          lblHlavickaVpravo.Caption := ' Bank. zùst = úè. zùst: ' + format('%m', [ucetniZustatek]);
         lblVypisOverview.Caption := 'Výpis k úètu ' + Vypis.cisloUctuVlastni + ' (' + Vypis.abraBankaccount.name + ')'
                         + #13#10 + 'Výpis k ' + DateToStr(Vypis.datum) + ', poøadové èíslo ' + IntToStr(Vypis.poradoveCislo)
                         + #13#10 + 'Poèáteèní zùstatek: ' + format('%m', [Vypis.zustatekPocatecni])
@@ -392,13 +402,10 @@ begin
     chbZobrazitBezproblemove.Enabled := true;
     chbZobrazitStandardni.Enabled := true;
     chbZobrazitDebety.Enabled := true;
-    //lPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu';
     lblPrechoziPlatbyZUctu.Enabled := true;
-    //lPrechoziPlatbySVs.Caption := 'Pøedchozí platby s VS';
     lblPrechoziPlatbySVs.Enabled := true;
-    //lNalezeneDoklady.Caption := 'Doklady podle VS';
     lblNalezeneDoklady.Enabled := true;
-    chbVsechnyDoklady.Enabled := false;
+    chbVsechnyDoklady.Enabled := true;
     chbVsechnyDoklady.Checked := false;
 
     CloseFile(GpcInputFile);
@@ -513,6 +520,7 @@ var
   i : integer;
   iPredchoziPlatba : TPredchoziPlatba;
 begin
+  // pøedchozí platby z úètu
   with asgPredchoziPlatby do begin
     Enabled := true;
     ClearNormalCells;
@@ -523,10 +531,10 @@ begin
       lblPrechoziPlatbyZUctu.Caption := 'Pro Èeskou poštu pøedchozí platby nenaèítáme'
     else if currPlatbaZVypisu.PredchoziPlatbyUcetList.Count = 0 then
       lblPrechoziPlatbyZUctu.Caption := 'Žádné pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni
-    else  
+    else
       lblPrechoziPlatbyZUctu.Caption := 'Pøedchozí platby z úètu ' + currPlatbaZVypisu.cisloUctuKZobrazeni;
-      
-    if (currPlatbaZVypisu.cisloUctuKZobrazeni <> '') and (currPlatbaZVypisu.PredchoziPlatbyUcetList.Count > 0) then
+
+    if (currPlatbaZVypisu.cisloUctuKZobrazeni <> '') AND (currPlatbaZVypisu.PredchoziPlatbyUcetList.Count > 0) then
     begin
       RowCount := currPlatbaZVypisu.PredchoziPlatbyUcetList.Count + 1;
       for i := 0 to RowCount - 2 do begin
@@ -542,11 +550,18 @@ begin
     end else
        RowCount := 2;
   end;
+
+  // pøechozí platby s VS
   with asgPredchoziPlatbyVs do begin
     Enabled := true;
     ClearNormalCells;
-    lblPrechoziPlatbySVs.Caption := 'Pøedchozí platby s VS ' + currPlatbaZVypisu.VS;
-    if currPlatbaZVypisu.PredchoziPlatbyVsList.Count > 0 then
+
+    if currPlatbaZVypisu.VS = '' then
+      lblPrechoziPlatbySVs.Caption := 'Prázdný VS, pøedchozí platby nenaèítáme'
+    else
+      lblPrechoziPlatbySVs.Caption := 'Pøedchozí platby s VS ' + currPlatbaZVypisu.VS;
+
+    if (currPlatbaZVypisu.VS <> '') AND (currPlatbaZVypisu.PredchoziPlatbyVsList.Count > 0) then
     begin
       RowCount := currPlatbaZVypisu.PredchoziPlatbyVsList.Count + 1;
       for i := 0 to RowCount - 2 do begin
@@ -568,7 +583,7 @@ var
   iPDPar : TPlatbaDokladPar;
   i : integer;
 begin
-  //currPlatbaZVypisu.loadDokladyPodleVS(); //bylo v minulosti
+
   with asgNalezeneDoklady do begin
     Enabled := true;
     ClearNormalCells;
@@ -584,12 +599,14 @@ begin
         Cells[4, i+1] := format('%m', [iDoklad.CastkaZaplaceno]);
         Cells[5, i+1] := format('%m', [iDoklad.CastkaDobropisovano]);
         Cells[6, i+1] := format('%m', [iDoklad.CastkaNezaplaceno]);
-        Cells[7, i+1] := iDoklad.ID;
         iPDPar := Parovatko.getPDPar(currPlatbaZVypisu, iDoklad.ID);
         if Assigned(iPDPar) then begin
-          Cells[8, i+1] := iPDPar.Popis; // + floattostr(iPDPar.CastkaPouzita);
+          Cells[7, i+1] := iPDPar.Popis.Trim.TrimRight(['|']);
           if iPDPar.CastkaPouzita = iDoklad.CastkaNezaplaceno then
-            Colors[6, i+1] := $AAFFAA
+          begin
+            Colors[6, i+1] := $AAFFAA;
+            Cells[7, i+1] := 'zaplaceno celé';
+          end
           else
             Colors[6, i+1] := $CDFAFF;
         end;
@@ -599,15 +616,24 @@ begin
       if chbVsechnyDoklady.Checked then
         lblNalezeneDoklady.Caption := 'Všechny doklady s VS ' +  currPlatbaZVypisu.VS
       else
-        lblNalezeneDoklady.Caption := 'Nezaplacené doklady s VS ' +  currPlatbaZVypisu.VS;
+      begin
+        iDoklad := TDoklad(currPlatbaZVypisu.DokladyList[0]);
+        if (currPlatbaZVypisu.DokladyList.Count = 1) AND (iDoklad.castkaNezaplaceno = 0) then
+            lblNalezeneDoklady.Caption := 'Zaplacený doklad s VS ' +  currPlatbaZVypisu.VS
+          else
+            lblNalezeneDoklady.Caption := 'Nezaplacené doklady s VS ' +  currPlatbaZVypisu.VS
+      end;
     end else begin
       RowCount := 2;
-      lblNalezeneDoklady.Caption := 'Žádné vystavené doklady s VS ' +  currPlatbaZVypisu.VS;
+      if currPlatbaZVypisu.VS <> '' then
+        lblNalezeneDoklady.Caption := 'Žádné vystavené doklady s VS ' +  currPlatbaZVypisu.VS
+      else
+        lblNalezeneDoklady.Caption := 'Prázdný VS, žádné vystavené doklady' +  currPlatbaZVypisu.VS
     end;
   end;
 end;
 
-procedure TfmMain.urciCurrPlatbaZVypisu();
+procedure TfmMain.urciCurrPlatbaZVypisu;
 begin
   if assigned(Vypis) then
     if assigned(Vypis.Platby[asgMain.row - 1]) then
@@ -648,11 +674,10 @@ begin
   if currPlatbaZVypisu.VS <> currPlatbaZVypisu.VSOrig then
     asgMain.AddButton(0, asgMain.row, 76, 16, currPlatbaZVypisu.VSOrig, haCenter, vaCenter);
   currPlatbaZVypisu.loadPredchoziPlatbyPodleVS(StrToInt(editPocetPredchPlateb.text));
-  vyplnPredchoziPlatby;
   currPlatbaZVypisu.loadDokladyPodleVS();
-  vyplnDoklady;
   sparujVsechnyPrichoziPlatby;
-  //sparujPrichoziPlatbu(asgMain.row - 1);
+  vyplnPredchoziPlatby;
+  vyplnDoklady;
   Memo2.Clear;
   Memo2.Lines.Add(Parovatko.getPDParyPlatbyAsText(currPlatbaZVypisu));
 end;
@@ -660,7 +685,7 @@ end;
 {*********************** akce Input elementù **********************************}
 procedure TfmMain.asgMainClick(Sender: TObject);
 begin
-  urciCurrPlatbaZVypisu();
+  urciCurrPlatbaZVypisu;
   vyplnPredchoziPlatby;
   vyplnDoklady;
   Memo2.Clear;
@@ -669,23 +694,40 @@ end;
 
 procedure TfmMain.asgMainCellsChanged(Sender: TObject; R: TRect);
 begin
+  { //pøesunuto do TfmMain.asgMainCellValidate
   if asgMain.col = 2 then //zmìna VS
   begin
      //asgMain.Colors[asgMain.col, asgMain.row] := clMoneyGreen;
      currPlatbaZVypisu.VS := asgMain.Cells[2, asgMain.row]; //do pøíslušného objektu platby zapíšu zmìnìný VS
      provedAkcePoZmeneVS;
   end;
+  }
+
   if asgMain.col = 5 then //zmìna textu (názvu klienta)
   begin
      //asgMain.Colors[asgMain.col, asgMain.row] := clMoneyGreen;
      currPlatbaZVypisu.nazevProtistrany := asgMain.Cells[5, asgMain.row]; //do pøíslušného objektu platby zapíšu zmìnìný text
   end;
 end;
+
+procedure TfmMain.asgMainCellValidate(Sender: TObject; ACol, ARow: Integer;
+  var Value: string; var Valid: Boolean);
+var
+ len: integer;
+begin
+  if asgMain.col = 2 then //zmìna VS
+  begin
+    Value := KeepOnlyNumbers(Value);
+    currPlatbaZVypisu.VS := Value; //do pøíslušného objektu platby zapíšu zmìnìný VS
+    provedAkcePoZmeneVS;
+  end;
+end;
+
 procedure TfmMain.asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
   State: Boolean);
 begin
   asgMain.row := ARow;
-  urciCurrPlatbaZVypisu();
+  urciCurrPlatbaZVypisu;
   currPlatbaZVypisu.jePotvrzenoUzivatelem := State;
   //Memo1.Lines.Add(BoolToStr(State,true));
 
@@ -694,7 +736,7 @@ end;
 procedure TfmMain.asgPredchoziPlatbyButtonClick(Sender: TObject; ACol,
   ARow: Integer);
 begin
-  urciCurrPlatbaZVypisu();
+  urciCurrPlatbaZVypisu;
   currPlatbaZVypisu.VS := TPredchoziPlatba(currPlatbaZVypisu.PredchoziPlatbyUcetList[ARow - 1]).VS;
   provedAkcePoZmeneVS;
 end;
@@ -829,8 +871,9 @@ procedure TfmMain.asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer;
 begin
   case ACol of
     0..1: CanEdit := false;
-    3..6: CanEdit := false;
-    8: CanEdit := false;
+    3..4: CanEdit := false;
+    6: CanEdit := false;
+    //8: CanEdit := false;
   end;
 end;
 
@@ -860,7 +903,7 @@ end;
 procedure TfmMain.asgMainButtonClick(Sender: TObject; ACol, ARow: Integer);
 begin
   asgMain.row := ARow;
-  urciCurrPlatbaZVypisu();
+  urciCurrPlatbaZVypisu;
   currPlatbaZVypisu.VS := currPlatbaZVypisu.VSOrig;
   provedAkcePoZmeneVS;
 end;
@@ -904,6 +947,7 @@ begin
   asgPredchoziPlatbyVs.ClearNormalCells;
   asgNalezeneDoklady.ClearNormalCells;
   lblHlavicka.Caption := '';
+  lblHlavickaVpravo.Caption := '';
   lblVypisOverview.Caption := '';
   btnHledej.Enabled := false;
   btnZapisDoAbry.Enabled := false;
@@ -922,7 +966,7 @@ begin
   chbVsechnyDoklady.Checked := false;
   Memo1.Clear;
   Memo2.Clear;
-  destroyVypisyObjects();
+  vyplnNacitaciButtony;
 end;
 
 procedure TfmMain.btnCustomersClick(Sender: TObject);
@@ -930,29 +974,5 @@ begin
   fmCustomers.Show;
 end;
 
-procedure TfmMain.destroyVypisyObjects();
-begin
-{
-  if assigned (currPlatbaZVypisu) then begin
-    currPlatbaZVypisu.Free;
-    currPlatbaZVypisu := nil
-  end;
-  if assigned (Parovatko) then begin
-    Parovatko.Free;
-    Parovatko := nil
-  end;
-  if assigned (Vypis) then begin
-    if assigned (Vypis.Platby) then
-      Vypis.Platby.Free;
-    Vypis.Free;
-    Vypis := nil;
-  end;
-  }
-end;
-
-procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  destroyVypisyObjects();
-end;
 
 end.

@@ -314,7 +314,7 @@ begin
     Close;
 
 
-    // když se nenajde nezaplacená faktura ani zálohový list, natáhnu 1 zaplacený abych mohl pøiøadit firmu
+    // když se nenajde nezaplacená faktura, zálohový list nebo dobropis, natáhnu 1 zaplacený abych mohl pøiøadit firmu
     if self.DokladyList.Count = 0 then begin
 
       SQL.Text := 'SELECT FIRST 1 ii.ID FROM ISSUEDINVOICES ii'

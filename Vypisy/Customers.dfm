@@ -2,8 +2,8 @@ object fmCustomers: TfmCustomers
   Left = 374
   Top = 132
   Caption = 'Z'#225'kazn'#237'ci v tabulce Customers'
-  ClientHeight = 95
-  ClientWidth = 651
+  ClientHeight = 102
+  ClientWidth = 879
   Color = clBtnFace
   Constraints.MinHeight = 134
   Constraints.MinWidth = 650
@@ -14,9 +14,6 @@ object fmCustomers: TfmCustomers
   Font.Style = []
   OldCreateOrder = False
   OnShow = FormShow
-  DesignSize = (
-    651
-    95)
   PixelsPerInch = 96
   TextHeight = 13
   object lbJmeno: TLabel
@@ -77,11 +74,10 @@ object fmCustomers: TfmCustomers
     OnKeyUp = edPrijmeniKeyUp
   end
   object btNajdi: TButton
-    Left = 581
-    Top = 11
+    Left = 571
+    Top = 10
     Width = 65
     Height = 21
-    Anchors = [akTop, akRight]
     Caption = '&Najdi'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -91,17 +87,16 @@ object fmCustomers: TfmCustomers
     ParentFont = False
     TabOrder = 2
     OnClick = btNajdiClick
-    ExplicitLeft = 564
   end
   object asgCustomers: TAdvStringGrid
     Left = 0
     Top = 42
-    Width = 659
-    Height = 65
+    Width = 887
+    Height = 72
     Cursor = crDefault
     Align = alCustom
     Anchors = [akLeft, akTop, akRight, akBottom]
-    ColCount = 6
+    ColCount = 9
     DefaultRowHeight = 18
     DrawingStyle = gdsClassic
     FixedCols = 0
@@ -128,7 +123,10 @@ object fmCustomers: TfmCustomers
       'VS'
       'Smlouva'
       'Stav'
-      'Fakturovat')
+      'Fakturovat'
+      #268#237'slo dokladu'
+      'Datum'
+      'Nezaplaceno')
     ControlLook.FixedGradientHoverFrom = clGray
     ControlLook.FixedGradientHoverTo = clWhite
     ControlLook.FixedGradientDownFrom = clGray
@@ -213,14 +211,18 @@ object fmCustomers: TfmCustomers
     ShowDesignHelper = False
     SortSettings.DefaultFormat = ssAutomatic
     Version = '7.4.2.0'
-    ExplicitWidth = 642
+    ExplicitWidth = 659
+    ExplicitHeight = 66
     ColWidths = (
       185
       90
       81
       100
       90
-      90)
+      90
+      87
+      64
+      81)
   end
   object edVS: TEdit
     Left = 464
@@ -231,32 +233,12 @@ object fmCustomers: TfmCustomers
     Text = '%'
     OnKeyUp = edVSKeyUp
   end
-  object dbMain: TZConnection
-    ControlsCodePage = cCP_UTF16
-    Catalog = ''
-    Properties.Strings = (
-      'controls_cp=GET_ACP')
-    AfterConnect = dbMainAfterConnect
-    HostName = 'test.iquest.cz'
-    Port = 0
-    Database = 'eurosignal'
-    User = 'eurosignal'
-    Password = 'ayQKeWSf9F'
-    Protocol = 'mysql-5'
-    Left = 72
-    Top = 6
-  end
-  object qrMain: TZQuery
-    Connection = dbMain
-    SortType = stIgnored
-    CachedUpdates = True
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    ShowRecordTypes = [usUnmodified, usModified, usInserted, usDeleted]
-    WhereMode = wmWhereAll
-    Left = 100
-    Top = 6
+  object chbJenSNezaplacenym: TCheckBox
+    Left = 650
+    Top = 13
+    Width = 177
+    Height = 17
+    Caption = 'jen s nezaplacen'#253'm dokladem'
+    TabOrder = 5
   end
 end

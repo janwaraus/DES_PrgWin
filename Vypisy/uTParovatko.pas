@@ -210,7 +210,7 @@ begin
     end;
 
     if (Platba.getPocetPredchozichPlatebZeStejnehoUctu() = 0)
-      AND (Platba.PredchoziPlatbyVsList.Count > 1) then
+      AND (Platba.PredchoziPlatbyVsList.Count > 3) then
     begin
       Platba.zprava := 'neznámý úèet - ' + Platba.zprava;
       Platba.problemLevel := 2;

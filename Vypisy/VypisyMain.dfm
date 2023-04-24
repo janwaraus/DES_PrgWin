@@ -13,7 +13,6 @@ object fmMain: TfmMain
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
-  OnClose = FormClose
   OnShow = FormShow
   DesignSize = (
     1379
@@ -23,8 +22,9 @@ object fmMain: TfmMain
   object lblHlavicka: TLabel
     Left = 115
     Top = 5
-    Width = 4
+    Width = 83
     Height = 16
+    Caption = 'lbl Hlavicka'
     Color = clSkyBlue
     Font.Charset = EASTEUROPE_CHARSET
     Font.Color = clWindowText
@@ -105,6 +105,23 @@ object fmMain: TfmMain
     Height = 13
     Caption = 'lblVypisFiokontoInfo'
   end
+  object lblHlavickaVpravo: TLabel
+    Left = 787
+    Top = 8
+    Width = 139
+    Height = 16
+    Alignment = taRightJustify
+    Caption = 'lbl Hlavicka Vpravo'
+    Color = clSkyBlue
+    Font.Charset = EASTEUROPE_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'Verdana'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+    Layout = tlBottom
+  end
   object pnRight: TPanel
     Left = 932
     Top = 0
@@ -134,8 +151,8 @@ object fmMain: TfmMain
       Caption = 'Po'#269'et plateb'
     end
     object lblPrechoziPlatbySVs: TLabel
-      Left = 12
-      Top = 147
+      Left = 8
+      Top = 176
       Width = 127
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby s VS'
@@ -149,9 +166,10 @@ object fmMain: TfmMain
     end
     object lblVypisOverview: TLabel
       Left = 16
-      Top = 568
-      Width = 3
+      Top = 464
+      Width = 86
       Height = 13
+      Caption = 'lbl Vypis Overview'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
@@ -160,10 +178,10 @@ object fmMain: TfmMain
       ParentFont = False
     end
     object Memo1: TMemo
-      Left = 0
-      Top = 276
-      Width = 431
-      Height = 139
+      Left = 16
+      Top = 556
+      Width = 417
+      Height = 105
       ScrollBars = ssVertical
       TabOrder = 0
     end
@@ -171,7 +189,7 @@ object fmMain: TfmMain
       Left = 8
       Top = 35
       Width = 433
-      Height = 110
+      Height = 127
       Cursor = crDefault
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
@@ -293,10 +311,10 @@ object fmMain: TfmMain
         167)
     end
     object asgPredchoziPlatbyVs: TAdvStringGrid
-      Left = 8
-      Top = 166
-      Width = 431
-      Height = 104
+      Left = 4
+      Top = 195
+      Width = 433
+      Height = 131
       Cursor = crDefault
       ColCount = 4
       DefaultRowHeight = 20
@@ -424,13 +442,14 @@ object fmMain: TfmMain
       Text = '4'
     end
     object Memo2: TMemo
-      Left = 0
-      Top = 438
-      Width = 431
-      Height = 112
+      Left = 6
+      Top = 332
+      Width = 435
+      Height = 106
       Align = alCustom
       ScrollBars = ssVertical
       TabOrder = 4
+      Visible = False
     end
   end
   object btnVypisFiokonto: TButton
@@ -729,6 +748,7 @@ object fmMain: TfmMain
     OnGetCellColor = asgMainGetCellColor
     OnGetAlignment = asgMainGetAlignment
     OnCanEditCell = asgMainCanEditCell
+    OnCellValidate = asgMainCellValidate
     OnCellsChanged = asgMainCellsChanged
     OnButtonClick = asgMainButtonClick
     OnCheckBoxClick = asgMainCheckBoxClick
@@ -743,7 +763,7 @@ object fmMain: TfmMain
       'VS'
       'SS'
       #268'. '#250#269'tu'
-      'Text'
+      'Protistrana / popis'
       'Datum'
       ''
       'pozn.')
@@ -839,7 +859,7 @@ object fmMain: TfmMain
       135
       64
       22
-      191)
+      184)
   end
   object pnBottom: TPanel
     Left = -1
@@ -867,7 +887,7 @@ object fmMain: TfmMain
       Width = 812
       Height = 105
       Cursor = crDefault
-      ColCount = 9
+      ColCount = 8
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
       Enabled = False
@@ -896,8 +916,7 @@ object fmMain: TfmMain
         'P'#345'edpis'
         'Zaplaceno'
         'Dobropis.'
-        'Nezaplaceno'
-        'ID Dokladu')
+        'Nezaplaceno')
       ControlLook.FixedGradientHoverFrom = clGray
       ControlLook.FixedGradientHoverTo = clWhite
       ControlLook.FixedGradientDownFrom = clGray
@@ -989,8 +1008,7 @@ object fmMain: TfmMain
         65
         65
         78
-        74
-        110)
+        186)
     end
     object chbVsechnyDoklady: TCheckBox
       Left = 824
@@ -1010,7 +1028,7 @@ object fmMain: TfmMain
     end
   end
   object NactiGpcDialog: TOpenDialog
-    Left = 1140
-    Top = 574
+    Left = 1292
+    Top = 486
   end
 end

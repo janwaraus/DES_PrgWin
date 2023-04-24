@@ -35,7 +35,6 @@ type
 
     procedure frxReportGetValue(const ParName: string; var ParValue: Variant);
     procedure frxReportBeginDoc(Sender: TObject);
-    procedure QRCodeChange(Sender: TObject);
 
 
   public
@@ -72,7 +71,7 @@ end;
 
 function TDesFrxU.fakturaTisk(fr3FileName : string) : string;
 begin
-  Result := faktura('tisk', fr3FileName);
+  Result := faktura('tisk', fr3FileName);
 end;
 
 function TDesFrxU.faktura(action, fr3FileName : string) : string;
@@ -185,7 +184,7 @@ if ParName = 'Value = 0' then Exit; //pro jistotu, ve fr3 souboru toto bylo v hi
     ShowMessage('Lehlo to na ' + ParName); //nefunguje mi
     //on E: Exception do
     //  ShowMessage(ParName + ' Chyba frxReportGetValue: '#13#10 + e.Message);
-  end;  
+  end;
 
 end;
 
@@ -476,3 +475,4 @@ begin
 end;
 
 end.
+

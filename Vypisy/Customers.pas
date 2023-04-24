@@ -9,8 +9,6 @@ uses
 
 type
   TfmCustomers = class(TForm)
-    dbMain: TZConnection;
-    qrMain: TZQuery;
     lbJmeno: TLabel;
     edJmeno: TEdit;
     lbPrijmeni: TLabel;
@@ -19,8 +17,8 @@ type
     edVS: TEdit;
     btNajdi: TButton;
     asgCustomers: TAdvStringGrid;
+    chbJenSNezaplacenym: TCheckBox;
     procedure FormShow(Sender: TObject);
-    procedure dbMainAfterConnect(Sender: TObject);
     procedure btNajdiClick(Sender: TObject);
     procedure asgCustomersGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
     procedure edJmenoKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -32,48 +30,15 @@ var
   fmCustomers: TfmCustomers;
 
 implementation
-
+uses
+  AbraEntities, DesUtils, Superobject;
 {$R *.dfm}
 
 procedure TfmCustomers.FormShow(Sender: TObject);
-var
-  FIIni: TIniFile;
-  FIFileName: AnsiString;
 begin
-  FIFileName := ExtractFilePath(ParamStr(0)) + 'FI.ini';
-  if FileExists(FIFileName) then begin                     // existuje FI.ini ?
-    FIIni := TIniFile.Create(FIFileName);
-    with FIIni do try
-      dbMain.HostName := ReadString('Preferences', 'ZakHN', '');
-      dbMain.Database := ReadString('Preferences', 'ZakDB', '');
-      dbMain.User := ReadString('Preferences', 'ZakUN', '');
-      dbMain.Password := ReadString('Preferences', 'ZakPW', '');
-    finally
-      FIIni.Free;
-    end;
-  end else begin
-    Application.MessageBox('Neexistuje soubor FI.ini, program ukonèen', 'FI.ini', MB_OK + MB_ICONERROR);
-    Application.Terminate;
-  end;
-  try
-    dbMain.Connect;
-  except on E: exception do
-    begin
-      Application.MessageBox(PChar('Nedá se pøipojit k databázi smluv, program ukonèen.' + ^M + E.Message), 'mySQL', MB_ICONERROR + MB_OK);
-      Application.Terminate;
-    end;
-  end;
   with fmMain.asgMain do
     if (Cells[2, Row] <> '') then edVS.Text := Cells[2, Row];
   edVS.SetFocus;
-end;
-
-procedure TfmCustomers.dbMainAfterConnect(Sender: TObject);
-begin
-  with qrMain do begin
-    SQL.Text := 'SET CHARACTER SET cp1250';                // pøeklad z UTF-8
-    ExecSQL;
-  end;
 end;
 
 procedure TfmCustomers.edJmenoKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -105,6 +70,7 @@ var
   SQLStr: AnsiString;
   SirkaOkna,
   Radek: integer;
+  nezaplacenyDoklad : TDoklad;
 begin
   SQLStr := 'SELECT DISTINCT Cu.Abra_code, Cu.Variable_symbol, Cu.Title, Cu.First_name, Cu.Surname, Cu.Business_name,'
   + ' C.Number, C.State, C.Invoice, C.Invoice_from, C.Canceled_at'
@@ -117,7 +83,8 @@ begin
   + ' OR C.Number LIKE ''' + edVS.Text + ''')'
   + ' ORDER BY Business_name, Surname, First_name';
   SQLStr := StringReplace(SQLStr, '*', '%', [rfReplaceAll]);      // aby fungovala i *
-  with qrMain, asgCustomers do try
+
+  with DesU.qrZakos, asgCustomers do try
     Screen.Cursor := crSQLWait;
     ClearNormalCells;
     RowCount := 2;
@@ -126,28 +93,50 @@ begin
     SQL.Text := SQLStr;
     Open;
     while not EOF do begin
-      Inc(Radek);
-      RowCount := Radek + 1;
-      Zakaznik := FieldByName('Surname').AsString;
-      if (FieldByName('First_name').AsString <> '') then Zakaznik := FieldByName('First_name').AsString + ' ' + Zakaznik;
-      if (FieldByName('Title').AsString <> '') then Zakaznik := FieldByName('Title').AsString + ' ' + Zakaznik;
-      if (FieldByName('Business_name').AsString <> '') then Zakaznik := FieldByName('Business_name').AsString + ', ' + Zakaznik;
-      if (Zakaznik <> PosledniZakaznik) then begin      // pro stejného zákazníka se vypisují jen údaje o smlouvì
-        Cells[0, Radek] := Zakaznik;
-        Cells[1, Radek] := FieldByName('Abra_code').AsString;
-        Cells[2, Radek] := FieldByName('Variable_symbol').AsString;
-        PosledniZakaznik := Zakaznik;
+
+      DesU.qrAbra.SQL.Text := 'SELECT ii.ID FROM ISSUEDINVOICES ii'
+                     + ' WHERE ii.VarSymbol = ''' + FieldByName('Number').AsString  + ''''
+          + ' AND (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT - ii.LOCALCREDITAMOUNT + ii.LOCALPAIDCREDITAMOUNT) <> 0'
+          + ' order by ii.DocDate$Date DESC';
+      DesU.qrAbra.Open;
+
+      if not chbJenSNezaplacenym.Checked OR not DesU.qrAbra.Eof then begin
+        Inc(Radek);
+        RowCount := Radek + 1;
+        Zakaznik := FieldByName('Surname').AsString;
+        if (FieldByName('First_name').AsString <> '') then Zakaznik := FieldByName('First_name').AsString + ' ' + Zakaznik;
+        if (FieldByName('Title').AsString <> '') then Zakaznik := FieldByName('Title').AsString + ' ' + Zakaznik;
+        if (FieldByName('Business_name').AsString <> '') then Zakaznik := FieldByName('Business_name').AsString + ', ' + Zakaznik;
+        if (Zakaznik <> PosledniZakaznik) then begin      // pro stejného zákazníka se vypisují jen údaje o smlouvì
+          Cells[0, Radek] := Zakaznik;
+          Cells[1, Radek] := FieldByName('Abra_code').AsString;
+          Cells[2, Radek] := FieldByName('Variable_symbol').AsString;
+          PosledniZakaznik := Zakaznik;
+        end;
+        Cells[3, Radek] := FieldByName('Number').AsString;
+        Cells[4, Radek] := FieldByName('State').AsString;
+        if (FieldByName('Invoice').AsInteger = 1) then Cells[5, Radek] := 'ano'
+        else Cells[5, Radek] := 'ne';
+        if (Cells[5, Radek] = 'ano') and (FieldByName('Invoice_from').AsString <> '') then
+          Cells[5, Radek] := Cells[5, Radek] + ', od ' + FieldByName('Invoice_from').AsString;
+        if (Cells[5, Radek] = 'ne') and (FieldByName('Canceled_at').AsString <> '') then
+          Cells[5, Radek] := Cells[5, Radek] + ', do ' + FieldByName('Canceled_at').AsString;
+
+        while not DesU.qrAbra.Eof do begin
+          Inc(Radek);
+          RowCount := Radek + 1;
+          nezaplacenyDoklad := TDoklad.create(DesU.qrAbra.FieldByName('ID').AsString, '03');
+          Cells[6, Radek] := nezaplacenyDoklad.cisloDokladu;
+          Cells[7, Radek] := DateToStr(nezaplacenyDoklad.datumDokladu);
+          Cells[8, Radek] := format('%m', [nezaplacenyDoklad.CastkaNezaplaceno]);
+          DesU.qrAbra.Next;
+        end;
+
+        Row := Radek;
+        Application.ProcessMessages;
       end;
-      Cells[3, Radek] := FieldByName('Number').AsString;
-      Cells[4, Radek] := FieldByName('State').AsString;
-      if (FieldByName('Invoice').AsInteger = 1) then Cells[5, Radek] := 'ano'
-      else Cells[5, Radek] := 'ne';
-      if (Cells[5, Radek] = 'ano') and (FieldByName('Invoice_from').AsString <> '') then
-        Cells[5, Radek] := Cells[5, Radek] + ', od ' + FieldByName('Invoice_from').AsString;
-      if (Cells[5, Radek] = 'ne') and (FieldByName('Canceled_at').AsString <> '') then
-        Cells[5, Radek] := Cells[5, Radek] + ', do ' + FieldByName('Canceled_at').AsString;
-      Row := Radek;  
-      Application.ProcessMessages;
+
+      DesU.qrAbra.Close;
       Next;
     end;
   finally
@@ -155,11 +144,11 @@ begin
     AutoSize := True;
     SirkaOkna := 0;
     for Radek := 0 to ColCount-1 do SirkaOkna := SirkaOkna + ColWidths[Radek];
-    fmCustomers.ClientWidth := SirkaOkna + 4;
-    fmCustomers.Left := Max(0, Round((Screen.Width - fmCustomers.Width) / 2));
+    fmCustomers.ClientWidth := Max(825, SirkaOkna + 4);
+    //fmCustomers.Left := Max(0, Round((Screen.Width - fmCustomers.Width) / 2));
     fmCustomers.ClientHeight := Min(RowCount * 18 + 46, Screen.Height - 30);
-    if (fmCustomers.ClientHeight = Screen.Height - 30) then fmCustomers.ClientWidth := fmCustomers.ClientWidth + 16;
-    fmCustomers.Top := Max(0, Round((Screen.Height - fmCustomers.Height) / 2));
+    if (fmCustomers.ClientHeight = Screen.Height - 30) then fmCustomers.ClientWidth := fmCustomers.ClientWidth + 26;
+    //fmCustomers.Top := Max(0, Round((Screen.Height - fmCustomers.Height) / 2));
     Screen.Cursor := crDefault;
   end;
 end;
