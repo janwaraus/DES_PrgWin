@@ -702,9 +702,8 @@ begin
 //ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));
 //ShowMessage('VRid_' +  DesU.getAbraVatindexId('Výst21'));
 
-Source := 'pakachar:ukulelee';
-
-Copy(Source, 8, MaxInt);
+//Source := 'pakachar:ukulelee';
+//Copy(Source, 8, MaxInt);
 
 //ShowMessage('1_' +  Copy(Source, Pos(':', Source)+1, MaxInt) + '_');
 //ShowMessage('1_' +  Copy(Source, 1, Pos(':', Source)-1) + '_');
@@ -739,7 +738,7 @@ ShowMessage (
   rData := TAArray.Create;
   rData['Title'] := 'Faktura za pøipojení k internetu';
   rData['Author'] := 'Družstvo Eurosignal';
-  ShowMessage ('-'+rData['kuku']+'-');
+  ShowMessage (rData['Title'] +' - '+rData['kuku']+'-');
 
 end;
 
