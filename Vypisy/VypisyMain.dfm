@@ -106,17 +106,17 @@ object fmMain: TfmMain
     Caption = 'lblVypisFiokontoInfo'
   end
   object lblHlavickaVpravo: TLabel
-    Left = 787
+    Left = 814
     Top = 8
-    Width = 139
-    Height = 16
+    Width = 112
+    Height = 13
     Alignment = taRightJustify
     Caption = 'lbl Hlavicka Vpravo'
     Color = clSkyBlue
     Font.Charset = EASTEUROPE_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
-    Font.Name = 'Verdana'
+    Font.Height = -12
+    Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentColor = False
     ParentFont = False

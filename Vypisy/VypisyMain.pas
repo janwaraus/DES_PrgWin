@@ -264,7 +264,7 @@ begin
   end;
     i1 := abraBankaccount.getPocetVypisu(fRok);
     i2 := abraBankaccount.getPoradoveCisloMaxVypisu(fRok);
-    // PayU nemá exrení èíslo výpisu, proto i3 nepotøebujeme
+    // PayU nemá externí èíslo výpisu, proto nenèítáme externí èíslo posledního výpisu
   lblVypisPayuInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, datum posledního výpisu %s', [
     i1, fRok, i2,
     DateToStr(abraBankaccount.getDatumMaxVypisu(fRok))
@@ -364,30 +364,32 @@ begin
     if assigned(Vypis) then
       if (Vypis.Platby.Count > 0) then
       begin
-        Vypis.init();
+        Vypis.init(GpcFilename);
         Vypis.setridit();
         sparujVsechnyPrichoziPlatby;
         vyplnPrichoziPlatby;
         filtrujZobrazeniPlateb;
-        ucetniZustatek := Vypis.abraBankaccount.getZustatek(Vypis.datum);  //zadáváme poèáteèní datum výpisu, dostaneme poèáteèní stav bank. úètu k tomuto datu
+        ucetniZustatek := Vypis.abraBankaccount.getZustatek(Vypis.datum);  //zadáváme datum výpisu (= datum poslední platby), dostaneme poèáteèní stav bank. úètu k tomuto datu
         lblHlavicka.Caption := Vypis.abraBankaccount.name // + ', ' + Vypis.abraBankaccount.number
                         + ', è.' + IntToStr(Vypis.poradoveCislo) + ' (max è. ' + IntToStr(Vypis.maxExistujiciPoradoveCislo) + '). Plateb: '
                         + IntToStr(Vypis.Platby.Count);
         if Vypis.zustatekPocatecni <> ucetniZustatek then
         begin
-          lblHlavickaVpravo.Caption := ' Bank. zùst: ' + format('%m', [Vypis.zustatekPocatecni])
+          lblHlavickaVpravo.Caption := 'K ' + DateToStr(Vypis.datum) + ' bank. zùst: ' + format('%m', [Vypis.zustatekPocatecni])
                         + ' (úè. zùst: ' + format('%m', [ucetniZustatek]) + ')';
           lblHlavickaVpravo.Font.Color := $0000FF;
-          Dialogs.MessageDlg('Pozor, poèáteèní zùstatek výpisu se neshoduje s úèetním zùstatkem v ABRA.', mtInformation, [mbOK], 0);
+          Dialogs.MessageDlg('Pozor, poèáteèní zùstatek výpisu se neshoduje s úèetním zùstatkem v ABRA (zùstatky k ' + DateToStr(Vypis.datum) + ')', mtInformation, [mbOK], 0);
         end else
-          lblHlavickaVpravo.Caption := ' Bank. zùst = úè. zùst: ' + format('%m', [ucetniZustatek]);
+          lblHlavickaVpravo.Caption := 'K ' + DateToStr(Vypis.datum) + ' bank. zùst = úè. zùst: ' + format('%m', [ucetniZustatek]);
         lblVypisOverview.Caption := 'Výpis k úètu ' + Vypis.cisloUctuVlastni + ' (' + Vypis.abraBankaccount.name + ')'
-                        + #13#10 + 'Výpis k ' + DateToStr(Vypis.datum) + ', poøadové èíslo ' + IntToStr(Vypis.poradoveCislo)
-                        + #13#10 + 'Poèáteèní zùstatek: ' + format('%m', [Vypis.zustatekPocatecni])
-                        + #13#10 + 'Koncový zùstatek: ' + format('%m', [Vypis.zustatekKoncovy])
-                        + #13#10 + 'Kreditní obrat ' + format('%m', [Vypis.obratKredit]) + ', debetní obrat ' + format('%m', [Vypis.obratDebet]);
-        if Vypis.cisloUctuVlastni = '2389210008000000' then
-          lblVypisOverview.Caption := lblVypisOverview.Caption + #13#10 + '(PayU výpis neuvádí poøadové èíslo)';
+                        + sLineBreak + 'Výpis k ' + DateToStr(Vypis.datum) + ', poøadové èíslo ' + IntToStr(Vypis.poradoveCislo)
+                        + sLineBreak + 'Poèáteèní zùstatek: ' + format('%m', [Vypis.zustatekPocatecni])
+                        + sLineBreak + 'Koncový zùstatek: ' + format('%m', [Vypis.zustatekKoncovy])
+                        + sLineBreak + 'Kreditní obrat ' + format('%m', [Vypis.obratKredit]) + ', debetní obrat ' + format('%m', [Vypis.obratDebet]);
+        if Vypis.isPayuVypis() then begin
+          //Vypis.isPayuVypis();
+          lblVypisOverview.Caption := lblVypisOverview.Caption + sLineBreak + '(PayU výpis neuvádí poøadové èíslo)';
+        end;
 
         if not Vypis.isNavazujeNaradu() then
           Dialogs.MessageDlg('Doklad è. '+ IntToStr(Vypis.poradoveCislo) + ' nenavazuje na øadu!', mtInformation, [mbOK], 0);

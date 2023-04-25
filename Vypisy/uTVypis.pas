@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, IniFiles, Forms,
-  Dialogs, StdCtrls, Grids, AdvObj, BaseGrid, AdvGrid, StrUtils,
+  Dialogs, StdCtrls, Grids, AdvObj, BaseGrid, AdvGrid, StrUtils, RegularExpressions,
   DB, ComObj, AdvEdit, DateUtils, Math, ExtCtrls,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
   uTPlatbaZVypisu, AbraEntities;
@@ -30,10 +30,11 @@ type
 
     constructor Create(gpcLine : string);
   published
-    procedure init();
+    procedure init(gpcFilename : string = '');
     procedure setridit();    
     procedure nactiMaxExistujiciPoradoveCislo();
     function isNavazujeNaRadu() : boolean;
+    function isPayuVypis() : boolean;
     function prictiCastkuPokudDvojitaPlatba(pPlatbaZVypisu : TPlatbaZVypisu) : integer;
     function isPayuProvize(pPlatbaZVypisu : TPlatbaZVypisu) : boolean;
     function hledej(needle : string) : TArrayOf2Int;
@@ -69,6 +70,15 @@ begin
     Result := false;
 end;
 
+function TVypis.isPayuVypis() : boolean;
+begin
+  if self.cisloUctuVlastni = '2389210008000000' then
+    Result := true
+  else
+    Result := false;
+end;
+
+
 procedure TVypis.nactiMaxExistujiciPoradoveCislo();
 begin
   with qrAbra do begin
@@ -92,25 +102,37 @@ begin
 end;
 
 
-procedure TVypis.init();
+procedure TVypis.init(gpcFilename : string = '');
 var
   i : integer;
   iPlatba, payuProvizePP : TPlatbaZVypisu;
   scitatPayUProvize : boolean;
   payuProvize : currency;
+  datumVypisu: string;
+  //Match: TMatch;
+  Matches : TMatchCollection;
 begin
 
   self.abraBankaccount.loadByNumber(self.cisloUctuVlastni);
-
-  self.datum := TPlatbaZVypisu(self.Platby[self.Platby.Count - 1]).Datum; //datum vypisu se urci jako datum poslední platby
+  self.datum := TPlatbaZVypisu(self.Platby[self.Platby.Count - 1]).datum; //datum vypisu se urci jako datum poslední platby
   self.nactiMaxExistujiciPoradoveCislo();
 
-  // vyøešíme seètení PayU provizí
-  if self.cisloUctuVlastni = '2389210008000000' then
-  {if Dialogs.MessageDlg('Seèíst PayU provize?', mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then}
+  if self.isPayuVypis() then
   begin
-    // pro každou platbu se podíváme, zda je PayU provize
+    // urèíme datum výpisu z názvu souboru
+    datumVypisu := TRegEx.Match(gpcFilename, '\d{4}\D\d{2}\D\d{2}\.gpc').Value; //nejprve vezmu poslední datum pøed .gpc
+    Matches := TRegEx.Matches(datumVypisu, '(\d+)'); // pak z nìj vezmu èíslice. v jednom regexp jsem to napsat nedokázal :)
+    datumVypisu := Matches[2].Value + '.' + Matches[1].Value + '.' + Matches[0].Value;
+
+    if not (self.datum = StrToDate(datumVypisu)) then begin
+      MessageDlg('Datum poslední platby ve výpisu je ' + DateToStr(self.datum)+ sLineBreak + 'Datum výpisu odvozené z názvu GPC souboru je však ' + DateToStr(StrToDate(datumVypisu)), mtInformation, [mbOk], 0);
+      self.datum := StrToDate(datumVypisu);
+    end;
+
+    // vyøešíme seètení PayU provizí
     payuProvize := 0;
+    {if Dialogs.MessageDlg('Seèíst PayU provize?', mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then}
+    // pro každou platbu se podíváme, zda je PayU provize
     for i := self.Platby.Count - 1 downto 0 do
     begin
       iPlatba := TPlatbaZVypisu(self.Platby[i]);
@@ -137,9 +159,11 @@ begin
 end;
 
 function TVypis.isPayuProvize(pPlatbaZVypisu : TPlatbaZVypisu) : boolean;
-{ Výpis projede všechny svoje platby a dívá se, zda je zkoumaná platba (pPlatbaZVypisu) PayU provizí, 
-  a to tak, že se snaží nalézt platbu, která je pøíslušným kreditem k vstupní platbì (pPlatbaZVypisu), která musí být 
-  debetem v rozmezí 1-7% hledaného kreditu (uvažujeme PauY provizi v rozmezí 1-7%, v roce 2023 je 3%)
+{ Výpis urèí, zda je zkoumaná platba (pPlatbaZVypisu) PayU provizí,
+  a to tak, že se snaží nalézt platbu, která
+   - je pøíslušným kreditem ke zkoumané vstupní platbì (pPlatbaZVypisu)
+   - pøièemž zkoumaná platba musí být debetem v rozmezí 1-7% pøíslušného kreditu (uvažujeme PauY provizi v rozmezí 1-7%, v roce 2023 je 3%)
+    - pøípadnì menší než 10 Kè (PayU u malých plateb zvedá procento poplatku)
 }
 var
   i : integer;
@@ -150,8 +174,8 @@ begin
   begin
     iPlatba := TPlatbaZVypisu(self.Platby[i]);
     if (pPlatbaZVypisu.kodUctovani = '1') //je to èistý debet, není to storno kreditu
-      AND(iPlatba.VS = pPlatbaZVypisu.VS) AND (iPlatba.kodUctovani = '2') // existuje jiná platba se stejným VS  a ta je kredit
-      AND(pPlatbaZVypisu.castka > iPlatba.castka * 0.01) AND (pPlatbaZVypisu.castka < iPlatba.castka * 0.07)  // èástka je vìtší než 1% a 7% kreditu. pokud není, nejedná se o provizi
+      AND (iPlatba.VS = pPlatbaZVypisu.VS) AND (iPlatba.kodUctovani = '2') // existuje jiná platba se stejným VS  a ta je kredit
+      AND (pPlatbaZVypisu.castka > iPlatba.castka * 0.01) AND (pPlatbaZVypisu.castka < Max(iPlatba.castka * 0.07, 10))  // èástka je vìtší než 1% kreditu a menší než 7% kreditu (nebo menší než 10 Kè). pokud není, nejedná se o provizi
       // AND self.cisloUctuVlastni = '2389210008000000' // toto není nutné, funkce se volá jen na PayU výpisy. pro jistotu by se dalo dát, ale zase je to hardcode èísla úètu PayU...      
     then begin
       Result := true;

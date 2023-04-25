@@ -1600,7 +1600,7 @@ end;
 
 function Str6digitsToDate(datum : string) : double;
 begin
-  Result := strtodate(copy(datum, 1, 2) + '.' + copy(datum, 3, 2) + '.20' + copy(datum, 5, 2));
+  Result := StrToDate(copy(datum, 1, 2) + '.' + copy(datum, 3, 2) + '.20' + copy(datum, 5, 2));
 end;
 
 function IndexByName(DataObject: variant; Name: ShortString): integer;
@@ -1692,7 +1692,7 @@ begin
   telCislo := stringreplace(telCislo, '+420', '', [rfReplaceAll, rfIgnoreCase]);
   telCislo := RemoveSpaces(telCislo); // nekdy jsou cisla psana jako 3 skupiny po 3 znacich
 
-  regexpr := TRegEx.Create('[6-7]{1}\d{8}',[roIgnoreCase,roMultiline]); //hledam devitimistne cislo
+  regexpr := TRegEx.Create('[6-7]{1}\d{8}',[roIgnoreCase,roMultiline]); //hledam devitimistne cislo zacinajici na 6 nebo 7
   match := regexpr.Match(telCislo);
 
   if match.Success then
