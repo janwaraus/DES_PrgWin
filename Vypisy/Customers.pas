@@ -94,11 +94,18 @@ begin
     Open;
     while not EOF do begin
 
-      DesU.qrAbra.SQL.Text := 'SELECT ii.ID FROM ISSUEDINVOICES ii'
-                     + ' WHERE ii.VarSymbol = ''' + FieldByName('Number').AsString  + ''''
-          + ' AND (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT - ii.LOCALCREDITAMOUNT + ii.LOCALPAIDCREDITAMOUNT) <> 0'
-          + ' order by ii.DocDate$Date DESC';
-      DesU.qrAbra.Open;
+      DesU.qrAbra.SQL.Text :=
+            'SELECT ID, DocumentType, DocDate$Date FROM ('
+          + 'SELECT ID, ''03'' as DocumentType, DocDate$Date FROM ISSUEDINVOICES'
+          + ' WHERE VarSymbol = ''' + FieldByName('Number').AsString + ''''
+          + ' AND (LOCALAMOUNT - LOCALPAIDAMOUNT - LOCALCREDITAMOUNT + LOCALPAIDCREDITAMOUNT) <> 0 '
+          + 'UNION '
+          + 'SELECT ID, ''10'' as DocumentType, DocDate$Date FROM ISSUEDDINVOICES'
+          + ' WHERE VarSymbol = ''' + FieldByName('Number').AsString + ''''
+          + ' AND (LOCALAMOUNT - LOCALPAIDAMOUNT) <> 0'
+          + ') ORDER BY DocDate$Date';
+
+      DesU.qrAbra.Open; //najdu IDèka nezaplacených fa a ZL
 
       if not chbJenSNezaplacenym.Checked OR not DesU.qrAbra.Eof then begin
         Inc(Radek);
@@ -125,7 +132,7 @@ begin
         while not DesU.qrAbra.Eof do begin
           Inc(Radek);
           RowCount := Radek + 1;
-          nezaplacenyDoklad := TDoklad.create(DesU.qrAbra.FieldByName('ID').AsString, '03');
+          nezaplacenyDoklad := TDoklad.create(DesU.qrAbra.FieldByName('ID').AsString, DesU.qrAbra.FieldByName('DocumentType').AsString); //vytvoøím objekty nezaplacených fa a ZL
           Cells[6, Radek] := nezaplacenyDoklad.cisloDokladu;
           Cells[7, Radek] := DateToStr(nezaplacenyDoklad.datumDokladu);
           Cells[8, Radek] := format('%m', [nezaplacenyDoklad.CastkaNezaplaceno]);

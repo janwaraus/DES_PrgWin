@@ -21,7 +21,7 @@ uses
   Grids, BaseGrid, AdvGrid, pCore2D, pBarcode2D, IniFiles, DateUtils, Math,
   DB, ZAbstractConnection, ZConnection, ZAbstractRODataset, ZAbstractDataset, ZDataset,
 
-  frxClass, frxDBSet, frxDesgn;
+  frxClass, frxDBSet, frxDesgn, AdvUtil;
 
 type
   TfmMain = class(TForm)

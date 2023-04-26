@@ -211,8 +211,6 @@ object fmCustomers: TfmCustomers
     ShowDesignHelper = False
     SortSettings.DefaultFormat = ssAutomatic
     Version = '7.4.2.0'
-    ExplicitWidth = 659
-    ExplicitHeight = 66
     ColWidths = (
       185
       90
