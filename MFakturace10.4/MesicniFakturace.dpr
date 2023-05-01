@@ -17,7 +17,8 @@ uses
   FImain in 'FImain.pas' {fmMain},
   DesFrxUtils in '..\DE$_Common\frxExport\DesFrxUtils.pas' {DesFrxU},
   frxExportSynPDF in '..\DE$_Common\frxExport\frxExportSynPDF.pas' {frxExportSynPDF},
-  SynZip in '..\DE$_Common\frxExport\SynZip.pas';
+  SynZip in '..\DE$_Common\frxExport\SynZip.pas',
+  DesFastReports in '..\DE$_Common\frxExport\DesFastReports.pas' {DesFastReport};
 
 {$R *.res}
 begin
@@ -32,5 +33,6 @@ begin
   Application.CreateForm(TdmPrevod, dmPrevod);
   Application.CreateForm(TdmTisk, dmTisk);
   Application.CreateForm(TDesFrxU, DesFrxU);
+  Application.CreateForm(TDesFastReport, DesFastReport);
   Application.Run;
 end.

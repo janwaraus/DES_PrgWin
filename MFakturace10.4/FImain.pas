@@ -139,7 +139,8 @@ var
 implementation
 
 uses DesUtils, AbraEntities, FICommon, FIfaktura, FIPrevod, FITisk, FIMail,
-AArray
+AArray,
+DesFastReports //pro test/demo jenom
 ;
 
 {$R *.dfm}
@@ -698,7 +699,15 @@ var
   source : string;
   i: integer;
   rData: TAArray;
+  temps : string;
 begin
+
+  DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
+  DesFastReport.setPdfDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
+
+    temps := dmPrevod.fakturaPrevod('1K6P200101');  // pokud zaškrtnuto, pøevádíme fa do PDF
+    //  '1K6P200101' '4K6P200101' '7K6P200101'
+    dmCommon.Zprava(Format('%s', [temps]));
 
 //ShowMessage('demooo_' +  BoolToStr(DesU.existujeVAbreDokladSPrazdnymVs(), true));
 //ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));
@@ -737,10 +746,13 @@ ShowMessage (
   );
 
 }
+
+{
   rData := TAArray.Create;
   rData['Title'] := 'Faktura za pøipojení k internetu';
   rData['Author'] := 'Družstvo Eurosignal';
   ShowMessage (rData['Title'] +' - '+rData['kuku']+'-');
+}
 
 end;
 

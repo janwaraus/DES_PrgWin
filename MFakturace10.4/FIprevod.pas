@@ -1,18 +1,14 @@
 unit FIprevod;
-
 interface
-
 uses
   Windows, Classes, Forms, Controls, SysUtils, Variants, DateUtils, Registry, Printers, Dialogs;
-
 type
   TdmPrevod = class(TDataModule)
-  private
-    procedure FakturaPrevod(Radek: integer);
   public
+    function fakturaPrevod(invoiceId: string) : string;
+    procedure FakturaPrevod_old(Radek: integer);
     procedure PrevedFaktury;
   end;
-
 
 var
   dmPrevod: TdmPrevod;
@@ -21,7 +17,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, DesFrxUtils, AArray, FImain, FIcommon;  //frxExportSynPDF;
+uses DesUtils, DesFastReports, DesFrxUtils, AArray, FImain, FIcommon;  //frxExportSynPDF;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -30,11 +26,14 @@ var
   Radek,
   i: integer;
   Reg: TRegistry;
+  vysledekPrevedeni : string;
 begin
   Screen.Cursor := crHourGlass;
 
-  with fmMain do try
+  DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
+  DesFastReport.setPdfDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
 
+  with fmMain do try
     if rbPodleSmlouvy.Checked then
       dmCommon.Zprava(Format('Pøevod faktur do PDF od VS %s do %s', [aedOd.Text, aedDo.Text]))
       else dmCommon.Zprava(Format('Pøevod faktur do PDF od èísla %s do %s', [aedOd.Text, aedDo.Text]));
@@ -44,6 +43,7 @@ begin
       apnPrevod.Visible := False;
       apbProgress.Position := 0;
       apbProgress.Visible := True;
+
 
       // hlavní smyèka
       for Radek := 1 to RowCount-1 do begin
@@ -60,11 +60,15 @@ begin
           Break;
         end;
 
-        if Ints[0, Radek] = 1 then FakturaPrevod(Radek)  // pokud zaškrtnuto, pøevádíme fa do PDF
+        //if Ints[0, Radek] = 1 then FakturaPrevod_old(Radek)  // pokud zaškrtnuto, pøevádíme fa do PDF
+        if Ints[0, Radek] = 1 then begin
+          vysledekPrevedeni := fakturaPrevod(asgMain.Cells[7, Radek]);  // pokud zaškrtnuto, pøevádíme fa do PDF
+          dmCommon.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], vysledekPrevedeni]));
+        end;
+
 
       end; // konec hlavní smyèky
     end;  // with asgMain
-
   finally
     Printer.PrinterIndex := -1;  // default
     apbProgress.Position := 0;
@@ -75,15 +79,19 @@ begin
     Screen.Cursor := crDefault;
     dmCommon.Zprava('Pøevod faktur do PDF ukonèen');
   end;
+end;
+// ------------------------------------------------------------------------------------------------
+function TdmPrevod.fakturaPrevod(invoiceId: string) : string;
+// podle faktury v Abøe a stavu pohledávek vytvoøí formuláø v PDF
 
+begin
+  DesFastReport.setInvoiceById(invoiceId);
+  Result := DesFastReport.createPdf(true);
 end;
 
-// ------------------------------------------------------------------------------------------------
-
-procedure TdmPrevod.FakturaPrevod(Radek: integer);
+procedure TdmPrevod.FakturaPrevod_old(Radek: integer);
 // podle faktury v Abøe a stavu pohledávek vytvoøí formuláø v PDF
 var
-
   FullPdfFileName,
   PdfDirName,
   //FStr,                              // prefix faktury
@@ -95,25 +103,18 @@ var
   Mesic, i: integer;
   datumDokladu : double;
 
-
 begin
   desFrxUtilsResult := '';
-
   with fmMain do begin
-
     //desFrxUtilsResult := DesFrxU.fakturaNactiData(globalAA['abraIiDocQueue_Id'], Ints[2, Radek], aseRok.Value); //takhle to bylo
     desFrxUtilsResult := DesFrxU.fakturaNactiData(asgMain.Cells[7, Radek]);
     dmCommon.Zprava(desFrxUtilsResult);
-
     Mesic := MonthOf(DesFrxU.reportData['DatumPlneni']); //opravdu datum plneni, tedy VATDate$DATE
-
     // adresáø pro ukládání faktur v PDF nemusí existovat
     PdfDirName := Format('%s\%4d\%2.2d', [globalAA['PDFDir'], aseRok.Value, Mesic]);  // Mesic misto jednoducheho aseMesic.Value
     if not DirectoryExists(PdfDirName) then Forcedirectories(PdfDirName);
-
     // jméno souboru s fakturou
     FullPdfFileName := PdfDirName + Format('\%s-%5.5d.pdf', [globalAA['invoiceDocQueueCode'], asgMain.Ints[2, Radek]]);
-
     // soubor už existuje
     if FileExists(FullPdfFileName) AND cbNeprepisovat.Checked then begin
         dmCommon.Zprava(Format('%s (%s): Soubor %s už existuje.', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], FullPdfFileName]));
@@ -121,12 +122,10 @@ begin
       end else
         DeleteFile(FullPdfFileName);
 
-
     // !!! zde zavolání vytvoøení PDF !!!
     DesFrxU.reportData['sQrKodem'] := true;
     desFrxUtilsResult := DesFrxU.fakturaVytvorPfd(FullPdfFileName, 'FOsPDP.fr3');
     dmCommon.Zprava(desFrxUtilsResult);
-
 
     // hotovo
     if not FileExists(FullPdfFileName) then
@@ -139,6 +138,4 @@ begin
   end;  // with fmMain
 end;
 
-
 end.
-

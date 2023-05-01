@@ -145,6 +145,10 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="..\DE$_Common\frxExport\SynZip.pas"/>
+        <DCCReference Include="..\DE$_Common\frxExport\DesFastReports.pas">
+            <Form>DesFastReport</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

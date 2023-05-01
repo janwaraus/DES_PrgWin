@@ -413,7 +413,7 @@ begin
         if rbMail.Checked then SQLStr := SQLStr + ' AND F.Firm_ID IS NULL';
         // TODO - vyhledají se totiž i doklady z jiných øad, není podmínka na DocQueue_ID
 
-        dmCommon.Zprava(SQLStr);
+        //dmCommon.Zprava(SQLStr); // bylo pro debug TOTO dát pryè
 
         SQLStr := SQLStr + ' AND DocQueue_ID = ' + Ap + globalAA['abraIiDocQueue_Id'] + Ap;
 
