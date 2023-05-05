@@ -48,7 +48,7 @@ begin
   Memo1.Lines.Add('Poèet výpisù: ' + IntToStr(abraBankaccount.getPocetVypisu('2023')));
   Memo1.Lines.Add('Jméno (s UTF8Decode): ' + UTF8Decode(abraBankaccount.name));
   Memo1.Lines.Add('Jméno (bez úpravy): ' + abraBankaccount.name);
-
+  // test
 end;
 
 procedure TForm1.FormShow(Sender: TObject);

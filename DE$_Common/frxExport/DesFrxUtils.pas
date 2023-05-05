@@ -56,7 +56,8 @@ var
 
 implementation
 
-uses DesUtils, AbraEntities, frxExportSynPDF;
+uses DesUtils, AbraEntities;
+// frxExportSynPDF; frx smazat
 
 {$R *.dfm}
 

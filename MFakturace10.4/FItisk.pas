@@ -21,7 +21,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, DesFrxUtils, AArray, FIcommon;
+uses DesUtils, AArray, FIcommon;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ begin
   desFrxUtilsResult := '';
 
   with fmMain do begin
-
+    { TODO na novy Report
     desFrxUtilsResult := DesFrxU.fakturaNactiData(asgMain.Cells[7, Radek]);
     dmCommon.Zprava(desFrxUtilsResult);
 
@@ -113,7 +113,7 @@ begin
     if desFrxUtilsResult <> 'Tisk OK' then
       if Application.MessageBox(PChar('Chyba pøi tisku'), 'Pokraèovat?',
          MB_YESNO + MB_ICONQUESTION) = IDNO then Prerusit := True;
-
+   }
   end;
 
 end;

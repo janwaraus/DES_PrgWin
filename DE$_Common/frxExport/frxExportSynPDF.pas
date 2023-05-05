@@ -17,10 +17,10 @@ uses
   ComCtrls,
 
   // Fast Report
-  frxClass,
+  frxClass;
 
   // Synopse PDF Engine
-  SynPdf;
+  // SynPdf;
 
 type
   TfrxExportSynPdf = class(TForm)

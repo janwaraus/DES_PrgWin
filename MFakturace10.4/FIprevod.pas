@@ -17,7 +17,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, DesFastReports, DesFrxUtils, AArray, FImain, FIcommon;  //frxExportSynPDF;
+uses DesUtils, DesFastReports, AArray, FImain, FIcommon;  //frxExportSynPDF, DesFrxUtils
 
 // ------------------------------------------------------------------------------------------------
 
@@ -104,6 +104,7 @@ var
   datumDokladu : double;
 
 begin
+{
   desFrxUtilsResult := '';
   with fmMain do begin
     //desFrxUtilsResult := DesFrxU.fakturaNactiData(globalAA['abraIiDocQueue_Id'], Ints[2, Radek], aseRok.Value); //takhle to bylo
@@ -136,6 +137,7 @@ begin
       asgMain.Row := Radek;
     end;
   end;  // with fmMain
+  }
 end;
 
 end.
