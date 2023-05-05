@@ -26,7 +26,7 @@ var
 
 implementation
 
-uses DesUtils, DesFrxUtils, FIcommon, FImain;
+uses DesUtils, FIcommon, FImain;
 
 {$R *.dfm}
 
@@ -125,7 +125,8 @@ begin
 
     try
       // !!! samotné poslání mailu
-      DesFrxU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel);
+      // TODO na novy report
+      // DesFrxU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel);
 
       dmCommon.Zprava(Format('%s (%s): Soubor %s byl odeslán na adresu %s.',
        [Cells[4, Radek], Cells[1, Radek], FullPdfFileName, Cells[5, Radek]]));

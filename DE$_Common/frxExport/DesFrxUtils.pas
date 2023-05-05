@@ -10,7 +10,7 @@ uses
   Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset,
   ZAbstractConnection, ZConnection, AArray,
 
-  frxClass, frxDBSet, frxDesgn, pCore2D, pBarcode2D, pQRCode,
+  frxClass, frxDBSet, frxDesgn, // pCore2D, pBarcode2D, pQRCode,
 
   IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdSMTP, IdHTTP, IdMessage, IdMessageClient, IdText, IdMessageParts,
@@ -28,7 +28,6 @@ type
     frxReport: TfrxReport;
     fdsDPH: TfrxDBDataset;
     fdsRadky: TfrxDBDataset;
-    QRCode: TBarcode2D_QRCode;
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
 
@@ -42,14 +41,12 @@ type
     reportData: TAArray;
 
     function fakturaNactiData(II_Id:  string) : string;
-
     function fakturaVytvorPfd(pdfFileName, fr3FileName : string) : string;
     function fakturaTisk(fr3FileName : string) : string;
     function faktura(action, fr3FileName : string) : string;
 
     function vytvorPdf(fr3FileName : string) : string;
     function tisk(fr3FileName : string) : string;
-
     function posliPdfEmailem(pdfFile, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string) : string;
 
   end;
@@ -59,7 +56,8 @@ var
 
 implementation
 
-uses DesUtils, AbraEntities, frxExportSynPDF;
+uses DesUtils, AbraEntities;
+// frxExportSynPDF; frx smazat
 
 {$R *.dfm}
 
@@ -157,8 +155,8 @@ begin
     frxReport.LoadFromFile(DesU.PROGRAM_PATH + fr3FileName);
     frxReport.PrepareReport;
     //frxReport.PrintOptions.ShowDialog := true;
-    frxReport.PrintOptions.ShowDialog := false;
-    frxReport.Print;
+    frxReport.PrintOptions.ShowDialog := false; // nezobrazí se výbìr tiskárny, tiskne se automaticky na default tiskárnu
+    frxReport.Print; // poslání reportu na tisk
   except on E: exception do
     begin
       Result := Format('%s (%s): Fakturu %s se nepodaøilo vytisknout.' + #13#10 + 'Chyba: %s',
@@ -196,7 +194,7 @@ var
   AWidth,
   AHeight: integer;
 begin
-
+   {
   // QR kód
   // nejdøíve ovìøení, že je reportData['sQrKodem'] typu boolean
   if varIsType(reportData['sQrKodem'], varBoolean) AND reportData['sQrKodem'] then begin
@@ -209,7 +207,7 @@ begin
       QRCode.DrawTo(Canvas, 0, 0);
     end;
   end;
-
+    }
 end;
 
 
@@ -246,15 +244,15 @@ begin
       + ' WHERE F.ID = II.Firm_ID'
       + ' AND A.ID = F.ResidenceAddress_ID'
       + ' AND Periods.ID = II.Period_ID'
-      + ' AND F.Hidden = ''N'''
+      // + ' AND F.Hidden = ''N''' // toto bylo když se anèítalo pøes DocQueue_ID, ale teï naèítáme pøes ID dokladu a nemá cenu už kontrolovat
       + ' AND II.ID = ' + Ap + II_Id + Ap ;
 
     Open;
 
     if RecordCount = 0 then begin
-      Result := Format('Neexistuje faktura s ID %d', [II_Id]);
+      Result := Format('Neexistuje faktura s ID %d nebo jiný problém se zákazníkem', [II_Id]);
       Close;
-      Exit;
+      Exit; // tohle ale nestaèí, je tøeba vyskoèit z celého pøevodu faktury, nebo to udìlat nìjak jinak správnì
     end;
 
     iOrdNumber := FieldByName('OrdNumber').AsInteger;
@@ -264,7 +262,7 @@ begin
     if Trim(FieldByName('AbraKod').AsString) = '' then begin
       Result := Format('Faktura %d: zákazník nemá kód Abry.', [iOrdNumber]);
       Close;
-      Exit;
+      Exit;  // tohle ale nestaèí, je tøeba vyskoèit z celého pøevodu faktury, nebo to udìlat nìjak jinak správnì
     end;
 
 
@@ -295,10 +293,13 @@ begin
     // všechny Firm_Id pro Abrakód firmy
     SQL.Text := 'SELECT * FROM DE$_Code_To_Firm_Id (' + Ap + reportData['AbraKod'] + ApZ;
     Open;
+
+
     if Fields[0].AsString = 'MULTIPLE' then begin
       Result := Format('%s (%s): Více zákazníkù pro kód %s.', [reportData['OJmeno'], reportData['VS'], reportData['AbraKod']]);
       Close;
-      Exit;
+      Exit;  // tohle ale nestaèí, je tøeba vyskoèit z celého pøevodu faktury, nebo to udìlat nìjak jinak správnì
+             // by se mìlo zkontrolovat pøi naèítání faktur a vùbec nepouštìt do pøevodu
     end;
 
     Saldo := 0;
