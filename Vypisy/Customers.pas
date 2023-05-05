@@ -5,7 +5,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, StdCtrls, Forms, Math, IniFiles, Dialogs, Grids, BaseGrid, AdvGrid, AdvObj,
-  DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, VypisyMain, AdvUtil;
+  DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, VypisyMain, AdvUtil,
+  Vcl.Buttons, Vcl.ExtCtrls;
 
 type
   TfmCustomers = class(TForm)
@@ -15,63 +16,60 @@ type
     edPrijmeni: TEdit;
     lbVS: TLabel;
     edVS: TEdit;
-    btNajdi: TButton;
+    btnNajdi: TButton;
     asgCustomers: TAdvStringGrid;
     chbJenSNezaplacenym: TCheckBox;
+    btnReset: TBitBtn;
+    infoPanel: TPanel;
+    infoPanelLabel: TLabel;
     procedure FormShow(Sender: TObject);
-    procedure btNajdiClick(Sender: TObject);
+    procedure btnNajdiClick(Sender: TObject);
+    procedure btnResettClick(Sender: TObject);
+    procedure btnResetClick(Sender: TObject);
     procedure asgCustomersGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
     procedure edJmenoKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure edPrijmeniKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure edVSKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+
+    procedure najdiZakazniky;
+    procedure resetVyhledavani;
+    procedure resizeFmCustomers;
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure FormCreate(Sender: TObject);
   end;
 
 var
   fmCustomers: TfmCustomers;
+  isBreakLoop : boolean;
+
 
 implementation
 uses
   AbraEntities, DesUtils, Superobject;
 {$R *.dfm}
 
-procedure TfmCustomers.FormShow(Sender: TObject);
-begin
-  with fmMain.asgMain do
-    if (Cells[2, Row] <> '') then edVS.Text := Cells[2, Row];
-  edVS.SetFocus;
-end;
-
-procedure TfmCustomers.edJmenoKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if (Key = 13) then btNajdiClick(Self);
-end;
-
-procedure TfmCustomers.edPrijmeniKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if (Key = 13) then btNajdiClick(Self);
-end;
-
-procedure TfmCustomers.edVSKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if (Key = 13) then btNajdiClick(Self);
-end;
-
-procedure TfmCustomers.asgCustomersGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
-begin
-  HAlign := taCenter;
-  if (ACol = 0) and (ARow > 0) then HAlign := taLeftJustify;
-end;
-
-procedure TfmCustomers.btNajdiClick(Sender: TObject);
-// jednoduché hledání z tabulek customers a contracts v databázi aplikace
+procedure TfmCustomers.najdiZakazniky;
+// jednoduché hledání z tabulek customers a contracts v databázi Aplikace
 var
   Zakaznik,
   PosledniZakaznik,
-  SQLStr: AnsiString;
+  SQLStr: string;
+  nezaplacenyDoklad : TDoklad;
   SirkaOkna,
   Radek: integer;
-  nezaplacenyDoklad : TDoklad;
+  Msg: TMsg;
+  Key: Char;
 begin
+
+  if trim(edJmeno.Text) = '' then edJmeno.Text := '*';
+  if trim(edPrijmeni.Text) = '' then edPrijmeni.Text := '*';
+  if trim(edVS.Text) = '' then edVS.Text := '*';
+
+  if (edJmeno.Text = '*') and (edPrijmeni.Text = '*') and (edVS.Text = '*') then
+    if Dialogs.MessageDlg('Není zadáno žádné vyhledávací kritérium. Opravdu vypsat všechny zákazníky?',
+      mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Exit;
+
   SQLStr := 'SELECT DISTINCT Cu.Abra_code, Cu.Variable_symbol, Cu.Title, Cu.First_name, Cu.Surname, Cu.Business_name,'
   + ' C.Number, C.State, C.Invoice, C.Invoice_from, C.Canceled_at'
   + ' FROM customers Cu, contracts C'
@@ -86,13 +84,16 @@ begin
 
   with DesU.qrZakos, asgCustomers do try
     Screen.Cursor := crSQLWait;
-    ClearNormalCells;
-    RowCount := 2;
+    asgCustomers.Enabled := true;
+    asgCustomers.ClearNormalCells;
+    asgCustomers.RowCount := 2;
     Radek := 0;
     PosledniZakaznik := '';
+    infoPanel.Visible := true;
+    isBreakLoop := false;
     SQL.Text := SQLStr;
     Open;
-    while not EOF do begin
+    while (not EOF) and (not isBreakLoop) do begin
 
       DesU.qrAbra.SQL.Text :=
             'SELECT ID, DocumentType, DocDate$Date FROM ('
@@ -140,7 +141,9 @@ begin
         end;
 
         Row := Radek;
+        infoPanelLabel.Caption := 'Naèítání ... ' + IntToStr(Radek) + ' (Esc pro pøerušení)';
         Application.ProcessMessages;
+
       end;
 
       DesU.qrAbra.Close;
@@ -148,16 +151,104 @@ begin
     end;
   finally
     Row := 1;
-    AutoSize := True;
-    SirkaOkna := 0;
-    for Radek := 0 to ColCount-1 do SirkaOkna := SirkaOkna + ColWidths[Radek];
-    fmCustomers.ClientWidth := Max(825, SirkaOkna + 4);
-    //fmCustomers.Left := Max(0, Round((Screen.Width - fmCustomers.Width) / 2));
-    fmCustomers.ClientHeight := Min(RowCount * 18 + 46, Screen.Height - 30);
-    if (fmCustomers.ClientHeight = Screen.Height - 30) then fmCustomers.ClientWidth := fmCustomers.ClientWidth + 26;
-    //fmCustomers.Top := Max(0, Round((Screen.Height - fmCustomers.Height) / 2));
+    infoPanel.Visible := false;
+    resizeFmCustomers;
     Screen.Cursor := crDefault;
   end;
 end;
+
+procedure TfmCustomers.resetVyhledavani;
+begin
+  edJmeno.Text := '*';
+  edPrijmeni.Text := '*';
+  edVS.Text := '*';
+  asgCustomers.ClearNormalCells;
+  asgCustomers.RowCount := 2;
+  asgCustomers.Enabled := false;
+  resizeFmCustomers;
+end;
+
+procedure TfmCustomers.resizeFmCustomers;
+var
+  SirkaOkna,
+  Radek: integer;
+begin
+  asgCustomers.AutoSize := True;
+  SirkaOkna := 0;
+  for Radek := 0 to asgCustomers.ColCount-1 do
+    SirkaOkna := SirkaOkna + asgCustomers.ColWidths[Radek];
+  fmCustomers.ClientWidth := Max(900, SirkaOkna + 4);
+  //fmCustomers.Left := Max(0, Round((Screen.Width - fmCustomers.Width) / 2));
+  if Screen.Height > asgCustomers.RowCount * 18 + 146 then
+    fmCustomers.ClientHeight := asgCustomers.RowCount * 18 + 46
+  else begin
+    fmCustomers.ClientHeight := Screen.Height - 100;
+    fmCustomers.ClientWidth := fmCustomers.ClientWidth + 26;
+    fmCustomers.Top := 0;
+  end;
+end;
+
+procedure TfmCustomers.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  resetVyhledavani;
+end;
+
+procedure TfmCustomers.FormCreate(Sender: TObject);
+begin
+  KeyPreview := True; // Enable key preview for the form
+end;
+
+procedure TfmCustomers.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  //if (Key = #27) AND false then // If the user presses the "Esc" key
+  if Key = #27 then // If the user presses the "Esc" key
+  begin
+   isBreakLoop := true;
+  end;
+end;
+
+procedure TfmCustomers.FormShow(Sender: TObject);
+begin
+  // with fmMain.asgMain do if (fmMain.asgMain.Cells[2, Row] <> '') then edVS.Text := Cells[2, Row]; // automatické pøenesení VS z asgMain do vyhledávání; zrušeno, není potøeba pøenášet
+  edVS.SetFocus;
+end;
+
+procedure TfmCustomers.btnNajdiClick(Sender: TObject);
+begin
+  najdiZakazniky;
+end;
+
+procedure TfmCustomers.btnResetClick(Sender: TObject);
+begin
+  resetVyhledavani;
+end;
+
+procedure TfmCustomers.btnResettClick(Sender: TObject);
+begin
+  resetVyhledavani;
+end;
+
+procedure TfmCustomers.edJmenoKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = 13) then najdiZakazniky;
+end;
+
+procedure TfmCustomers.edPrijmeniKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = 13) then najdiZakazniky;
+end;
+
+procedure TfmCustomers.edVSKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = 13) then najdiZakazniky;
+end;
+
+procedure TfmCustomers.asgCustomersGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
+begin
+  HAlign := taCenter;
+  if (ACol = 0) and (ARow > 0) then HAlign := taLeftJustify;
+end;
+
+
 
 end.

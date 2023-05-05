@@ -3,7 +3,7 @@ object fmCustomers: TfmCustomers
   Top = 132
   Caption = 'Z'#225'kazn'#237'ci v tabulce Customers'
   ClientHeight = 102
-  ClientWidth = 879
+  ClientWidth = 891
   Color = clBtnFace
   Constraints.MinHeight = 134
   Constraints.MinWidth = 650
@@ -13,6 +13,9 @@ object fmCustomers: TfmCustomers
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnKeyPress = FormKeyPress
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
@@ -23,33 +26,33 @@ object fmCustomers: TfmCustomers
     Height = 13
     Caption = 'Jm'#233'no'
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = 8269108
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object lbPrijmeni: TLabel
-    Left = 168
+    Left = 159
     Top = 14
     Width = 92
     Height = 13
     Caption = 'P'#345#237'jmen'#237' / Firma'
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = 8269108
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
   end
   object lbVS: TLabel
-    Left = 378
+    Left = 370
     Top = 14
     Width = 77
     Height = 13
     Caption = 'VS / smlouva'
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = 8269108
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
@@ -58,23 +61,23 @@ object fmCustomers: TfmCustomers
   object edJmeno: TEdit
     Left = 54
     Top = 10
-    Width = 101
+    Width = 83
     Height = 21
     TabOrder = 0
-    Text = '%'
+    Text = '*'
     OnKeyUp = edJmenoKeyUp
   end
   object edPrijmeni: TEdit
-    Left = 266
+    Left = 260
     Top = 10
-    Width = 101
+    Width = 95
     Height = 21
     TabOrder = 1
-    Text = '%'
+    Text = '*'
     OnKeyUp = edPrijmeniKeyUp
   end
-  object btNajdi: TButton
-    Left = 571
+  object btnNajdi: TButton
+    Left = 555
     Top = 10
     Width = 65
     Height = 21
@@ -86,12 +89,12 @@ object fmCustomers: TfmCustomers
     Font.Style = [fsBold]
     ParentFont = False
     TabOrder = 2
-    OnClick = btNajdiClick
+    OnClick = btnNajdiClick
   end
   object asgCustomers: TAdvStringGrid
     Left = 0
     Top = 42
-    Width = 887
+    Width = 899
     Height = 72
     Cursor = crDefault
     Align = alCustom
@@ -99,6 +102,7 @@ object fmCustomers: TfmCustomers
     ColCount = 9
     DefaultRowHeight = 18
     DrawingStyle = gdsClassic
+    Enabled = False
     FixedCols = 0
     RowCount = 2
     Font.Charset = DEFAULT_CHARSET
@@ -215,28 +219,58 @@ object fmCustomers: TfmCustomers
       185
       90
       81
-      100
+      106
       90
       90
       87
       64
-      81)
+      88)
   end
   object edVS: TEdit
-    Left = 464
+    Left = 453
     Top = 10
     Width = 85
     Height = 21
     TabOrder = 4
-    Text = '%'
+    Text = '*'
     OnKeyUp = edVSKeyUp
   end
   object chbJenSNezaplacenym: TCheckBox
-    Left = 650
+    Left = 631
     Top = 13
-    Width = 177
-    Height = 17
+    Width = 162
+    Height = 15
     Caption = 'jen s nezaplacen'#253'm dokladem'
     TabOrder = 5
+  end
+  object btnReset: TBitBtn
+    Left = 821
+    Top = 8
+    Width = 57
+    Height = 23
+    Caption = '&Reset'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = 5790335
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 6
+    OnClick = btnResetClick
+  end
+  object infoPanel: TPanel
+    Left = 307
+    Top = 41
+    Width = 265
+    Height = 41
+    TabOrder = 7
+    Visible = False
+    object infoPanelLabel: TLabel
+      Left = 19
+      Top = 14
+      Width = 70
+      Height = 13
+      Caption = 'infoPanelLabel'
+    end
   end
 end

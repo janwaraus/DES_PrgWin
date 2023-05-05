@@ -112,15 +112,18 @@ type
     procedure Zprava(TextZpravy : string);
     procedure zpravaRozdilCasu(cas01, cas02 : double; TextZpravy : string);
   end;
+
 var
   fmMain : TfmMain;
   Vypis : TVypis;
   currPlatbaZVypisu : TPlatbaZVypisu;
   Parovatko : TParovatko;
+
 implementation
 uses
   AbraEntities, DesUtils, Superobject, Customers, PrirazeniPNP;
 {$R *.dfm}
+
 procedure TfmMain.FormShow(Sender: TObject);
 begin
   //DesU.desUtilsInit('');

@@ -340,8 +340,9 @@ begin
 
 
   {* HW testovaci nastaveni *}
-  aseMesic.Value := 3;
-  aedOd.Text := '17020';
+  aseMesic.Value := 2;
+  aedOd.Text := '5000';
+  aedDo.Text := '5004';
 
 end;
 
@@ -368,9 +369,9 @@ begin
   aseRokChange(Self);
 
   {* HW testovaci nastaveni *}
-  aseMesic.Value := 3;
-  aedOd.Text := '6319';
-  aedDo.Text := '6500';
+  aseMesic.Value := 2;
+  aedOd.Text := '5000';
+  aedDo.Text := '5004';
 
 
 end;
