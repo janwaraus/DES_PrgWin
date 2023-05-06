@@ -24,7 +24,8 @@ uses
   IdTCPClient, IdSMTP, IdHTTP, IdMessage, IdMessageClient, IdText, IdMessageParts,
   IdAntiFreezeBase, IdAntiFreeze, IdIOHandler,
   IdIOHandlerSocket, IdSSLOpenSSL, IdExplicitTLSClientServerBase, IdSMTPBase, IdAttachmentFile,
-  frxExportBaseDialog, frxExportPDF, frxExportPDFHelpers
+  frxExportBaseDialog, frxExportPDF, frxExportPDFHelpers, frxBarcode2d,
+  frxBarcode
   ;
 
 type
@@ -37,6 +38,7 @@ type
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     frxPDFExport1: TfrxPDFExport;
+    frxBarCodeObject1: TfrxBarCodeObject;
 
     procedure frxReportGetValue(const ParName: string; var ParValue: Variant);
     procedure frxReportBeginDoc(Sender: TObject);
@@ -127,6 +129,7 @@ var
     // frxSynPDFExport: TfrxSynPDFExport; frx smazat
     i : integer;
     fullPdfFileName : string;
+    barcode: TfrxBarcode2DView;
 begin
 
   if newPdfFileName <> '' then
@@ -143,6 +146,13 @@ begin
   self.prepareInvoiceDataSets;
 
   frxReport.LoadFromFile(DesU.PROGRAM_PATH + self.fr3FileName);
+
+   //if varIsType(reportData['sQrKodem'], varBoolean) AND reportData['sQrKodem'] then begin   // TODO je potøeba?
+     barcode := TfrxBarcode2DView(frxReport.FindObject('pQR'));
+     barcode.Text := reportData['QRText'];
+   //end;
+
+
   frxReport.PrepareReport;
 
   with frxPDFExport1 do begin
@@ -250,7 +260,9 @@ var
   ASymbolHeight,
   AWidth,
   AHeight: integer;
+  barcode: TfrxBarcodeView;
 begin
+
    {
   // QR kód
   // nejdøíve ovìøení, že je reportData['sQrKodem'] typu boolean
@@ -427,6 +439,12 @@ begin
     reportData['PObec'] := reportData['OObec'];
   end;
 
+  // text pro QR kód
+  reportData['QRText'] := Format('SPD*1.0*ACC:CZ6020100000002100098382*AM:%d*CC:CZK*DT:%s*X-VS:%s*X-SS:%s*MSG:QR PLATBA EUROSIGNAL',[
+    Round(reportData['ZaplatitCislo']),
+    FormatDateTime('yyyymmdd', reportData['DatumSplatnosti']),
+    reportData['VS'],
+    reportData['SS']]);
 
   slozenkaCastka := Format('%6.0f', [Zaplatit]);
   //nahradíme vlnovkou poslední mezeru, tedy dáme vlnovku pøed první èíslici

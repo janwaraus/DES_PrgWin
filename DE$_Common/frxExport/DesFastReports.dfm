@@ -41,9 +41,10 @@ object DesFastReport: TDesFastReport
     PrintOptions.PrintOnSheet = 0
     PrintOptions.ShowDialog = False
     ReportOptions.CreateDate = 41751.679037013900000000
-    ReportOptions.LastChange = 43367.940698310200000000
+    ReportOptions.LastChange = 45053.004331134260000000
     ScriptLanguage = 'PascalScript'
     StoreInDFM = False
+    OnBeginDoc = frxReportBeginDoc
     OnGetValue = frxReportGetValue
     Left = 25
     Top = 14
@@ -114,6 +115,10 @@ object DesFastReport: TDesFastReport
     PDFStandard = psNone
     PDFVersion = pv17
     Left = 96
+    Top = 16
+  end
+  object frxBarCodeObject1: TfrxBarCodeObject
+    Left = 184
     Top = 16
   end
 end
