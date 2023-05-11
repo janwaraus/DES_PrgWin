@@ -15,8 +15,8 @@ uses
   FIprevod in 'FIprevod.pas' {dmPrevod: TDataModule},
   FItisk in 'FItisk.pas' {dmTisk: TDataModule},
   FImain in 'FImain.pas' {fmMain},
-  SynZip in '..\DE$_Common\frxExport\SynZip.pas',
-  DesFastReports in '..\DE$_Common\frxExport\DesFastReports.pas' {DesFastReport};
+  DesInvoices in '..\DE$_Common\DesInvoices.pas',
+  DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport};
 
 {$R *.res}
 begin

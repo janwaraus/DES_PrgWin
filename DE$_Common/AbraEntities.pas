@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Variants, Classes, Controls,
-  ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection;  
+  ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection;
 
 type
 
@@ -75,6 +75,25 @@ type
     constructor create(iCode : string);
   end;
 
+  TAbraFirm = class
+  public
+    ID : string[10];
+    Name,
+    AbraCode,
+    OrgIdentNumber,
+    VATIdentNumber : string;
+    constructor create(ID, Name, AbraCode, OrgIdentNumber, VATIdentNumber : string);
+  end;
+
+  TAbraAddress = class
+  public
+    ID : string[10];
+    Street,
+    City,
+    PostCode : string;
+    constructor create(ID, Street, City, PostCode : string);
+  end;
+
 implementation
 
 uses
@@ -129,6 +148,7 @@ begin
   end;
 end;
 
+
 {** class TAbraBankAccount **}
 
 constructor TAbraBankAccount.create();
@@ -160,7 +180,7 @@ end;
 function TAbraBankAccount.getPoradoveCisloMaxVypisu(pYear : string) : integer;
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT MAX(bs.OrdNumber) as MaxOrdNumber '  //nemìlo by být max externalnumber?
+    SQL.Text := 'SELECT MAX(bs.OrdNumber) as MaxOrdNumber '
               + ' FROM BANKSTATEMENTS bs, PERIODS p '
               + 'WHERE bs.DOCQUEUE_ID = ''' + self.bankStatementDocqueueId  + ''''
               + ' AND bs.PERIOD_ID = p.ID'
@@ -183,7 +203,6 @@ begin
               + ' WHERE bs1.DOCQUEUE_ID = ''' + self.bankStatementDocqueueId  + ''''
               + ' AND bs1.PERIOD_ID = (SELECT ID FROM PERIODS p WHERE p.CODE = ''' + pYear  + ''')'
               + ' AND bs1.OrdNumber = (SELECT max(bs2.ORDNUMBER) FROM BANKSTATEMENTS bs2 WHERE bs1.DOCQUEUE_ID = bs2.DOCQUEUE_ID and bs1.PERIOD_ID = bs2.PERIOD_ID)';
-
     Open;
     if not Eof then
       Result := FieldByName('MaxExtOrdNumber').AsInteger
@@ -236,8 +255,7 @@ begin
               + ' FROM BANKSTATEMENTS bs, PERIODS p '
               + 'WHERE bs.DOCQUEUE_ID = ''' + self.bankStatementDocqueueId  + ''''
               + ' AND bs.PERIOD_ID = p.ID'
-              + ' AND p.CODE = ''' + pYear  + ''''
-              + ' GROUP BY bs.DOCQUEUE_ID';
+              + ' AND p.CODE = ''' + pYear  + '''';
     Open;
     if not Eof then
       Result := FieldByName('PocetVypisu').AsInteger
@@ -319,7 +337,6 @@ begin
 end;
 
 
-
 {** class TAbraDrcArticle **}
 
 constructor TAbraDrcArticle.create(iCode : string);
@@ -337,5 +354,29 @@ begin
     Close;
   end;
 end;
+
+
+{** class TAbraFirm **}
+
+constructor TAbraFirm.create(ID, Name, AbraCode, OrgIdentNumber, VATIdentNumber : string);
+begin
+  self.ID := ID;
+  self.Name := Name;
+  self.AbraCode := AbraCode;
+  self.OrgIdentNumber := OrgIdentNumber;
+  self.VATIdentNumber := VATIdentNumber;
+end;
+
+
+{** class TAbraAddress **}
+
+constructor TAbraAddress.create(ID, Street, City, PostCode : string);
+begin
+  self.ID := ID;
+  self.Street := Street;
+  self.City := City;
+  self.PostCode := PostCode;
+end;
+
 
 end.

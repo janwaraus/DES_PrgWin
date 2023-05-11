@@ -126,8 +126,8 @@
             <Form>fmMain</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\DE$_Common\frxExport\SynZip.pas"/>
-        <DCCReference Include="..\DE$_Common\frxExport\DesFastReports.pas">
+        <DCCReference Include="..\DE$_Common\DesInvoices.pas"/>
+        <DCCReference Include="..\DE$_Common\DesFastReports.pas">
             <Form>DesFastReport</Form>
             <FormType>dfm</FormType>
         </DCCReference>

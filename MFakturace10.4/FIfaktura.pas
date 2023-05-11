@@ -472,7 +472,7 @@ begin
       FRow.ValueByName('TotalPrice') := '62';
       FRowsCollection.Add(FRow);
     end;
-    Description := Description + Cells[1, Radek];        // VS
+    Description := Description + Cells[1, Radek];        // v Cells[1, Radek] je VS
     FData.ValueByName('Description') := Description;
     if isDebugMode then dmCommon.Zprava('Data faktury pøipravena');
 // vytvoøení faktury
