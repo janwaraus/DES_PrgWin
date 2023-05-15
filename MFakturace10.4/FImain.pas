@@ -206,6 +206,9 @@ begin
   abraDrcArticle := TAbraDrcArticle.create('21');
   globalAA['abraDrcArticle_Id'] := abraDrcArticle.id;
 
+  // pro text, TODO smazat
+  aedOd.Text := '10200555';
+  aedDo.Text := '10205555';
 
 end;
 

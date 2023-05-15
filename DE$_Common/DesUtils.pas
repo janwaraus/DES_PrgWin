@@ -73,6 +73,7 @@ type
       function abraBoGet(abraBoName : string) : string;
       function abraBoGetById(abraBoName, sId : string) : string;
 
+      { ABRA zapisující funkce pomocí SuperObjectu, používáno }
       function abraBoCreate(boAA: TAArray; abraBoName : string) : string;
       function abraBoCreateOLE(boAA: TAArray; abraBoName : string) : string;
       function abraBoCreateWebApi(boAA: TAArray; abraBoName : string) : string;
@@ -84,6 +85,7 @@ type
       function abraBoUpdateWebApi(boAA: TAArray; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
       procedure logJson(boAAjson, header : string);
 
+      { ABRA zapisující funkce pomocí SuperObjectu, v praxi nepoužíváno }
       function abraBoCreate_So(jsonSO: ISuperObject; abraBoName : string) : string;
       function abraBoCreate_SoOLE(jsonSO: ISuperObject; abraBoName : string) : string;
       function abraBoCreate_SoWebApi(jsonSO: ISuperObject; abraBoName : string) : string;
@@ -99,7 +101,7 @@ type
       function getAbraVatrateId(code : string) : string;
       function getAbraVatindexId(code : string) : string;
       function getAbraIncometypeId(code : string) : string;
-      function getAbraBusorderId(name : string) : string;
+      function getAbraBusorderId(busOrderName : string) : string;
       function getAbraDivisionId() : string;
       function getAbraCurrencyId(code : string = 'CZK') : string;
 
@@ -622,9 +624,10 @@ function TDesU.abraBoCreate(boAA: TAArray; abraBoName : string) : string;
 begin
   if AnsiLowerCase(abraDefaultCommMethod) = 'webapi' then
     Result := self.abraBoCreateWebApi(boAA, abraBoName)
-  else
+  else begin
     Result := self.abraBoCreateOLE(boAA, abraBoName);
     self.abraOLELogout;
+  end;
 end;
 
 function TDesU.abraBoCreateWebApi(boAA: TAArray; abraBoName : string) : string;
@@ -634,7 +637,7 @@ var
   newAbraBo : string;
 begin
 
-  self.logJson(boAA.AsJSon(), 'abraBoCreateWebApi_AA - ' + abraWebApiUrl + abraBoName);
+  self.logJson(boAA.AsJSon(), 'abraBoCreateWebApi_AA - ' + abraWebApiUrl + abraBoName + 's');
 
   sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
   idHTTP := newAbraIdHttp(900, true);
@@ -1025,7 +1028,7 @@ begin
   boRowAA['Text'] := 'Kredit Internet';
   boRowAA['Vatrate_Id'] := self.getAbraVatrateId('Výst21');
   boRowAA['Incometype_Id'] := self.getAbraIncometypeId('SL'); // služby
-  //boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit Internet');
+  //boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit Internet'); //takový zakázka (BusOrder) není
   boRowAA['Division_Id'] := self.getAbraDivisionId;
 
   //writeToFile(ExtractFilePath(ParamStr(0)) + '!json' + formatdatetime('hhnnss', Now) + '.txt', jsonBo.AsJSon(true));
@@ -1094,7 +1097,7 @@ begin
   boRowAA['Vatrate_Id'] := self.getAbraVatrateId('Výst21');
   //boRowAA.S['Vatindex_Id'] := self.getAbraVatindexId('Výst21'); //je potøeba?
   boRowAA['Incometype_Id'] := self.getAbraIncometypeId('SL'); // služby
-  boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit VoIP'); // '6400000101' zkontrolovat že je 'kredit VoIP' v DB
+  boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit VoIP'); // '6400000101' je 'kredit VoIP' v DB
   boRowAA['Division_Id'] := self.getAbraDivisionId;
 
   //writeToFile(ExtractFilePath(ParamStr(0)) + '!json' + formatdatetime('hhnnss', Now) + '.txt', jsonBo.AsJSon(true));
@@ -1215,11 +1218,11 @@ begin
   end;
 end;
 
-function TDesU.getAbraBusorderId(name : string) : string;
+function TDesU.getAbraBusorderId(busOrderName : string) : string;
 begin
   with DesU.qrAbraOC do begin
     SQL.Text := 'SELECT Id FROM BusOrders'
-              + ' WHERE Name = ''' + name + '''';
+              + ' WHERE Name = ''' + busOrderName + '''';
     Open;
     if not Eof then begin
       Result := FieldByName('Id').AsString;
