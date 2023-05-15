@@ -41,7 +41,7 @@ object DesFastReport: TDesFastReport
     PrintOptions.PrintOnSheet = 0
     PrintOptions.ShowDialog = False
     ReportOptions.CreateDate = 41751.679037013900000000
-    ReportOptions.LastChange = 45053.004331134260000000
+    ReportOptions.LastChange = 45060.077223564820000000
     ScriptLanguage = 'PascalScript'
     StoreInDFM = False
     OnBeginDoc = frxReportBeginDoc

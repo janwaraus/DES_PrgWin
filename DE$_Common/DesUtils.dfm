@@ -2,7 +2,7 @@ object DesU: TDesU
   Left = 0
   Top = 0
   Caption = 'DesU'
-  ClientHeight = 243
+  ClientHeight = 319
   ClientWidth = 390
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -97,5 +97,24 @@ object DesU: TDesU
     Params = <>
     Left = 208
     Top = 8
+  end
+  object idMessage: TIdMessage
+    AttachmentEncoding = 'MIME'
+    BccList = <>
+    CCList = <>
+    Encoding = meMIME
+    FromList = <
+      item
+      end>
+    Recipients = <>
+    ReplyTo = <>
+    ConvertPreamble = True
+    Left = 12
+    Top = 215
+  end
+  object idSMTP: TIdSMTP
+    SASLMechanisms = <>
+    Left = 66
+    Top = 215
   end
 end

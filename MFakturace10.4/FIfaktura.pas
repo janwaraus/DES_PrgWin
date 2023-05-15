@@ -216,7 +216,7 @@ begin
         Firm_Id := Fields[0].AsString;
         Zakaznik := Fields[1].AsString;
         IC := Trim(Fields[2].AsString);
-        FirmOffice_Id := Fields[3].AsString;
+        FirmOffice_Id := Fields[3].AsString; //
       end;
 // 24.1.2017 obchodní pøípady pro ÈTÚ - platí pro celou faktury
       if isDRC then BusTransactionCode := 'VO'                  // velkoobchod

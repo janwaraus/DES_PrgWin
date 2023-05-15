@@ -1,11 +1,13 @@
 unit FIprevod;
 interface
 uses
-  Windows, Classes, Forms, Controls, SysUtils, Variants, DateUtils, Registry, Printers, Dialogs;
+  Windows, Classes, Forms, Controls, SysUtils, Variants, DateUtils, Registry, Printers, Dialogs,
+  DesUtils;
+
 type
   TdmPrevod = class(TDataModule)
   public
-    function fakturaPrevod(invoiceId: string) : string;
+    function fakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
     procedure FakturaPrevod_old(Radek: integer);
     procedure PrevedFaktury;
   end;
@@ -17,7 +19,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, DesFastReports, AArray, FImain, FIcommon;  //frxExportSynPDF, DesFrxUtils
+uses DesInvoices, DesFastReports, AArray, FImain, FIcommon;  //frxExportSynPDF, DesFrxUtils
 
 // ------------------------------------------------------------------------------------------------
 
@@ -26,12 +28,12 @@ var
   Radek,
   i: integer;
   Reg: TRegistry;
-  vysledekPrevedeni : string;
+  VysledekPrevedeni : TDesResult;
 begin
   Screen.Cursor := crHourGlass;
 
-  DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
-  DesFastReport.setPdfDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
+  /// DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
+  /// DesFastReport.setExportDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
 
   with fmMain do try
     if rbPodleSmlouvy.Checked then
@@ -61,9 +63,13 @@ begin
         end;
 
         //if Ints[0, Radek] = 1 then FakturaPrevod_old(Radek)  // pokud zaškrtnuto, pøevádíme fa do PDF
-        if Ints[0, Radek] = 1 then begin
-          vysledekPrevedeni := fakturaPrevod(asgMain.Cells[7, Radek]);  // pokud zaškrtnuto, pøevádíme fa do PDF
-          dmCommon.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], vysledekPrevedeni]));
+        if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
+          VysledekPrevedeni := fakturaPrevod(asgMain.Cells[7, Radek], not cbNeprepisovat.Checked);
+          dmCommon.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
+          if VysledekPrevedeni.isOk then begin
+            asgMain.Ints[0, Radek] := 0;
+            asgMain.Row := Radek;
+          end;
         end;
 
 
@@ -81,12 +87,27 @@ begin
   end;
 end;
 // ------------------------------------------------------------------------------------------------
-function TdmPrevod.fakturaPrevod(invoiceId: string) : string;
+function TdmPrevod.fakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
 // podle faktury v Abøe a stavu pohledávek vytvoøí formuláø v PDF
+var
+  Faktura : TDesInvoice;
 
 begin
-  DesFastReport.setInvoiceById(invoiceId);
-  Result := DesFastReport.createPdf(true);
+  // DesFastReport.setInvoiceById(invoiceId);
+  // Result := DesFastReport.createPdf(true);
+
+  Faktura := TDesInvoice.create(InvoiceId);
+
+  if Faktura.Firm.AbraCode = '' then begin
+    Result := TDesResult.create('err', Format('Faktura %d: zákazník nemá kód Abry.', [Faktura.OrdNumber]));
+    Exit;
+  end;
+
+  // faktura se vytvoøí v defaultním adresáøi s defaultním jménem souboru.
+  // TODO pokud by bylo potøeba ten default zmìnit, lze to udìlat pøedchozím pøiøazením jiných hodnot a hlídáním, zda již mají nìjakou hodnotu
+  Result := Faktura.createPdf('FOsPDP.fr3', OverwriteExistingPdf);
+
+
 end;
 
 procedure TdmPrevod.FakturaPrevod_old(Radek: integer);

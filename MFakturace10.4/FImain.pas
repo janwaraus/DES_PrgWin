@@ -161,7 +161,7 @@ begin
   LogDir := DesU.PROGRAM_PATH + '\logy\Mìsíèní fakturace\';
   if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
   globalAA['LogFileName'] := LogDir + FormatDateTime('yyyy.mm".log"', Date);
-  DesUtils.appendToFile(globalAA['LogFileName'],''); //vloží prázdný øádek dek do logu
+  DesUtils.appendToFile(globalAA['LogFileName'],''); //vloží prázdný øádek do logu
   dmCommon.Zprava('Start programu "Mìsíèní fakturace".');
 
 
@@ -186,16 +186,13 @@ begin
   asgMain.CheckTrue := '1';
   apnFakturyZa.Visible := False;
 
-
   aseRokChange(nil);
   rbFakturaceClick(nil);
 
-
   //nastavení globálních promìnných pøi startu programu
-
   globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
 
-  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze to této øady
+  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
   globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03');
 
   abraVatIndex := TAbraVatIndex.create('Výst21');
@@ -700,14 +697,15 @@ var
   i: integer;
   rData: TAArray;
   temps : string;
+  vysledek : TDesResult;
 begin
 
   DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
-  DesFastReport.setPdfDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
+  DesFastReport.setExportDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
 
-    temps := dmPrevod.fakturaPrevod('1K6P200101');  // pokud zaškrtnuto, pøevádíme fa do PDF
+    vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
     //  '1K6P200101' '4K6P200101' '7K6P200101'
-    dmCommon.Zprava(Format('%s', [temps]));
+    dmCommon.Zprava(Format('%s', [vysledek.Messg]));
 
 //ShowMessage('demooo_' +  BoolToStr(DesU.existujeVAbreDokladSPrazdnymVs(), true));
 //ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));

@@ -39,9 +39,11 @@ var
   Radek: integer;
 begin
 
+  { preneseno do DesUtils
   idSMTP.Host :=  DesU.getIniValue('Mail', 'SMTPServer');
   idSMTP.Username := DesU.getIniValue('Mail', 'SMTPLogin');
   idSMTP.Password := DesU.getIniValue('Mail', 'SMTPPW');
+  }
 
 
   with fmMain do try
@@ -93,48 +95,47 @@ var
   emailPredmet,
   emailZprava,
   emailOdesilatel,
-  FullPdfFileName: string;
+  FullPdfFileName,
+  ExtraPrilohaFileName: string;
+  VysledekZaslani : TDesResult;
 begin
   with fmMain, fmMain.asgMain do begin
-// musí existovat PDF soubor s fakturou
+    // musí existovat PDF soubor s fakturou
     FullPdfFileName := Format('%s\%4d\%2.2d\%s-%5.5d.pdf', [globalAA['PDFDir'], aseRok.Value, aseMesic.Value, globalAA['invoiceDocQueueCode'], Ints[2, Radek]]);
-    //PDFFileName := Format('%s-%5.5d.pdf', [globalAA['invoiceDocQueueCode'], Ints[2, Radek]]); // neni potreba doufam
+    // PDFFileName := Format('%s-%5.5d.pdf', [globalAA['invoiceDocQueueCode'], Ints[2, Radek]]); // neni potreba doufam
     if not FileExists(FullPdfFileName) then begin
       dmCommon.Zprava(Format('%s (%s): Soubor %s neexistuje. Pøeskoèeno.', [Cells[4, Radek], Cells[1, Radek], FullPdfFileName]));
       Exit;
     end;
-// alespoò nìjaká kontrola mailové adresy
-    if Pos('@', Cells[5, Radek]) = 0 then begin
+
+    emailAddrStr := Cells[5, Radek];
+    // alespoò nìjaká kontrola mailové adresy
+    if Pos('@', emailAddrStr) = 0 then begin
       dmCommon.Zprava(Format('%s (%s): Neplatná mailová adresa "%s". Pøeskoèeno.', [Cells[4, Radek], Cells[1, Radek], Cells[5, Radek]]));
       Exit;
     end;
 
-    emailAddrStr := Cells[5, Radek];
     emailOdesilatel := 'uctarna@eurosignal.cz';
     emailPredmet := Format('Družstvo EUROSIGNAL, faktura za internet FO1-%5.5d/%d', [Ints[2, Radek], aseRok.Value]);
 
     emailZprava := Format('Faktura FO1-%5.5d/%d za pøipojení k internetu je v pøiloženém PDF dokumentu.'
-      + ' Poslední verze programu Adobe Reader, kterým mùžete PDF dokumenty zobrazit i vytisknout,'
-      + ' je zdarma ke stažení na http://get.adobe.com/reader/otherversions/.', [Ints[2, Radek], aseRok.Value])
+      // + ' Poslední verze programu Adobe Reader, kterým mùžete PDF dokumenty zobrazit i vytisknout,'
+      // + ' je zdarma ke stažení na http://get.adobe.com/reader/otherversions/.'
+      , [Ints[2, Radek], aseRok.Value])
       + sLineBreak + sLineBreak
-      +'Pokud dostanete tuto zprávu bez pøílohy, napište nám, prosím, my se to pokusíme napravit.'
-      + sLineBreak + sLineBreak
+      // + 'Pokud dostanete tuto zprávu bez pøílohy, napište nám, prosím, my se to pokusíme napravit.' + sLineBreak + sLineBreak
       + 'Pøejeme pìkný den'
       + sLineBreak + sLineBreak
-      +'Družstvo Eurosignal';
+      + 'Váš Eurosignal';
 
-    try
-      // !!! samotné poslání mailu
-      // TODO na novy report
-      // DesFrxU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel);
+    if (Ints[6, Radek] = 0) and (fePriloha.FileName <> '') then
+      ExtraPrilohaFileName := fePriloha.FileName
+    else
+      ExtraPrilohaFileName := '';
 
-      dmCommon.Zprava(Format('%s (%s): Soubor %s byl odeslán na adresu %s.',
-       [Cells[4, Radek], Cells[1, Radek], FullPdfFileName, Cells[5, Radek]]));
-      Ints[0, Radek] := 0;
-    except on E: exception do
-      dmCommon.Zprava(Format('%s (%s): Soubor %s se nepodaøilo odeslat na adresu %s.' + #13#10 + 'Chyba: %s',
-       [Cells[4, Radek], Cells[1, Radek], FullPdfFileName, Cells[5, Radek], E.Message]));
-    end;
+    VysledekZaslani := DesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel, ExtraPrilohaFileName);
+    dmCommon.Zprava(Format('%s (%s): %s', [Cells[4, Radek], Cells[1, Radek], VysledekZaslani.Messg]));
+    Ints[0, Radek] := 0;
     Application.ProcessMessages;
 
   end;  // with fmMain

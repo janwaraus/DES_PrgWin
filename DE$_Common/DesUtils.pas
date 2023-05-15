@@ -3,13 +3,29 @@ unit DesUtils;
 interface
 
 uses
-  Winapi.Windows, Winapi.ShellApi, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, StrUtils,  IOUtils, IniFiles, ComObj, System.RegularExpressions,
-  IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
-  Data.DB, Math, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection, Superobject, AArray;
+  Winapi.Windows, Winapi.ShellApi, Winapi.Messages,
+  System.SysUtils, System.Variants, System.Classes, System.RegularExpressions,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Math, StrUtils, IOUtils, IniFiles, ComObj,
+
+  IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent,
+  IdTCPConnection, IdTCPClient, IdHTTP, IdSMTP, IdExplicitTLSClientServerBase, IdSMTPBase,
+  IdText, IdMessage, IdMessageParts, IdMessageClient, IdAttachmentFile,
+  //IdAntiFreezeBase, IdAntiFreeze,
+  Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
+  Superobject, AArray;
 
 
 type
+  TDesResult = class
+  public
+    Code,
+    Messg : string;
+    constructor create(Code, Messg : string);
+    function isOk : boolean;
+    function isErr : boolean;
+  end;
+
   TDesU = class(TForm)
     dbAbra: TZConnection;
     qrAbra: TZQuery;
@@ -20,6 +36,8 @@ type
     qrAbraOC: TZQuery; //pro jednorázové servisní Open/Close použití
     dbVoip: TZConnection;
     qrVoip: TZQuery;
+    idMessage: TIdMessage;
+    idSMTP: TIdSMTP;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string);
@@ -32,6 +50,9 @@ type
     function vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
     function vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
     function zrusPenizeNaCeste(VS : string) : string;
+    function ulozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+    function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
+
 
     public
       PROGRAM_PATH,
@@ -45,7 +66,7 @@ type
       AbraOLE: variant;
       adpIniFile: TIniFile;
 
-      abraValues : TAArray;
+      //abraValues : TAArray;
 
       function getAbraOLE() : variant;
       procedure abraOLELogout();
@@ -86,9 +107,10 @@ type
       function getAbracodeByContractNumber(cnumber : string) : string;
       function getFirmIdByCode(code : string) : string;
       function getZustatekByAccountId (accountId : string; datum : double) : double;
+      function existujeVAbreDokladSPrazdnymVs() : boolean;
+
       function isVoipKreditContract(cnumber : string) : boolean;
       function isCreditContract(cnumber : string) : boolean;
-      function existujeVAbreDokladSPrazdnymVs() : boolean;
 
       function sendGodsSms(telCislo, smsText : string) : string;
       function sendSms(telCislo, smsText : string) : string;
@@ -122,8 +144,6 @@ function RandString(const stringsize: integer): string;
 procedure debugRozdilCasu(cas01, cas02 : double; textZpravy : string);
 procedure RunCMD(cmdLine: string; WindowMode: integer);
 
-function UlozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
-// ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
 
 const
   Ap = chr(39);
@@ -157,7 +177,7 @@ procedure TDesU.desUtilsInit(createOptions : string);
 
 begin
   globalAA := TAArray.Create;
-  abraValues := TAArray.Create;
+  //abraValues := TAArray.Create; // asi se muze vyhodit
 
   PROGRAM_PATH := ExtractFilePath(ParamStr(0));
 
@@ -376,7 +396,7 @@ begin
   end;
 end;
 
-function TDesU.abraBoCreate_SoOLE(jsonSO: ISuperObject; abraBoName : string) : string;
+function TDesU.abraBoCreate_SoOLE(jsonSO : ISuperObject; abraBoName : string) : string;
 var
   i, j : integer;
   BO_Object,
@@ -1038,9 +1058,8 @@ end;
 
 function TDesU.vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
 var
-  i: integer;
   boAA, boRowAA: TAArray;
-  newId, firmAbraCode: String;
+  newId, firmAbraCode: string;
 begin
 
   firmAbraCode := self.getAbracodeByContractNumber(VS);
@@ -1092,22 +1111,6 @@ begin
   end;
 
 end;
-
-
-function TDesU.zrusPenizeNaCeste(VS : string) : string;
-var
-  i: integer;
-  boAA, boRowAA: TAArray;
-  newId, firmAbraCode: String;
-begin
-  with DesU.qrZakos do begin
-    SQL.Text := 'UPDATE customers SET pay_u_payment = 0 where variable_symbol = ''' + VS + '''';
-    ExecSQL;
-    Close;
-  end;
-
-end;
-
 
 
 function TDesU.getAbraPeriodId(pYear : string) : string;
@@ -1323,37 +1326,6 @@ begin
   end;
 end;
 
-function TDesU.isVoipKreditContract(cnumber : string) : boolean;
-begin
-
-  with DesU.qrZakos do begin
-    SQL.Text := 'SELECT co.id FROM contracts co  '
-              + ' WHERE co.number = ''' + cnumber + ''''
-             // + ' AND co.credit = 1' kredit
-              + ' AND co.tariff_id = 2'; //je to kreditni Voip
-    Open;
-    if not Eof then
-      Result := true
-    else
-      Result := false;
-    Close;
-  end;
-end;
-
-function TDesU.isCreditContract(cnumber : string) : boolean;
-begin
-  with DesU.qrZakos do begin
-    SQL.Text := 'SELECT co.id FROM contracts co  '
-              + ' WHERE co.number = ''' + cnumber + ''''
-              + ' AND co.credit = 1';
-    Open;
-    if not Eof then
-      Result := true
-    else
-      Result := false;
-    Close;
-  end;
-end;
 
 function TDesU.existujeVAbreDokladSPrazdnymVs() : boolean;
 var
@@ -1428,6 +1400,155 @@ begin
     Result :=  adpIniFile.ReadString(iniGroup, iniItem, '');
   except
   end;
+end;
+
+
+{ *** DB Zakos (Aplikace) manipulating functions *** }
+
+function TDesU.isVoipKreditContract(cnumber : string) : boolean;
+begin
+
+  with DesU.qrZakos do begin
+    SQL.Text := 'SELECT co.id FROM contracts co  '
+              + ' WHERE co.number = ''' + cnumber + ''''
+             // + ' AND co.credit = 1' kredit
+              + ' AND co.tariff_id = 2'; //je to kreditni Voip
+    Open;
+    if not Eof then
+      Result := true
+    else
+      Result := false;
+    Close;
+  end;
+end;
+
+function TDesU.isCreditContract(cnumber : string) : boolean;
+begin
+  with DesU.qrZakos do begin
+    SQL.Text := 'SELECT co.id FROM contracts co  '
+              + ' WHERE co.number = ''' + cnumber + ''''
+              + ' AND co.credit = 1';
+    Open;
+    if not Eof then
+      Result := true
+    else
+      Result := false;
+    Close;
+  end;
+end;
+
+
+function TDesU.zrusPenizeNaCeste(VS : string) : string;
+var
+  i: integer;
+  boAA, boRowAA: TAArray;
+  newId, firmAbraCode: String;
+begin
+  with DesU.qrZakos do begin
+    SQL.Text := 'UPDATE customers SET pay_u_payment = 0 where variable_symbol = ''' + VS + '''';
+    ExecSQL;
+    Close;
+  end;
+
+end;
+
+
+function TDesU.ulozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+// ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
+var
+  CommId: integer;
+  SQLStr: string;
+begin
+  Result := '';
+  with DesU.qrZakos do try
+    Close;
+    SQL.Text := 'SELECT MAX(Id) FROM communications';
+    Open;
+    CommId := Fields[0].AsInteger + 1;
+    Close;
+    SQLStr := 'INSERT INTO communications ('
+    + ' Id,'
+    + ' Customer_id,'
+    + ' User_id,'
+    + ' Communication_type_id,'
+    + ' Content,'
+    + ' Created_at,'
+    + ' Updated_at) VALUES ('
+    + IntToStr(CommId) + ', '
+    + Customer_id + ', '
+    + '1, '                                        // admin
+    + Typ + ','
+    + Ap + Zprava + ApC
+    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
+    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;
+    SQL.Text := SQLStr;
+    ExecSQL;
+  except on E: exception do
+    Result := E.Message;
+  end;
+end;
+
+
+function TDesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
+begin
+  idSMTP.Host :=  self.getIniValue('Mail', 'SMTPServer');
+  idSMTP.Username := self.getIniValue('Mail', 'SMTPLogin');
+  idSMTP.Password := self.getIniValue('Mail', 'SMTPPW');
+
+  emailAddrStr := StringReplace(emailAddrStr, ',', ';', [rfReplaceAll]);    // èárky za støedníky
+
+  with idMessage do begin
+    Clear;
+    From.Address := emailOdesilatel;
+    ReceiptRecipient.Text := emailOdesilatel;
+
+    // více mailových adres oddìlených støedníky se rozdìlí
+    while Pos(';', emailAddrStr) > 0 do begin
+      Recipients.Add.Address := Trim(Copy(emailAddrStr, 1, Pos(';', emailAddrStr)-1));
+      emailAddrStr := Copy(emailAddrStr, Pos(';', emailAddrStr)+1, Length(emailAddrStr));
+    end;
+    Recipients.Add.Address := Trim(emailAddrStr);
+
+    Subject := emailPredmet;
+    ContentType := 'multipart/mixed';
+
+    with TIdText.Create(idMessage.MessageParts, nil) do begin
+      Body.Text := emailZprava;
+      ContentType := 'text/plain';
+      Charset := 'utf-8';
+    end;
+
+    with TIdAttachmentFile.Create(IdMessage.MessageParts, FullPdfFileName) do begin
+      ContentType := 'application/pdf';
+      FileName := ExtractFileName(FullPdfFileName);
+    end;
+
+    // pøidá se extra pøíloha, je-li vybrána
+    if ExtraPrilohaFileName <> '' then
+    with TIdAttachmentFile.Create(IdMessage.MessageParts, ExtraPrilohaFileName) do begin
+      ContentType := ''; //co je priloha za typ?
+      FileName := ExtraPrilohaFileName;
+    end;
+
+    { uz bylo vyhozeny
+    with idSMTP do begin
+      Port := 25;
+      if Username = '' then AuthenticationType := atNone
+      else AuthenticationType := atLogin;
+    end;
+    }
+
+    try
+      if not idSMTP.Connected then idSMTP.Connect;
+      idSMTP.Send(idMessage);  // ! samotné poslání mailu
+      Result :=TDesResult.create('ok', Format('Soubor %s byl odeslán na adresu %s.', [FullPdfFileName, emailAddrStr]));
+    except on E: exception do
+      Result := TDesResult.create('err', Format('Soubor %s se nepodaøilo odeslat na adresu %s.' + #13#10 + 'Chyba: %s',
+       [FullPdfFileName, emailAddrStr, E.Message]));
+    end;
+
+  end;
+
 end;
 
 
@@ -1559,6 +1680,28 @@ end;
 {********************     General helper functions     *********************}
 {***************************************************************************}
 
+
+{** class TDesResult **}
+
+constructor TDesResult.create(Code, Messg : string);
+begin
+  self.Code := Code;
+  self.Messg := Messg;
+end;
+
+function TDesResult.isOk : boolean;
+begin
+  Result := LowerCase(LeftStr(self.Code, 2)) = 'ok';
+end;
+
+function TDesResult.isErr : boolean;
+begin
+  Result := LowerCase(LeftStr(self.Code, 3)) = 'err';
+end;
+
+
+{** other functions **}
+
 // pøedaný string vrátí bez háèku a èárek
 function odstranDiakritiku(textDiakritika : string) : string;
 var
@@ -1585,7 +1728,6 @@ begin
     end;
   Result := '';
 end;
-
 
 //zaplní øetìzec nulama zleva až do celkové délky lenght
 function LeftPad(value:integer; length:integer=8; pad:char='0'): string; overload;
@@ -1867,40 +2009,6 @@ begin
   ShowWindowsErrorMessage(err);
 end;
 
-function UlozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
-// ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
-var
-  CommId: integer;
-  SQLStr: string;
-begin
-  Result := '';
-  with DesU.qrZakos do try
-    Close;
-    SQL.Text := 'SELECT MAX(Id) FROM communications';
-    Open;
-    CommId := Fields[0].AsInteger + 1;
-    Close;
-    SQLStr := 'INSERT INTO communications ('
-    + ' Id,'
-    + ' Customer_id,'
-    + ' User_id,'
-    + ' Communication_type_id,'
-    + ' Content,'
-    + ' Created_at,'
-    + ' Updated_at) VALUES ('
-    + IntToStr(CommId) + ', '
-    + Customer_id + ', '
-    + '1, '                                        // admin
-    + Typ + ','
-    + Ap + Zprava + ApC
-    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
-    + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;
-    SQL.Text := SQLStr;
-    ExecSQL;
-  except on E: exception do
-    Result := E.Message;
-  end;
-end;
 
 end.
 

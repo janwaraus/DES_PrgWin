@@ -87,9 +87,6 @@ procedure TdmCommon.Zprava(TextZpravy: string);
 var
   TimeOut: integer;
 begin
-  if TextZpravy = '' then Exit;
-
-  TimeOut := 0;
   with fmMain do begin
     TextZpravy := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
     lbxLog.Items.Add(TextZpravy);
@@ -98,6 +95,8 @@ begin
     DesUtils.appendToFile(globalAA['LogFileName'],TextZpravy);
 
     { *HW* nelíbí se mi to takhle
+
+    TimeOut := 0;
     while TimeOut < 1000 do try         // 30.11.17 zkouší to 10x po 100 ms
       Append(F);
       Writeln (F, Format('(%s - %s) ', [Trim(CompName), Trim(UserName)]) + FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy);
@@ -106,9 +105,10 @@ begin
     except
       Sleep(100);
       Inc(TimeOut, 100);
-    end;  
+    end;
   end;
   }
+
   end;
 end;
 
@@ -404,7 +404,7 @@ begin
         Close;
         dmCommon.Zprava(Format('Naètení faktur od %s do %s.', [aedOd.Text, aedDo.Text]));
 // faktura(y) v Abøe v mìsíci aseMesic
-        SQLStr := 'SELECT II.ID, F.Name, II.OrdNumber, II.VarSymbol, II.Amount, II.VATDate$DATE, II.DocDate$DATE FROM IssuedInvoices II, Firms F'
+        SQLStr := 'SELECT II.ID, F.Name, F.Code as Abrakod, II.OrdNumber, II.VarSymbol, II.Amount, II.VATDate$DATE, II.DocDate$DATE FROM IssuedInvoices II, Firms F'
         + ' WHERE II.Firm_ID = F.ID'
         + ' AND OrdNumber >= ' + aedOd.Text
         + ' AND OrdNumber <= ' + aedDo.Text
@@ -470,7 +470,6 @@ begin
               Cells[7, Radek] := DesU.qrAbra.FieldByName('ID').AsString;             // ID faktury
               Cells[8, Radek] := DateToStr(DesU.qrAbra.FieldByName('VATDate$DATE').AsFloat);
               Cells[9, Radek] := DateToStr(DesU.qrAbra.FieldByName('DocDate$DATE').AsFloat);
-
 
               Next;
             end;  // while not EOF

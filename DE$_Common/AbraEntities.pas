@@ -16,14 +16,11 @@ type
     firmName : string[100];
     datumDokladu  : double;
     datumSplatnosti  : double;
-    //AccDocQueue_ID : string[10];
-    //FirmOffice_ID : string[10];
-    //DocUUID : string[26];
     documentType : string[2]; // 60 typ dokladu dobopis fa vydaných (DO),  61 je typ dokladu dobropis faktur pøijatých (DD), 03 je faktura vydaná, 04 je faktura pøijatá, 10 je ZL
-    castka  : Currency; // LocalAmount
-    castkaZaplaceno  : Currency;
-    castkaDobropisovano  : Currency;
-    castkaNezaplaceno  : Currency;
+    castka  : currency; // LocalAmount
+    castkaZaplaceno  : currency;
+    castkaDobropisovano  : currency;
+    castkaNezaplaceno  : currency;
     cisloDokladu : string[20]; // složené ABRA "lidské" èíslo dokladu
 
     constructor create(Document_ID : string; Document_Type : string = '03');
@@ -136,10 +133,10 @@ begin
       self.Firm_ID := FieldByName('Firm_ID').AsString;
       self.FirmName := FieldByName('FirmName').AsString;
       self.DatumDokladu := FieldByName('DocDate$Date').asFloat;
-      self.Castka := FieldByName('LocalAmount').AsCurrency;
-      self.CastkaZaplaceno := FieldByName('LocalPaidAmount').AsCurrency
-                                    - FieldByName('LocalPaidCreditAmount').AsCurrency;
-      self.CastkaDobropisovano := FieldByName('LocalCreditAmount').AsCurrency;
+      self.Castka := FieldByName('LocalAmount').Ascurrency;
+      self.CastkaZaplaceno := FieldByName('LocalPaidAmount').Ascurrency
+                                    - FieldByName('LocalPaidCreditAmount').Ascurrency;
+      self.CastkaDobropisovano := FieldByName('LocalCreditAmount').Ascurrency;
       self.CastkaNezaplaceno := self.Castka - self.CastkaZaplaceno - self.CastkaDobropisovano;
       self.CisloDokladu := FieldByName('CisloDokladu').AsString;
       self.DocumentType := FieldByName('DocumentType').AsString;
@@ -362,7 +359,7 @@ constructor TAbraFirm.create(ID, Name, AbraCode, OrgIdentNumber, VATIdentNumber 
 begin
   self.ID := ID;
   self.Name := Name;
-  self.AbraCode := AbraCode;
+  self.AbraCode := Trim(AbraCode);
   self.OrgIdentNumber := OrgIdentNumber;
   self.VATIdentNumber := VATIdentNumber;
 end;
