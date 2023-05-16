@@ -166,10 +166,10 @@ begin
 
 
   // jména pro viewjsou unikátní, aby program nebyl omezen na jednu instanci
-  fiVoipCustomersView := FormatDateTime('VoIPyymmddhhnnss', Now);
-  fiBBmaxView := FormatDateTime('BByymmddhhnnss', Now);
-  fiBillingView := FormatDateTime('BVyymmddhhnnss', Now);
-  fiInvoiceView := FormatDateTime('IVyymmddhhnnss', Now);
+  fiVoipCustomersView := FormatDateTime('fiVoIPyymmddhhnnss', Now);
+  fiBBmaxView := FormatDateTime('fiBByymmddhhnnss', Now);
+  fiBillingView := FormatDateTime('fiBVyymmddhhnnss', Now);
+  fiInvoiceView := FormatDateTime('fiIVyymmddhhnnss', Now);
 
   // do 25. se oèekává fakturace za minulı mìsíc, pak u za aktuální
   if DayOf(Date) > 25 then begin

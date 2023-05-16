@@ -354,6 +354,8 @@ begin
         HovorneVoIP := (100 + globalAA['abraVatRate'])/100 * Fields[0].AsFloat;
         Close;
       end;
+
+      {  CTU, neni uz potreba
 // 24.1.2017 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
       with qrAbra do begin
         Close;
@@ -372,12 +374,14 @@ begin
         BusOrder_Id := Fields[0].AsString;
         Close;
       end;
+      }
+
 // cena za tarif
       if (FieldByName('Tarifni').AsInteger = 1) then begin
         CenaTarifu := qrSmlouva.FieldByName('Cena').AsFloat;
         if not SmlouvaVoIP then begin                    // pøipojení k Internetu
           FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-          FRow.ValueByName('BusOrder_ID') := BusOrder_Id;
+          // FRow.ValueByName('BusOrder_ID') := BusOrder_Id; // CTU, neni uz potreba
           if qrSmlouva.FieldByName('Typ').AsString = 'TvContract' then FRow.ValueByName('BusOrder_ID') := '1700000101';
           FRow.ValueByName('BusTransaction_ID') := BusTransaction_Id;
           FRow.ValueByName('Division_ID') := '1000000101';
