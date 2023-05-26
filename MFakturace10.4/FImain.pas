@@ -452,7 +452,7 @@ begin
       dmCommon.AktualizaceView;
 
       // první a poslední èíslo smlouvy
-      SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM fiInvoiceView';
+      SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM ' + fiInvoiceView;
       Open;
       aedOd.Text := Fields[0].AsString;
       aedDo.Text := Fields[1].AsString;

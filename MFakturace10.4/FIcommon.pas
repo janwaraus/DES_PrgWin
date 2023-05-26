@@ -92,7 +92,7 @@ begin
     lbxLog.Items.Add(TextZpravy);
     lbxLog.ItemIndex := lbxLog.Count - 1;
     Application.ProcessMessages;
-    DesUtils.appendToFile(globalAA['LogFileName'],TextZpravy);
+    DesUtils.appendToFile(globalAA['LogFileName'], TextZpravy);
 
     { *HW* nelíbí se mi to takhle
 
@@ -128,7 +128,7 @@ begin
     + ' AS SELECT DISTINCT Variable_symbol FROM customers Cu, contracts C'
     + ' WHERE Cu.Id = C.Customer_Id'
     + ' AND (C.Tariff_Id = 1 OR C.Tariff_Id = 3)'
-    + ' AND C.State = ''active'' '
+    + ' AND C.State = ''active'' '   // proè se tady hlídá "C.state = active" a v fiBillingView "C.invoice = 1"
     + ' AND Variable_symbol IS NOT NULL';
     SQL.Text := SQLStr;
     ExecSQL;
@@ -139,6 +139,7 @@ begin
     + ' AND (C.Tariff_Id = 1 OR C.Tariff_Id = 3)'
     + ' AND C.State = ''active'' '
     + ' AND Variable_symbol IS NOT NULL';
+    //DesUtils.appendToFile(globalAA['LogFileName']+'.txt', SQLStr);
     SQL.Text := SQLStr;
     ExecSQL;
 // aktuální data z billing_batches
@@ -155,6 +156,7 @@ begin
     + ' WHERE From_date = (SELECT MAX(From_date) FROM billing_batches B2'
       + ' WHERE B2.From_date <= ' + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + Ap
       + ' AND B1.Contract_Id = B2.Contract_Id)';
+    //DesUtils.appendToFile(globalAA['LogFileName']+'.txt', SQLStr);
     SQL.Text := SQLStr;
     ExecSQL;
 // billing view k datu fakturace
@@ -183,6 +185,7 @@ begin
     + ' AND (C.Invoice_from IS NULL OR C.Invoice_from <= ' + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApZ
     + ' AND C.Activated_at <= ' + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + Ap
     + ' AND BB.Period = 1';
+    //DesUtils.appendToFile(globalAA['LogFileName']+'.txt', SQLStr);
     SQL.Text := SQLStr;
     ExecSQL;
 // view k datu fakturace
@@ -207,6 +210,7 @@ begin
     + ' LEFT JOIN codebooks CB1 ON Cu.Invoice_sending_method_Id = CB1.Id'
     + ' LEFT JOIN codebooks CB2 ON BV.VAT_Id = CB2.Id'
     + ' LEFT JOIN tariffs T ON BV.Tariff_Id = T.Id';
+    //DesUtils.appendToFile(globalAA['LogFileName']+'.txt', SQLStr);
     SQL.Text := SQLStr;
     ExecSQL;
   end;
@@ -279,11 +283,11 @@ begin
         if cbSVoIP.Checked and not cbBezVoIP.Checked then
           SQLStr := SQLStr + ' AND EXISTS (SELECT Variable_symbol FROM ' + fiVoipCustomersView
           + ' WHERE Variable_symbol = ' + fiInvoiceView + '.VS)';
-        if rbMail.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''M%''';
+        if rbMail.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''M%''';  // hodnota v db "Mailem"
         if rbTisk.Checked then begin
-          if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''P%'''
-          else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''S%'''
-          else if rbKuryr.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''K%''';
+          if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''P%''' // hodnota v db "Poštou"
+          else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''S%''' // hodnota v db "Se složenkou"
+          else if rbKuryr.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''K%'''; // hodnota v db "Kurýr"
         end;
 
         Close;
