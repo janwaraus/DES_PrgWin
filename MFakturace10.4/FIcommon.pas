@@ -225,6 +225,7 @@ var
   VarSymbol,
   Firm_ID: string[10];
   Zakaznik,
+  SqlProcedureName,
   SQLStr: string;
 begin
   with fmMain do try
@@ -263,32 +264,29 @@ begin
           if cbBezVoIP.Checked then dmCommon.Zprava('      - zákazníci bez VoIP');
           if cbSVoIP.Checked then dmCommon.Zprava('      - zákazníci s VoIP');
 
-
+        {
         end else begin              // if rbFakturace.Checked
           // ne Fakturace - tedy Pøevod, tisk, mail
           dmCommon.Zprava(Format('Naètení faktur na období %s.%s od VS %s do %s.', [aseMesic.Text, aseRok.Text, aedOd.Text, aedDo.Text]));
 
           if cbBezVoIP.Checked then dmCommon.Zprava('      - zákazníci bez VoIP');
           if cbSVoIP.Checked then dmCommon.Zprava('      - zákazníci s VoIP');
-
+        }
         end;      // if rbFakturace.Checked else ...
 
-        SQLStr := 'SELECT DISTINCT VS, Abrakod, Mail, Reklama FROM ' + fiInvoiceView
-        + ' WHERE VS >= ' + Ap + aedOd.Text + Ap
-        + ' AND VS <= ' + Ap + aedDo.Text + Ap;
 
         if cbBezVoIP.Checked and not cbSVoIP.Checked then
-          SQLStr := SQLStr + ' AND NOT EXISTS (SELECT Variable_symbol FROM ' + fiVoipCustomersView
-          + ' WHERE Variable_symbol = ' + fiInvoiceView + '.VS)';
-        if cbSVoIP.Checked and not cbBezVoIP.Checked then
-          SQLStr := SQLStr + ' AND EXISTS (SELECT Variable_symbol FROM ' + fiVoipCustomersView
-          + ' WHERE Variable_symbol = ' + fiInvoiceView + '.VS)';
-        if rbMail.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''M%''';  // hodnota v db "Mailem"
-        if rbTisk.Checked then begin
-          if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''P%''' // hodnota v db "Poštou"
-          else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''S%''' // hodnota v db "Se složenkou"
-          else if rbKuryr.Checked then SQLStr := SQLStr + ' AND Posilani LIKE ''K%'''; // hodnota v db "Kurýr"
-        end;
+          SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_nonvoip'
+        else if cbSVoIP.Checked and not cbBezVoIP.Checked then
+          SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_voip'
+        else
+          SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_all';
+
+        SQLStr := 'CALL ' + SqlProcedureName + '('
+          + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
+          + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApC
+          + Ap + aedOd.Text + ApC
+          + Ap + aedDo.Text + ApZ;
 
         Close;
         SQL.Text := SQLStr;
@@ -451,11 +449,11 @@ begin
             if cbSVoIP.Checked and not cbBezVoIP.Checked then
               SQLStr := SQLStr + ' AND EXISTS (SELECT Variable_symbol FROM ' + fiVoipCustomersView
               + ' WHERE Variable_symbol = ' + Ap + VarSymbol + ApZ;
-            if rbMail.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 9';
+            if rbMail.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 9'; // hodnota v codebooks "Mailem"
             if rbTisk.Checked then begin
-              if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 10'
-              else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 11'
-              else if rbKuryr.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 12';
+              if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 10' // hodnota v codebooks "Poštou"
+              else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 11' // hodnota v codebooks "Se složenkou"
+              else if rbKuryr.Checked then SQLStr := SQLStr + ' AND Invoice_sending_method_id = 12'; // hodnota v codebooks "Kurýr"
             end;
 
             SQL.Text := SQLStr;

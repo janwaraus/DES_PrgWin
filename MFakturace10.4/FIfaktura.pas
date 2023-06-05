@@ -96,6 +96,7 @@ begin
         lbxLog.Visible := False;
         Break;
       end;
+      //if Ints[0, Radek] = 1 then FakturaAbra(Radek);
       if Ints[0, Radek] = 1 then FakturaAbraAA(Radek);
     end;  // for
 // konec hlavní smyèky
@@ -194,6 +195,7 @@ begin
     + ' WHERE VS = ' + Ap + Cells[1, Radek] + Ap
     + ' ORDER BY Smlouva, Tarifni DESC';
     SQL.Text := SQLStr;
+    // SQL.Text := 'CALL get_monthly_invoicing_by_vs('2023-05-01','2023-05-31','2015020259')' //TODO tohle dat
     Open;
 // pøi lecjaké chybì v databázi (napø. Tariff_Id je NULL) konec
     if RecordCount = 0 then begin
@@ -455,7 +457,7 @@ begin
         if FieldByName('DPH').AsString = '21%' then begin                   // 4.1.2013
           FRow.ValueByName('VATRate_ID') := VarToStr(globalAA['abraVatRate_Id']);
           if isDRC then begin                                              // 19.10.2016
-            FRow.ValueByName('VATIndex_ID') := VarToStr(globalAA['abraDrcVatIndex_Id']);
+            //FRow.ValueByName('VATIndex_ID') := VarToStr(globalAA['abraDrcVatIndex_Id']);
             FRow.ValueByName('DRCArticle_ID') := VarToStr(globalAA['abraDrcArticle_Id']);          // typ plnìní 21
             FRow.ValueByName('VATMode') := 1;
             FRow.ValueByName('TotalPrice') := Format('%f', [FieldByName('Cena').AsFloat * Redukce / 1.21]);
@@ -551,6 +553,7 @@ var
   abraResponseJSON,
   newID: string;
   abraResponseSO : ISuperObject;
+  abraWebApiResponse : TDesResult;
 
   cas01, cas02, cas03: double;
 
@@ -733,8 +736,10 @@ begin
       DatumUkonceni := FieldByName('AktivniDo').AsDateTime;
       Redukce := 1;
       PrvniFakturace := False;
-      if DatumSpusteni >= FieldByName('FakturovatOd').AsDateTime then with qrAbra do begin
-// už je nìjaká faktura ?
+
+      if DatumSpusteni >= FieldByName('FakturovatOd').AsDateTime then
+      with qrAbra do begin
+        // už je nìjaká faktura ?
         Close;
         SQLStr := 'SELECT COUNT(*) FROM IssuedInvoices'
         + ' WHERE DocQueue_ID = ' + Ap + globalAA['abraIiDocQueue_Id'] + Ap
@@ -744,6 +749,7 @@ begin
 // zákazníkovi se ještì vùbec nefakturovalo
         PrvniFakturace := Fields[0].AsInteger = 0;
       end;  // with qrAbra
+
 // ještì podle data aktivace (po pauze se fakturuje znovu)
       if not PrvniFakturace then
         PrvniFakturace := (MonthOf(DatumSpusteni) = MonthOf(deDatumDokladu.Date))
@@ -764,9 +770,8 @@ begin
 // pro VoIP
       SmlouvaVoIP := Copy(qrSmlouva.FieldByName('Tarif').AsString, 1, 2) = 'EP';
       HovorneVoIP := 0;
-      CenaTarifu := 0;
-// paušál a hovorné
-      if cbSVoIP.Checked and SmlouvaVoIP then with qrVoIP do begin
+      // paušál (? TODO) a hovorné
+      if cbSVoIP.Checked and SmlouvaVoIP then with qrVoIP do begin // TODO je treba hlidat cbSVoIP.Checked?
         Description := Description + 'VoIP, ';
         Close;
         SQLStr := 'SELECT SUM(Amount) FROM VoIP.Invoices_flat'
@@ -919,23 +924,23 @@ begin
 
 // vytvoøení faktury
     try
-      abraResponseJSON := DesU.abraBoCreateWebApi_v2(boAA, 'issuedinvoice');
-      abraResponseSO := SO(abraResponseJSON);
-      newId := abraResponseSO.S['id'];
-      //dmCommon.Zprava(abraResponseJSON);
-      //FCena := double(FData.Value[dmCommon.IndexByName(FData, 'Amount')]);
-      dmCommon.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [Zakaznik, Cells[1, Radek], abraResponseSO.S['displayname']]));
-      //Result := newId;
-      Ints[0, Radek] := 0;
-      Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
-      Cells[3, Radek] := abraResponseSO.S['amount'];                                                // èástka
-      Cells[4, Radek] := Zakaznik;
+      abraWebApiResponse := DesU.abraBoCreateWebApi(boAA, 'issuedinvoice');
+      if abraWebApiResponse.isOk then begin
+        abraResponseSO := SO(abraWebApiResponse.Messg);
+        dmCommon.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [Zakaznik, Cells[1, Radek], abraResponseSO.S['displayname']]));
+        Ints[0, Radek] := 0;
+        Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
+        Cells[3, Radek] := abraResponseSO.S['amount'];                                                // èástka
+        Cells[4, Radek] := Zakaznik;
+      end else begin
+        dmCommon.Zprava(Format('%s (%s): Chyba %s: %s', [Zakaznik, Cells[1, Radek], abraWebApiResponse.Code, abraWebApiResponse.Messg]));
+        if Dialogs.MessageDlg( '(' + abraWebApiResponse.Code + ') '
+           + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
+           mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
+      end;
     except on E: exception do
       begin
         Application.MessageBox(PChar('Problem ' + ^M + E.Message), 'Vytvoøení fa');
-        //dmCommon.Zprava(Format('%s (%s): Chyba v Abøe - %s', [Zakaznik, Cells[1, Radek], E.Message]));
-        //if Application.MessageBox(PChar(E.Message + ^M + 'Pokraèovat?'), 'Chyba',
-        // MB_YESNO + MB_ICONQUESTION) = IDNO then Prerusit := True;
       end;
     end;
 

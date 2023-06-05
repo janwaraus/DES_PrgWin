@@ -41,7 +41,8 @@ object DesU: TDesU
     ControlsCodePage = cCP_UTF16
     Catalog = ''
     Properties.Strings = (
-      'controls_cp=GET_ACP')
+      'controls_cp=GET_ACP'
+      'CLIENT_MULTI_STATEMENTS=1')
     ReadOnly = True
     HostName = ''
     Port = 0
@@ -113,8 +114,22 @@ object DesU: TDesU
     Top = 215
   end
   object idSMTP: TIdSMTP
+    IOHandler = IdSSLIOHandler
+    Port = 465
     SASLMechanisms = <>
+    UseTLS = utUseImplicitTLS
     Left = 66
     Top = 215
+  end
+  object IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL
+    Destination = ':465'
+    MaxLineAction = maException
+    Port = 465
+    DefaultPort = 0
+    SSLOptions.Mode = sslmUnassigned
+    SSLOptions.VerifyMode = []
+    SSLOptions.VerifyDepth = 0
+    Left = 136
+    Top = 216
   end
 end

@@ -23,9 +23,6 @@ type
     DocDate,
     DueDate,
     VATDate : double;
-    //AccDocQueue_ID : string[10];
-    //FirmOffice_ID : string[10];
-    //DocUUID : string[26];
 
     Castka  : currency; // LocalAmount
     CastkaZaplaceno  : currency; // se zapoèítáním zaplacení dobropisù
@@ -48,6 +45,14 @@ type
 
     constructor create(DocumentID : string; DocumentType : string = '03');
     function createPdf(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
+  end;
+
+  TNewDesInvoiceAA = class
+  public
+    AA : TAArray;
+    constructor create(DocDate : double; VarSymbol : string);
+    function createNew0Row(RowText : string) : TAArray;
+    function createNew1Row(RowText : string) : TAArray;
   end;
 
 
@@ -320,6 +325,39 @@ begin
   self.prepareFastReportData;
   DesFastReport.prepareInvoiceDataSets(self.ID);
   Result := DesFastReport.createPdf(FullPdfFileName, OverwriteExistingPdf);
+end;
+
+
+constructor TNewDesInvoiceAA.create(DocDate : double; VarSymbol : string);
+begin
+  AA['DocDate'] := DocDate;
+  AA['VarSymbol'] := VarSymbol;
+end;
+
+function TNewDesInvoiceAA.createNew0Row(RowText : string) : TAArray;
+var
+  RowAA: TAArray;
+begin
+  RowAA := AA.addRow();
+  RowAA['Rowtype'] := 0;
+  RowAA['Text'] := RowText;
+  RowAA['Division_ID'] := AbraEnt.getDivisionId;
+  Result := RowAA;
+end;
+
+
+function TNewDesInvoiceAA.createNew1Row(RowText : string) : TAArray;
+var
+  RowAA: TAArray;
+begin
+  RowAA := AA.addRow();
+  RowAA['Rowtype'] := 1;
+  RowAA['Text'] := RowText;
+  RowAA['Division_ID'] := AbraEnt.getDivisionId;
+  RowAA['Vatrate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
+  RowAA['VatIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
+  RowAA['Incometype_ID'] := AbraEnt.getBusOrder('Code=SL').ID; // služby
+  Result := RowAA;
 end;
 
 end.

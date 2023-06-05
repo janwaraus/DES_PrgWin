@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 758
-  ClientWidth = 996
+  ClientHeight = 954
+  ClientWidth = 1417
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -44,12 +44,13 @@ object Form1: TForm1
     TabOrder = 1
   end
   object Memo2: TMemo
-    Left = 16
-    Top = 174
-    Width = 433
-    Height = 243
+    Left = 8
+    Top = 230
+    Width = 1233
+    Height = 707
     Lines.Strings = (
       '')
+    ScrollBars = ssBoth
     TabOrder = 2
   end
   object btnPost: TButton
@@ -79,10 +80,10 @@ object Form1: TForm1
     Text = 'http://localhost/DES/periods?where=code+gt+2015'
   end
   object Memo3: TMemo
-    Left = 472
-    Top = 174
-    Width = 516
-    Height = 243
+    Left = 800
+    Top = 8
+    Width = 497
+    Height = 209
     TabOrder = 6
   end
   object btnCreateByAA: TButton
@@ -120,6 +121,15 @@ object Form1: TForm1
     Caption = 'send SMS'
     TabOrder = 10
     OnClick = btnSendSmsClick
+  end
+  object Button1: TButton
+    Left = 657
+    Top = 133
+    Width = 75
+    Height = 25
+    Caption = 'Button1'
+    TabOrder = 11
+    OnClick = Button1Click
   end
   object IdSMTP1: TIdSMTP
     SASLMechanisms = <>

@@ -3,7 +3,7 @@ unit AbraEntities;
 interface
 
 uses
-  SysUtils, Variants, Classes, Controls,
+  SysUtils, Variants, Classes, Controls, System.Generics.Collections,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection;
 
 type
@@ -22,7 +22,6 @@ type
     castkaDobropisovano  : currency;
     castkaNezaplaceno  : currency;
     cisloDokladu : string[20]; // složené ABRA "lidské" èíslo dokladu
-
     constructor create(Document_ID : string; Document_Type : string = '03');
   end;
 
@@ -55,13 +54,22 @@ type
     constructor create(pDate : double); overload;
   end;
 
+  TAbraDocQueue = class
+  public
+    ID : string[10];
+    Code : string[10];
+    DocumentType : string[2];
+    Name : string;
+    constructor create(pGetBy, pValue : string);
+  end;
+
   TAbraVatIndex = class
   public
-    id : string[10];
-    code : string[10];
-    tariff : integer;
-    vatRateId : string[10];
-    constructor create(iCode : string);
+    ID : string[10];
+    Code : string[10];
+    Tariff : integer;
+    VATRate_ID : string[10];
+    constructor Create(pCode : string);
   end;
 
   TAbraDrcArticle = class
@@ -72,13 +80,31 @@ type
     constructor create(iCode : string);
   end;
 
+  TAbraBusOrder = class
+  public
+    ID : string[10];
+    Code : string[20];
+    Name : string;
+    Parent_ID : string;
+    constructor create(pGetBy, pValue : string);
+  end;
+
+  TAbraIncomeType = class
+  public
+    ID : string[10];
+    Code : string[20];
+    Name : string;
+    constructor create(pGetBy, pValue : string);
+  end;
+
+
   TAbraFirm = class
   public
     ID : string[10];
     Name,
     AbraCode,
     OrgIdentNumber,
-    VATIdentNumber : string;
+    VatIdentNumber : string;
     constructor create(ID, Name, AbraCode, OrgIdentNumber, VATIdentNumber : string);
   end;
 
@@ -90,6 +116,29 @@ type
     PostCode : string;
     constructor create(ID, Street, City, PostCode : string);
   end;
+
+  TAbraEnt = class
+  public
+    OA: TDictionary<string, TObject>;
+    bvByPart, bvValuePart: string;
+    //VatIndex_Vyst21: TAbraVatIndex;
+    //VatIndex_VystR21: TAbraVatIndex;
+    //DrcArticle_21: TAbraDrcArticle;
+    //DocQueue_FO1: TAbraDocQueue;
+    constructor create;
+    //procedure loadVatEntities;
+    //procedure loadDocQueueByCode(pCode : string);
+    function getDivisionId : string;
+    function getCurrencyId : string;
+    function getDocQueue(bvString : string) : TAbraDocQueue;
+    function getVatIndex(bvString : string) : TAbraVatIndex;
+    function getDrcArticle(bvString : string) : TAbraDrcArticle;
+    function getBusOrder(bvString : string) : TAbraBusOrder;
+    function getIncomeType(bvString : string) : TAbraIncomeType;
+  end;
+
+var
+  AbraEnt : TAbraEnt;
 
 implementation
 
@@ -314,20 +363,39 @@ begin
 end;
 
 
-{** class TAbraVatIndexes **}
+{** class TAbraDocqueue **}
 
-constructor TAbraVatIndex.create(iCode : string);
+constructor TAbraDocQueue.create(pGetBy, pValue : string);
+begin
+  with DesU.qrAbraOC do begin
+    SQL.Text := 'SELECT Id, Code, DocumentType, Name FROM DocQueues'
+              + ' WHERE Hidden = ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
+    Open;
+    if not Eof then begin
+      self.id := FieldByName('ID').AsString;
+      self.code := FieldByName('Code').AsString;
+      self.documentType := FieldByName('DocumentType').AsString;
+      self.name := FieldByName('Name').AsString;
+    end;
+    Close;
+  end;
+end;
+
+
+{** class TAbraVatIndex **}
+
+constructor TAbraVatIndex.Create(pCode : string);
 begin
   with DesU.qrAbraOC do begin
     SQL.Text := 'SELECT Id, Code, Tariff, Vatrate_Id'
               + ' FROM VatIndexes'
-              + ' WHERE Hidden = ''N'' AND Code = ''' + iCode  + '''';
+              + ' WHERE Hidden = ''N'' AND Code = ''' + pCode  + '''';
     Open;
     if not Eof then begin
-      self.id := FieldByName('Id').AsString;
-      self.code := FieldByName('Code').AsString;
-      self.tariff := FieldByName('Tariff').AsInteger;
-      self.vatrateId := FieldByName('Vatrate_Id').AsString;
+      self.ID := FieldByName('Id').AsString;
+      self.Code := FieldByName('Code').AsString;
+      self.Tariff := FieldByName('Tariff').AsInteger;
+      self.VATRate_ID := FieldByName('VATRate_ID').AsString;
     end;
     Close;
   end;
@@ -347,6 +415,43 @@ begin
       self.id := FieldByName('Id').AsString;
       self.code := FieldByName('Code').AsString;
       self.name := FieldByName('Name').AsString;
+    end;
+    Close;
+  end;
+end;
+
+
+{** class TAbraBusOrder **}
+
+constructor TAbraBusOrder.create(pGetBy, pValue : string);
+begin
+  with DesU.qrAbraOC do begin
+    SQL.Text := 'SELECT Id, Code, DocumentType, Name FROM BusOrdres'
+              + ' WHERE ' + pGetBy + ' = ''' + pValue + '''';
+    Open;
+    if not Eof then begin
+      self.ID := FieldByName('ID').AsString;
+      self.Code := FieldByName('Code').AsString;
+      self.Name := FieldByName('Name').AsString;
+      self.Parent_ID := FieldByName('Name').AsString;
+    end;
+    Close;
+  end;
+end;
+
+
+{** class TAbraIncomeType **}
+
+constructor TAbraIncomeType.create(pGetBy, pValue : string);
+begin
+  with DesU.qrAbraOC do begin
+    SQL.Text := 'SELECT Id, Code, Name FROM IncomeTypes'
+              + ' WHERE Hidden = ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
+    Open;
+    if not Eof then begin
+      self.ID := FieldByName('ID').AsString;
+      self.Code := FieldByName('Code').AsString;
+      self.Name := FieldByName('Name').AsString;
     end;
     Close;
   end;
@@ -374,6 +479,112 @@ begin
   self.City := City;
   self.PostCode := PostCode;
 end;
+
+
+{** class TAbraEnt **}
+
+constructor TAbraEnt.Create;
+begin
+  self.OA:= TDictionary<string, TObject>.Create;
+end;
+
+
+function TAbraEnt.getDivisionId : string;
+begin
+  Result := '1000000101';
+end;
+
+function TAbraEnt.getCurrencyId : string;
+begin
+  Result := '0000CZK000'; //pouze CZK
+end;
+
+{
+procedure TAbraEnt.loadVatEntities;
+begin
+  VatIndex_Vyst21 := TAbraVatIndex.create('Výst21');
+  VatIndex_VystR21 := TAbraVatIndex.create('VýstR21');
+  DrcArticle_21 :=  TAbraDrcArticle.create('21');
+end;
+
+procedure TAbraEnt.loadDocQueueByCode(pCode : string);
+begin
+  if pCode = 'FO1' then
+    DocQueue_FO1 := TAbraDocQueue.create(pCode,'Code')
+  else if pCode = 'FO2' then
+    DocQueue_FO2 := TAbraDocQueue.create(pCode,'Code')
+  else if pCode = 'FO3' then
+    DocQueue_FO3 := TAbraDocQueue.create(pCode,'Code')
+  else if pCode = 'FO4' then
+    DocQueue_FO4 := TAbraDocQueue.create(pCode,'Code');
+end;
+}
+
+function TAbraEnt.getDocQueue(bvString : string) : TAbraDocQueue;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('DocQueue_' + bvString, outAbraEntity) then
+    Result := TAbraDocQueue(outAbraEntity)
+  else begin
+    Result := TAbraDocQueue.create(bvByPart, bvValuePart);
+    OA.Add('DocQueue_' + bvString, Result);
+  end;
+end;
+
+function TAbraEnt.getVatIndex(bvString : string) : TAbraVatIndex;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('VatIndex_' + bvString, outAbraEntity) then
+    Result := TAbraVatIndex(outAbraEntity)
+  else begin
+    Result := TAbraVatIndex.create(bvValuePart);
+    OA.Add('VatIndex_' + bvString, Result);
+  end;
+end;
+
+function TAbraEnt.getDrcArticle(bvString : string) : TAbraDrcArticle;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('DrcArticle_' + bvString, outAbraEntity) then
+    Result := TAbraDrcArticle(outAbraEntity)
+  else begin
+    Result := TAbraDrcArticle.create(bvValuePart);
+    OA.Add('DrcArticle_' + bvString, Result);
+  end;
+end;
+
+function TAbraEnt.getBusOrder(bvString : string) : TAbraBusOrder;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('BusOrder_' + bvString, outAbraEntity) then
+    Result := TAbraBusOrder(outAbraEntity)
+  else begin
+    Result := TAbraBusOrder.create(bvByPart, bvValuePart);
+    OA.Add('BusOrder_' + bvString, Result);
+  end;
+end;
+
+function TAbraEnt.getIncomeType(bvString : string) : TAbraIncomeType;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('IncomeType_' + bvString, outAbraEntity) then
+    Result := TAbraIncomeType(outAbraEntity)
+  else begin
+    Result := TAbraIncomeType.create(bvByPart, bvValuePart);
+    OA.Add('IncomeType_' + bvString, Result);
+  end;
+end;
+
 
 
 end.

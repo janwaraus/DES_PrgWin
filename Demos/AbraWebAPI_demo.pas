@@ -7,7 +7,9 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
   IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
   IdSMTP, IdMessage, IdMessageParts, IdAttachment, IdEMailAddress, IdAttachmentFile, IdText,
-  IdExplicitTLSClientServerBase, IdMessageClient, IdSMTPBase;
+  IdExplicitTLSClientServerBase, IdMessageClient, IdSMTPBase,
+  System.NetEncoding, System.RegularExpressions, System.Character, System.JSON
+  ;
 
 type
   TForm1 = class(TForm)
@@ -26,6 +28,7 @@ type
     IdSMTP1: TIdSMTP;
     IdMessage1: TIdMessage;
     btnSendSms: TButton;
+    Button1: TButton;
     procedure btnGetClick(Sender: TObject);
     procedure btnPostClick(Sender: TObject);
     procedure btnPutClick(Sender: TObject);
@@ -33,11 +36,16 @@ type
     procedure btnUpdateByAaClick(Sender: TObject);
     procedure btnSendEmailClick(Sender: TObject);
     procedure btnSendSmsClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
   end;
+
+
+function DecodeUnicodeEscapeSequences(const input: string): string;
+
 
 var
   Form1: TForm1;
@@ -47,12 +55,40 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, Superobject, AArray;
+uses DesUtils, Superobject, AArray, AbraEntities;
 
 
 
 ////////////////////////////////////
 // *** SuperObject (SO) demos *** //
+
+function DecodeUnicodeEscapeSequences(const input: string): string;
+var
+  regex: TRegEx;
+  match: TMatch;
+  startIndex: Integer;
+  codePoint: Integer;
+  replaceChar: Char;
+begin
+  regex := TRegEx.Create('\\u([0-9a-fA-F]{4})');
+  match := regex.Match(input);
+  startIndex := 1;
+  Result := '';
+
+  while match.Success do
+  begin
+    Result := Result + Copy(input, startIndex, match.Index - startIndex);
+
+    codePoint := StrToInt('$' + match.Groups[1].Value);
+    replaceChar := WideChar(codePoint);
+    Result := Result + replaceChar;
+
+    startIndex := match.Index + match.Length;
+    match := match.NextMatch;
+  end;
+
+  Result := Result + Copy(input, startIndex, Length(input));
+end;
 
 procedure TForm1.btnGetClick(Sender: TObject);
 var
@@ -84,27 +120,29 @@ procedure TForm1.btnPostClick(Sender: TObject);
 var
   sResponse: string;
   Json: string;
+  abraResponse : TDesResult;
+  newID: string;
+  abraResponseSO : ISuperObject;
 begin
 
 editUrl.Text := 'issuedinvoice';
 
 Json := '{'+
   '"docqueue_id": "L000000101",'+
-  '"period_id": "1L20000101",'+
-  '"docdate$date": "2017-06-04",'+
+  '"period_id": "2390000101",'+
+  '"docdate$date": "2023-06-03",'+
   '"firm_id": "2SZ1000101",'+
   '"description": "ppppøipojení, 2018020612",'+
-  '"accdate$date": "2017-05-30",'+
   '"varsymbol": "2014020777",'+
   '"priceswithvat": true,'+
 
   '"rows": ['+
   '  {'+
-  '    "totalprice": 3881.5,'+
+  '    "totalprice": 3881,'+
   '    "division_id": "1000000101",'+
   '    "busorder_id": "9D00000101",'+
   '    "bustransaction_id": "3L00000101",'+
-  '    "text": "podle smlouvy  2019020777  službu  5AA-Optimal",'+
+  '    "text": "pppodle smlouvy 2019020777 službu  5AA-Optimal",'+
   '    "vatrate_id": "02100X0000",'+
   '    "rowtype": 1,'+
   '    "incometype_id": "2000000000",'+
@@ -113,9 +151,34 @@ Json := '{'+
   '}';
 
   memo1.Lines.Add(Json);
+
+  abraResponse := DesU.abraBoCreate_SoWebApi(SO(Json), 'issuedinvoice');
+  if abraResponse.isOk then begin
+    memo2.Lines.Add(abraResponse.Messg);
+    abraResponseSO := SO(abraResponse.Messg);
+    newId := abraResponseSO.S['id'];
+    memo2.Lines.Add('------x------');
+    memo2.Lines.Add(abraResponseSO.AsJSon(true));
+    memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.AsJSon(true)));
+    memo2.Lines.Add(abraResponseSO.S['tradetypedescription']);
+    memo2.Lines.Add(abraResponseSO.S['description']);
+    memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.S['tradetypedescription']));
+    memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.S['description']));
+  end else begin
+    memo2.Lines.Add(abraResponse.Code);
+    memo2.Lines.Add(abraResponse.Messg);
+    memo2.Lines.Add(UTF8Encode(abraResponse.Messg));
+
+  end;
+
+
+
+
+  {
   sResponse := DesU.abraBoCreate_So(SO(Json), editUrl.Text);
   memo2.Lines.Add (SO(sResponse).AsJSon(True));
   memo2.Lines.Add(sResponse);
+  }
 end;
 
 
@@ -132,7 +195,7 @@ begin
   JsonSO.S['varsymbol'] := '1116378';
   Json := JsonSO.AsJSon(true);
   memo1.Lines.Add(Json);
-  sResponse := DesU.abraBoUpdate_So(SO(Json), 'bankstatement', '36E2000101', 'row', '5BRD000101');
+  sResponse := DesU.abraBoUpdate_SoWebApi(SO(Json), 'bankstatement', '36E2000101', 'row', '5BRD000101');
   memo2.Lines.Add (SO(sResponse).AsJSon(true));
 end;
 
@@ -156,6 +219,32 @@ begin
   //memo2.Lines.Add ('-------');
   memo2.Lines.Add (SO(sResponse).AsJSon(true));
 end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+
+var
+  apiResponse: string;
+  translatedString: string;
+  CodePoint : integer;
+begin
+  apiResponse := 'V\u00E1m za obdob\u00ED slu\u017Ebu  5G'; // Vaše odpovìï z API
+  memo2.Lines.Add(apiResponse); // Zobrazí "Vám"
+
+  // Dekódování øetìzce
+  translatedString := UTF8ToString(apiResponse);
+
+  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
+
+
+  translatedString := TNetEncoding.URL.Decode(apiResponse);
+  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
+
+
+  translatedString := DecodeUnicodeEscapeSequences(apiResponse);
+  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
+
+end;
+
 
 procedure TForm1.btnCreateByAAClick(Sender: TObject);
 var
@@ -186,7 +275,7 @@ begin
   boRowAA['text'] := 'Za naše svìlé Služby';
   boRowAA['totalprice'] := 246;
   boRowAA['vatrate_id'] := DesU.getAbraVatrateId('Výst21');
-  boRowAA['incometype_id'] := DesU.getAbraIncometypeId('SL');
+  boRowAA['incometype_id'] := AbraEnt.getIncomeType('Code=SL').ID;
   boRowAA['division_id'] := '1000000101';
 
   newid := DesU.abraBoCreate(boAA, 'issuedinvoice'); //použije POST (pokud je metoda WebApi)

@@ -193,18 +193,22 @@ begin
   globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
 
   globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
-  globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03');
+  globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03'); // L000000101
 
   abraVatIndex := TAbraVatIndex.create('Výst21');
-  globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id
-  globalAA['abraVatRate_Id'] := abraVatIndex.vatrateId; //VATRate_Id
+  globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id 6521000000
+  globalAA['abraVatRate_Id'] := abraVatIndex.vatrate_Id; //VATRate_Id 02100X0000
   globalAA['abraVatRate'] := abraVatIndex.tariff; //VATRate
 
   abraVatIndex := TAbraVatIndex.create('VýstR21');
-  globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id
+  globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id  6621000000
+  {DRC ma napriklad doklad 7D6P200101, VS 20069024}
 
   abraDrcArticle := TAbraDrcArticle.create('21');
   globalAA['abraDrcArticle_Id'] := abraDrcArticle.id;
+
+
+
 
   // pro text, TODO smazat
   aedOd.Text := '10200555';
@@ -452,7 +456,10 @@ begin
       dmCommon.AktualizaceView;
 
       // první a poslední èíslo smlouvy
-      SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM ' + fiInvoiceView;
+      //SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM ' + fiInvoiceView;
+      SQL.Text := 'CALL get_monthly_invoicing_minmaxvs('
+        + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
+        + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApZ;
       Open;
       aedOd.Text := Fields[0].AsString;
       aedDo.Text := Fields[1].AsString;

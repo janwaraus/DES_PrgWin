@@ -216,7 +216,8 @@ begin
     Close;
     SQL.Text := 'SELECT Text, TAmountWithoutVAT AS BezDane, VATRate AS Sazba, TAmount - TAmountWithoutVAT AS DPH, TAmount AS SDani FROM IssuedInvoices2'
     + ' WHERE Parent_ID = ' + Ap + invoiceId + Ap
-    + ' AND NOT (Text = ''Zaokrouhlení'' AND TAmount = 0)'
+    // + ' AND NOT (Text = ''Zaokrouhlení'' AND TAmount = 0)'
+    + ' AND NOT ((RowType = 4) AND (TAmount = 0))' // nebereme nulové zaokrouhlení
     + ' ORDER BY PosIndex';
     Open;
   end;

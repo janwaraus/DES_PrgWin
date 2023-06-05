@@ -294,8 +294,8 @@ begin
     boRowAA['SpecSymbol'] := iPDPar.Platba.SS;
     boRowAA['DocDate$DATE'] := iPDPar.Platba.Datum;
     boRowAA['AccDate$DATE'] := iPDPar.Platba.Datum;
-    boRowAA['Division_Id'] := DesU.getAbraDivisionId;
-    boRowAA['Currency_id'] := DesU.getAbraCurrencyId;
+    boRowAA['Division_Id'] := AbraEnt.getDivisionId;
+    boRowAA['Currency_id'] := AbraEnt.getCurrencyId;
 
 
     if Assigned(iPDPar.Doklad) then
