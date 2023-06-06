@@ -447,7 +447,7 @@ begin
   deDatumPlneni.Date := deDatumDokladu.Date;
   aedSplatnost.Text := '10';
 
-  // *** výbìr podle smlouvy
+  // *** výbìr podle VS (táta tomu øíká "podle smlouvy")
   if rbPodleSmlouvy.Checked then begin
     with DesU.qrZakos do try
       Screen.Cursor := crSQLWait;

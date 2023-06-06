@@ -239,12 +239,11 @@ begin
     with DesU.qrZakos, asgMain do try
       ClearNormalCells;
       RowCount := 2;
-      Close;
 
       // ***
       // ***  výbìr zákazníkù/smluv podle VS/smlouvy  ***
       // ***
-      if rbPodleSmlouvy.Checked then begin
+      if rbPodleSmlouvy.Checked then begin // výbìr podle VS (táta tomu øíká "podle smlouvy")
         // Fakturace
         if rbFakturace.Checked then begin          //výbìr zákazníkù/smluv k fakturaci
           // kontrola mìsíce a roku fakturace
@@ -275,6 +274,10 @@ begin
         end;      // if rbFakturace.Checked else ...
 
 
+        Radek := 0;
+        apbProgress.Position := 0;
+        apbProgress.Visible := True;
+
         if cbBezVoIP.Checked and not cbSVoIP.Checked then
           SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_nonvoip'
         else if cbSVoIP.Checked and not cbBezVoIP.Checked then
@@ -282,32 +285,29 @@ begin
         else
           SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_all';
 
-        SQLStr := 'CALL ' + SqlProcedureName + '('
+        SQL.Text := 'CALL ' + SqlProcedureName + '('
           + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
           + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApC
           + Ap + aedOd.Text + ApC
           + Ap + aedDo.Text + ApZ;
 
-        Close;
-        SQL.Text := SQLStr;
         Open;
-        Radek := 0;
-        apbProgress.Position := 0;
-        apbProgress.Visible := True;
         while not EOF do begin
-          VarSymbol := FieldByName('VS').AsString;
+          VarSymbol := FieldByName('cu_variable_symbol').AsString;
           apbProgress.Position := Round(100 * RecNo / RecordCount);
           Application.ProcessMessages;
+
           if Prerusit then begin
             Prerusit := False;
             apbProgress.Position := 0;
             apbProgress.Visible := False;
             btVytvorit.Enabled := True;
             btKonec.Caption := '&Konec';
-            Break;
+            Break;  // konec while a tedy skok skoro na konec procedury a konec naèítání
           end;
+
           with DesU.qrAbra do begin
-            // ne Fakturace
+            // ne Fakturace; HW jen kontroly
             if not rbFakturace.Checked then begin
               Close;
               DesU.dbAbra.Reconnect;
@@ -358,7 +358,9 @@ begin
                   Screen.Cursor := crDefault;
                   Exit;
                 end;
-              end else if RecordCount > 1 then begin      // více faktur s jedním datem
+              end
+              else if RecordCount > 1 then
+              begin      // více faktur s jedním datem
                 Zprava(Format('%s: Více faktur na období %s.%s.', [Zakaznik, aseMesic.Text, aseRok.Text]));
                 Dotaz := Application.MessageBox(PChar(Format('%s: Více faktur na období %s.%s. Je to v poøádku ?',
                 [Zakaznik, aseMesic.Text, aseRok.Text])), 'Pozor', MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON1);
@@ -383,7 +385,7 @@ begin
             if rbFakturace.Checked then begin
               Cells[2, Radek] := '';                                                 // faktura
               Cells[3, Radek] := '';                                                 // èástka
-              Cells[4, Radek] := DesU.qrZakos.FieldByName('Abrakod').AsString;             // jméno
+              Cells[4, Radek] := DesU.qrZakos.FieldByName('cu_abra_code').AsString;             // jméno
             end else begin
               Cells[2, Radek] := Format('%5.5d', [FieldByName('OrdNumber').AsInteger]);     // faktura
               Floats[3, Radek] := FieldByName('Amount').AsFloat;                    // èástka
@@ -392,18 +394,20 @@ begin
               Cells[8, Radek] := DateToStr(FieldByName('VATDate$DATE').AsFloat);
               Cells[9, Radek] := DateToStr(FieldByName('DocDate$DATE').AsFloat);
             end;  // if rbFakturace.Checked else...
-            Cells[5, Radek] := DesU.qrZakos.FieldByName('Mail').AsString;                // mail
-            Ints[6, Radek] := DesU.qrZakos.FieldByName('Reklama').AsInteger;             // reklama
+            Cells[5, Radek] := DesU.qrZakos.FieldByName('cu_postal_mail').AsString;                // mail
+            Ints[6, Radek] := DesU.qrZakos.FieldByName('cu_disable_mailings').AsInteger;             // reklama
             Application.ProcessMessages;
           end;  // with DesU.qrAbra
           Next;
         end;  // while not EOF
+        Close;
 
       // ***
       // ***  výbìr zákazníkù podle faktury  ***
       // ***
-      end else if rbPodleFaktury.Checked then with DesU.qrAbra do begin
-        Close;
+      end
+      else if rbPodleFaktury.Checked then with DesU.qrAbra do
+      begin
         dmCommon.Zprava(Format('Naètení faktur od %s do %s.', [aedOd.Text, aedDo.Text]));
 // faktura(y) v Abøe v mìsíci aseMesic
         SQLStr := 'SELECT II.ID, F.Name, F.Code as Abrakod, II.OrdNumber, II.VarSymbol, II.Amount, II.VATDate$DATE, II.DocDate$DATE FROM IssuedInvoices II, Firms F'
