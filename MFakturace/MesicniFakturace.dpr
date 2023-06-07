@@ -1,5 +1,4 @@
 program MesicniFakturace;
-
 uses
   Forms,
   AArray in '..\DE$_Common\AArray.pas',
@@ -16,17 +15,10 @@ uses
   FIprevod in 'FIprevod.pas' {dmPrevod: TDataModule},
   FItisk in 'FItisk.pas' {dmTisk: TDataModule},
   FImain in 'FImain.pas' {fmMain},
-  DesFrxUtils in '..\DE$_Common\frxExport\DesFrxUtils.pas' {DesFrxU},
-  frxExportSynPDF in '..\DE$_Common\frxExport\frxExportSynPDF.pas' {frxExportSynPDF},
-  SynCommons in '..\DE$_Common\frxExport\SynCommons.pas',
-  SynCrypto in '..\DE$_Common\frxExport\SynCrypto.pas',
-  SynGdiPlus in '..\DE$_Common\frxExport\SynGdiPlus.pas',
-  SynLZ in '..\DE$_Common\frxExport\SynLZ.pas',
-  SynPdf in '..\DE$_Common\frxExport\SynPdf.pas',
-  SynZip in '..\DE$_Common\frxExport\SynZip.pas';
+  DesInvoices in '..\DE$_Common\DesInvoices.pas',
+  DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport};
 
 {$R *.res}
-
 begin
   Application.Initialize;
   Application.Title := 'Mìsíèní fakturace s ÈTÚ';
@@ -38,6 +30,6 @@ begin
   Application.CreateForm(TdmMail, dmMail);
   Application.CreateForm(TdmPrevod, dmPrevod);
   Application.CreateForm(TdmTisk, dmTisk);
-  Application.CreateForm(TDesFrxU, DesFrxU);
+  Application.CreateForm(TDesFastReport, DesFastReport);
   Application.Run;
 end.

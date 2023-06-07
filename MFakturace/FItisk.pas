@@ -21,7 +21,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, DesFrxUtils, AArray, FIcommon;
+uses DesUtils, AArray, FIcommon;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ begin
     if rbSeSlozenkou.Checked then Posilani := 'se složenkou';
     if rbKuryr.Checked then Posilani := 'roznášených kurýrem';
 
-    if rbPodleSmlouvy.Checked then dmCommon.Zprava(Format('Tisk faktur %s od VS %s do %s', [Posilani, aedOd.Text, aedDo.Text]))
+    if rbVyberPodleVS.Checked then dmCommon.Zprava(Format('Tisk faktur %s od VS %s do %s', [Posilani, aedOd.Text, aedDo.Text]))
     else dmCommon.Zprava(Format('Tisk faktur %s od èísla %s do %s', [Posilani, aedOd.Text, aedDo.Text]));
     with asgMain do begin
       dmCommon.Zprava(Format('Poèet faktur k tisku: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
@@ -58,8 +58,6 @@ begin
           apbProgress.Position := 0;
           apbProgress.Visible := False;
           btVytvorit.Enabled := True;
-          asgMain.Visible := True;
-          lbxLog.Visible := False;
           Break;
         end;
         if Ints[0, Radek] = 1 then FakturaTisk(Radek);
@@ -71,8 +69,6 @@ begin
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     apnTisk.Visible := True;
-    asgMain.Visible := False;
-    lbxLog.Visible := True;
     Screen.Cursor := crDefault;                                             // default
     dmCommon.Zprava('Tisk faktur ukonèen');
   end;
@@ -93,7 +89,7 @@ begin
   desFrxUtilsResult := '';
 
   with fmMain do begin
-
+    { TODO na novy Report
     desFrxUtilsResult := DesFrxU.fakturaNactiData(asgMain.Cells[7, Radek]);
     dmCommon.Zprava(desFrxUtilsResult);
 
@@ -113,7 +109,7 @@ begin
     if desFrxUtilsResult <> 'Tisk OK' then
       if Application.MessageBox(PChar('Chyba pøi tisku'), 'Pokraèovat?',
          MB_YESNO + MB_ICONQUESTION) = IDNO then Prerusit := True;
-
+   }
   end;
 
 end;

@@ -233,6 +233,7 @@ begin
   if (not dbZakos.Connected) AND (dbZakos.Database <> '') then try begin
     dbZakos.Connect;
     qrZakos.SQL.Text := 'SET CHARACTER SET cp1250';
+    // SQL.Text := 'SET AUTOCOMMIT = 1';       // 16.9.21 táta, HWTODO probrat, je potøeba proè? pøidat?
     qrZakos.ExecSQL;
   end;
   except on E: exception do
@@ -241,6 +242,18 @@ begin
       Application.Terminate;
     end;
   end;
+
+  {
+  if (not dbVoIP.Connected) AND (dbVoIP.Database <> '') then try begin
+    dbVoIP.Connect;
+  end;
+  except on E: exception do
+    begin
+      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP, program ukonèen.' + ^M + E.Message), 'DesU DB VoIP', MB_ICONERROR + MB_OK);
+      Application.Terminate;
+    end;
+  end;
+  }
 
 end;
 

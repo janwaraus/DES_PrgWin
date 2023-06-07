@@ -18,7 +18,8 @@ interface
 uses
   Windows, Messages, Dialogs, SysUtils, Variants, Classes, Graphics, Controls, StdCtrls, ExtCtrls, Forms, Mask, ComObj, ComCtrls,
   AdvObj, AdvPanel, AdvEdit, AdvSpin, AdvDateTimePicker, AdvEdBtn, AdvFileNameEdit, AdvProgressBar, GradientLabel,
-  Grids, BaseGrid, AdvGrid, pCore2D, pBarcode2D, IniFiles, DateUtils, Math,
+  Grids, BaseGrid, AdvGrid, //pCore2D, pBarcode2D,
+  IniFiles, DateUtils, Math,
   DB, ZAbstractConnection, ZConnection, ZAbstractRODataset, ZAbstractDataset, ZDataset,
 
   frxClass, frxDBSet, frxDesgn, AdvUtil;
@@ -27,7 +28,6 @@ type
   TfmMain = class(TForm)
     qrMain: TZQuery;
     qrSmlouva: TZQuery;
-    dbVoIP: TZConnection;
     qrVoIP: TZQuery;
     qrAbra: TZQuery;
     qrAdresa: TZQuery;
@@ -48,9 +48,6 @@ type
     lbFakturyZa: TLabel;
     cbBezVoIP: TCheckBox;
     cbSVoIP: TCheckBox;
-    apnFakturyZa: TAdvPanel;
-    rbInternet: TRadioButton;
-    rbVoIP: TRadioButton;
     deDatumDokladu: TAdvDateTimePicker;
     deDatumPlneni: TAdvDateTimePicker;
     aedSplatnost: TAdvEdit;
@@ -72,8 +69,8 @@ type
     asgMain: TAdvStringGrid;
     apnVyberPodle: TAdvPanel;
     lbVyber: TLabel;
-    rbPodleFaktury: TRadioButton;
-    rbPodleSmlouvy: TRadioButton;
+    rbVyberPodleFaktury: TRadioButton;
+    rbVyberPodleVS: TRadioButton;
     Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure glbFakturaceClick(Sender: TObject);
@@ -99,15 +96,13 @@ type
     procedure asgMainClickCell(Sender: TObject; ARow, ACol: Integer);
     procedure asgMainCanSort(Sender: TObject; ACol: Integer; var DoSort: Boolean);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
-    procedure asgMainDblClick(Sender: TObject);
-    procedure lbxLogDblClick(Sender: TObject);
     procedure btVytvoritClick(Sender: TObject);
     procedure btOdeslatClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
     procedure btKonecClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure rbPodleSmlouvyClick(Sender: TObject);
-    procedure rbPodleFakturyClick(Sender: TObject);
+    procedure rbVyberPodleVSClick(Sender: TObject);
+    procedure rbVyberPodleFakturyClick(Sender: TObject);
     procedure rbFakturaceClick(Sender: TObject);
     procedure rbPrevodClick(Sender: TObject);
     procedure rbTiskClick(Sender: TObject);
@@ -138,7 +133,8 @@ var
 implementation
 
 uses DesUtils, AbraEntities, FICommon, FIfaktura, FIPrevod, FITisk, FIMail,
-AArray
+AArray,
+DesFastReports //pro test/demo jenom
 ;
 
 {$R *.dfm}
@@ -159,15 +155,15 @@ begin
   LogDir := DesU.PROGRAM_PATH + '\logy\Mìsíèní fakturace\';
   if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
   globalAA['LogFileName'] := LogDir + FormatDateTime('yyyy.mm".log"', Date);
-  DesUtils.appendToFile(globalAA['LogFileName'],''); //vloží prázdný øádek dek do logu
+  DesUtils.appendToFile(globalAA['LogFileName'],''); //vloží prázdný øádek do logu
   dmCommon.Zprava('Start programu "Mìsíèní fakturace".');
 
 
   // jména pro viewjsou unikátní, aby program nebyl omezen na jednu instanci
-  fiVoipCustomersView := FormatDateTime('VoIPyymmddhhnnss', Now);
-  fiBBmaxView := FormatDateTime('BByymmddhhnnss', Now);
-  fiBillingView := FormatDateTime('BVyymmddhhnnss', Now);
-  fiInvoiceView := FormatDateTime('IVyymmddhhnnss', Now);
+  fiVoipCustomersView := FormatDateTime('fiVoIPyymmddhhnnss', Now);
+  fiBBmaxView := FormatDateTime('fiBByymmddhhnnss', Now);
+  fiBillingView := FormatDateTime('fiBVyymmddhhnnss', Now);
+  fiInvoiceView := FormatDateTime('fiIVyymmddhhnnss', Now);
 
   // do 25. se oèekává fakturace za minulý mìsíc, pak už za aktuální
   if DayOf(Date) > 25 then begin
@@ -182,31 +178,31 @@ begin
   // fajfky v asgMain
   asgMain.CheckFalse := '0';
   asgMain.CheckTrue := '1';
-  apnFakturyZa.Visible := False;
-
 
   aseRokChange(nil);
   rbFakturaceClick(nil);
 
-
   //nastavení globálních promìnných pøi startu programu
-
   globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
 
-  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze to této øady
-  globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03');
+  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
+  globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03'); // L000000101
 
   abraVatIndex := TAbraVatIndex.create('Výst21');
-  globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id
-  globalAA['abraVatRate_Id'] := abraVatIndex.vatrateId; //VATRate_Id
+  globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id 6521000000
+  globalAA['abraVatRate_Id'] := abraVatIndex.vatrate_Id; //VATRate_Id 02100X0000
   globalAA['abraVatRate'] := abraVatIndex.tariff; //VATRate
 
   abraVatIndex := TAbraVatIndex.create('VýstR21');
-  globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id
+  globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id  6621000000
 
   abraDrcArticle := TAbraDrcArticle.create('21');
   globalAA['abraDrcArticle_Id'] := abraDrcArticle.id;
 
+
+  // pro text, TODO smazat
+  aedOd.Text := '10200555';
+  aedDo.Text := '10205555';
 
 end;
 
@@ -308,8 +304,8 @@ begin
   glbMail.Color := clSilver;
   glbMail.ColorTo := clGray;
   apnMail.Visible := False;
-  rbPodleSmlouvy.Checked := True;
-  rbPodleFaktury.Enabled := False;
+  rbVyberPodleVS.Checked := True;
+  rbVyberPodleFaktury.Enabled := False;
   apnVyberPodle.Visible := False;
   apbProgress.Visible := False;
   lbxLog.Visible := True;
@@ -333,16 +329,16 @@ begin
   apnMail.Visible := False;
   glbFakturace.Color := clSilver;
   glbFakturace.ColorTo := clGray;
-  rbPodleFaktury.Enabled := True;
-  rbPodleFaktury.Checked := True;
+  rbVyberPodleFaktury.Enabled := True;
+  rbVyberPodleFaktury.Checked := True;
   apnVyberPodle.Visible := True;
   aseRokChange(Self);
 
 
-  {* HW testovaci nastaveni *}
+  {* HW testovaci nastaveni TODO odstranit*}
   aseMesic.Value := 2;
   aedOd.Text := '5000';
-  aedDo.Text := '5004';
+  aedDo.Text := '5003';
 
 end;
 
@@ -363,15 +359,15 @@ begin
   glbPrevod.Color := clSilver;
   glbPrevod.ColorTo := clGray;
   apnPrevod.Visible := False;
-  rbPodleFaktury.Enabled := True;
-  rbPodleFaktury.Checked := True;
+  rbVyberPodleFaktury.Enabled := True;
+  rbVyberPodleFaktury.Checked := True;
   apnVyberPodle.Visible := True;
   aseRokChange(Self);
 
-  {* HW testovaci nastaveni *}
+  {* HW testovaci nastaveni TODO odstranit *}
   aseMesic.Value := 2;
   aedOd.Text := '5000';
-  aedDo.Text := '5004';
+  aedDo.Text := '5003';
 
 
 end;
@@ -393,8 +389,8 @@ begin
   glbTisk.Color := clSilver;
   glbTisk.ColorTo := clGray;
   apnTisk.Visible := False;
-  rbPodleFaktury.Enabled := True;
-  rbPodleFaktury.Checked := True;
+  rbVyberPodleFaktury.Enabled := True;
+  rbVyberPodleFaktury.Checked := True;
   apnVyberPodle.Visible := True;
   aseRokChange(Self);
 end;
@@ -420,67 +416,68 @@ end;
 procedure TfmMain.aseRokChange(Sender: TObject);
 // pøi zmìnì (nejen) roku nastaví nové deDatumDokladu, deDatumPlneni, aedSplatnost, aedOd a aedDo
 begin
-  if (not DesU.dbZakos.Connected) or (not DesU.dbAbra.Connected) then begin
-    ShowMessage('Nejsou pøipravené databáze (TfmMain.aseRokChange)');
-    Exit;
-  end;
-
   aedOd.Clear;
   aedDo.Clear;
   asgMain.ClearNormalCells;
   asgMain.RowCount := 2;
   btVytvorit.Caption := '&Naèíst';
-  asgMain.Visible := True;
-  lbxLog.Visible := False;
 
 
-  globalAA['abraIiPeriod_Id'] := DesU.getAbraPeriodId(aseRok.Text); // tohle ale dát jinam
+  globalAA['abraIiPeriod_Id'] := DesU.getAbraPeriodId(aseRok.Text); // tohle ale dát jinam, resp. vyhodit a øešit Period_ID až pøi tvorbì fa (jen tehdy je potøeba)
 
 // datum fakturace i datum plnìní je poslední den v mìsíci
   deDatumDokladu.Date := EndOfAMonth(aseRok.Value, aseMesic.Value);
   deDatumPlneni.Date := deDatumDokladu.Date;
   aedSplatnost.Text := '10';
 
-  // *** výbìr podle smlouvy
-  if rbPodleSmlouvy.Checked then begin
+
+  if rbFakturace.Checked then begin
+    // *** výbìr pro Fakturaci, pouze podle VS
     with DesU.qrZakos do try
       Screen.Cursor := crSQLWait;
 
       // view pro fakturaci
-      dmCommon.AktualizaceView;
+      dmCommon.AktualizaceView; // TODO dat pryc
 
-      // první a poslední èíslo smlouvy
-      SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM fiInvoiceView';
+      // první a poslední VS
+      SQL.Text := 'CALL get_monthly_invoicing_minmaxvs('
+        + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
+        + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApZ;
+
       Open;
-      aedOd.Text := Fields[0].AsString;
-      aedDo.Text := Fields[1].AsString;
+      aedOd.Text := FieldByName('min_vs').AsString;
+      aedDo.Text := FieldByName('max_vs').AsString;
       Close;
     finally
       Screen.Cursor := crDefault;
     end;
-  end;
-
-  // *** výbìr podle faktury
-  if rbPodleFaktury.Checked then begin
+  end else begin
+    // *** výbìr pro Pøevod, Tisk, Mail
     DesU.dbAbra.Reconnect;
     with DesU.qrAbra do begin
       // rozpìtí èísel FO1 v mìsíci
-      SQL.Text := 'SELECT MIN(OrdNumber), MAX(OrdNumber) FROM IssuedInvoices'
-      + ' WHERE VATDate$DATE >= ' + FloatToStr(Trunc(StartOfAMonth(aseRok.Value, aseMesic.Value)))
-      + ' AND VATDate$DATE <= ' + FloatToStr(Trunc(EndOfAMonth(aseRok.Value, aseMesic.Value)))
-      + ' AND DocQueue_ID = ' + Ap + globalAA['abraIiDocQueue_Id'] + Ap;
+      if rbVyberPodleVS.Checked then
+        SQL.Text := 'SELECT MIN(VarSymbol), MAX(VarSymbol) ';
+
+      if rbVyberPodleFaktury.Checked then
+        SQL.Text := 'SELECT MIN(OrdNumber), MAX(OrdNumber) ';
+
+      SQL.Text := SQL.Text + 'FROM IssuedInvoices'
+      + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').id + Ap
+      + ' AND VATDate$DATE >= ' + FloatToStr(Trunc(StartOfAMonth(aseRok.Value, aseMesic.Value)))
+      + ' AND VATDate$DATE <= ' + FloatToStr(Trunc(EndOfAMonth(aseRok.Value, aseMesic.Value)));
+
       Open;
       if RecordCount > 0 then begin
         aedOd.Text := Fields[0].AsString;
         aedDo.Text := Fields[1].AsString;
-        Close;
       end else begin
         aedOd.Clear;
         aedDo.Clear;
       end;
+      Close;
     end;
   end;
-
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -570,14 +567,14 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.rbPodleSmlouvyClick(Sender: TObject);
+procedure TfmMain.rbVyberPodleVSClick(Sender: TObject);
 begin
   aseRokChange(nil);
 end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.rbPodleFakturyClick(Sender: TObject);
+procedure TfmMain.rbVyberPodleFakturyClick(Sender: TObject);
 begin
   aseRokChange(nil);
 end;
@@ -603,13 +600,6 @@ begin
   aedOdChange(nil);
 end;
 
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.asgMainDblClick(Sender: TObject);
-begin
-  asgMain.Visible := False;
-  lbxLog.Visible := True;
-end;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -645,14 +635,6 @@ begin
   HAlign := taLeftJustify;
   if (ACol = 0) or (ARow = 0) then HAlign := Classes.taCenter
   else if (ACol in [1..3]) and (ARow > 0) then HAlign := taRightJustify;
-end;
-
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.lbxLogDblClick(Sender: TObject);
-begin
-  asgMain.Visible := True;
-  lbxLog.Visible := False;
 end;
 
 
@@ -697,7 +679,16 @@ var
   source : string;
   i: integer;
   rData: TAArray;
+  temps : string;
+  vysledek : TDesResult;
 begin
+
+  DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
+  DesFastReport.setExportDirName(Format('%s\%4d\%2.2d\', [globalAA['PDFDir'], 2023, 15])); // 15 pro legraci
+
+    vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
+    //  '1K6P200101' '4K6P200101' '7K6P200101'
+    dmCommon.Zprava(Format('%s', [vysledek.Messg]));
 
 //ShowMessage('demooo_' +  BoolToStr(DesU.existujeVAbreDokladSPrazdnymVs(), true));
 //ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));
@@ -736,10 +727,13 @@ ShowMessage (
   );
 
 }
+
+{
   rData := TAArray.Create;
   rData['Title'] := 'Faktura za pøipojení k internetu';
   rData['Author'] := 'Družstvo Eurosignal';
   ShowMessage (rData['Title'] +' - '+rData['kuku']+'-');
+}
 
 end;
 
