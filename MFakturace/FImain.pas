@@ -100,7 +100,6 @@ type
     procedure btOdeslatClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
     procedure btKonecClick(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure rbVyberPodleVSClick(Sender: TObject);
     procedure rbVyberPodleFakturyClick(Sender: TObject);
     procedure rbFakturaceClick(Sender: TObject);
@@ -140,7 +139,7 @@ var
 
 implementation
 
-uses DesUtils, AbraEntities, FICommon, FIfaktura, FIPrevod, FITisk, FIMail,
+uses DesUtils, AbraEntities, FIfaktura, FIPrevod, FITisk, FIMail,
 AArray,
 DesFastReports //pro test/demo jenom
 ;
@@ -217,21 +216,6 @@ begin
 
 end;
 
-// ------------------------------------------------------------------------------------------------
-procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  with DesU.qrZakos do try
-    SQL.Text := 'DROP VIEW ' + fiVoipCustomersView;
-    ExecSQL;
-    SQL.Text := 'DROP VIEW ' + fiInvoiceView;
-    ExecSQL;
-    SQL.Text := 'DROP VIEW ' + fiBillingView;
-    ExecSQL;
-    SQL.Text := 'DROP VIEW ' + fiBBmaxView;
-    ExecSQL;
-  except
-  end;
-end;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -446,9 +430,6 @@ begin
     // *** výbìr pro Fakturaci, pouze podle VS
     with DesU.qrZakos do try
       Screen.Cursor := crSQLWait;
-
-      // view pro fakturaci
-      dmCommon.AktualizaceView; // TODO dat pryc
 
       // první a poslední VS
       SQL.Text := 'CALL get_monthly_invoicing_minmaxvs('

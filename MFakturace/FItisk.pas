@@ -21,7 +21,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, AArray, FIcommon;
+uses DesUtils, AArray;
 
 // ------------------------------------------------------------------------------------------------
 

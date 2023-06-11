@@ -26,7 +26,7 @@ var
 
 implementation
 
-uses DesUtils, FIcommon, FImain;
+uses DesUtils, FImain;
 
 {$R *.dfm}
 

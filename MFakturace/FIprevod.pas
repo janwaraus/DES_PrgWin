@@ -18,7 +18,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesInvoices, DesFastReports, AArray, FImain, FIcommon;  //frxExportSynPDF, DesFrxUtils
+uses DesInvoices, DesFastReports, AArray, FImain;  //frxExportSynPDF, DesFrxUtils
 
 // ------------------------------------------------------------------------------------------------
 
