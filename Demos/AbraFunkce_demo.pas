@@ -72,7 +72,7 @@ var
   DQueue : TAbraDocQueue;
 begin
 Memo1.Lines.Clear;
-
+  {
   AbraEnt.loadVatEntities;
 
   MyArray := TDictionary<string, TObject>.Create;
@@ -89,7 +89,7 @@ Memo1.Lines.Clear;
   Memo1.Lines.Append('DQ1: ' +  AbraEnt.getDocQueue('Code=FO1').id);
   Memo1.Lines.Append('DQ1x: ' +  DQueue.id + ' ' + DQueue.name);
   Memo1.Lines.Append('DRC: ' +  AbraEnt.getDrcArticle('Code=21').id + ' ' + AbraEnt.getDrcArticle('Code=21').name );
-
+  }
 
 
 

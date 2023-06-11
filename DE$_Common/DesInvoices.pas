@@ -75,7 +75,6 @@ begin
       + ' JOIN Firms f ON ii.Firm_ID = f.ID'
       + ' JOIN Addresses a ON f.ResidenceAddress_ID = a.ID'
       + ' WHERE ii.ID = ''' + DocumentID + '''';
-
     DesUtils.appendToFile(globalAA['LogFileName'], SQL.Text);
 
     Open;
@@ -103,7 +102,7 @@ begin
       self.DocumentType := FieldByName('DocumentType').asString;
       self.Year := FieldByName('YearCode').asString;
 
-      self.CisloDokladu := Format('%s-%d/%s', [self.DocQueueCode, self.OrdNumber, self.Year]); // s leading nulami by bylo jako '%s-%d/%s'
+      self.CisloDokladu := Format('%s-%d/%s', [self.DocQueueCode, self.OrdNumber, self.Year]); // s leading nulami by bylo jako '%s-%5.5d/%s'
       self.CisloDokladuZkracene := Format('%s-%d/%s', [self.DocQueueCode, self.OrdNumber, RightStr(self.Year, 2)]);
 
       self.Firm := TAbraFirm.create(

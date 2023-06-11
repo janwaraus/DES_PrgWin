@@ -33,10 +33,10 @@ begin
 
   with fmMain do try
     if rbVyberPodleVS.Checked then
-      dmCommon.Zprava(Format('Pøevod faktur do PDF od VS %s do %s', [aedOd.Text, aedDo.Text]))
-      else dmCommon.Zprava(Format('Pøevod faktur do PDF od èísla %s do %s', [aedOd.Text, aedDo.Text]));
+      fmMain.Zprava(Format('Pøevod faktur do PDF od VS %s do %s', [aedOd.Text, aedDo.Text]))
+      else fmMain.Zprava(Format('Pøevod faktur do PDF od èísla %s do %s', [aedOd.Text, aedDo.Text]));
     with asgMain do begin
-      dmCommon.Zprava(Format('Poèet faktur k pøevodu: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
+      fmMain.Zprava(Format('Poèet faktur k pøevodu: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
       Screen.Cursor := crHourGlass;
       apnPrevod.Visible := False;
       apbProgress.Position := 0;
@@ -59,7 +59,7 @@ begin
         //if Ints[0, Radek] = 1 then FakturaPrevod_old(Radek)  // pokud zaškrtnuto, pøevádíme fa do PDF
         if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
           VysledekPrevedeni := fakturaPrevod(asgMain.Cells[7, Radek], not cbNeprepisovat.Checked);
-          dmCommon.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
+          fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
           if VysledekPrevedeni.isOk then begin
             asgMain.Ints[0, Radek] := 0;
             asgMain.Row := Radek;
@@ -75,7 +75,7 @@ begin
     apbProgress.Visible := False;
     apnPrevod.Visible := True;
     Screen.Cursor := crDefault;
-    dmCommon.Zprava('Pøevod faktur do PDF ukonèen');
+    fmMain.Zprava('Pøevod faktur do PDF ukonèen');
   end;
 end;
 // ------------------------------------------------------------------------------------------------

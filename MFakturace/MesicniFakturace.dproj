@@ -93,19 +93,10 @@
         <DCCReference Include="..\DE$_Common\Superobject.pas"/>
         <DCCReference Include="..\DE$_Common\Supertimezone.pas"/>
         <DCCReference Include="..\DE$_Common\Supertypes.pas"/>
-        <DCCReference Include="FIcommon.pas">
-            <Form>dmCommon</Form>
-            <FormType>dfm</FormType>
-            <DesignClass>TDataModule</DesignClass>
-        </DCCReference>
         <DCCReference Include="FIfaktura.pas">
             <Form>dmFaktura</Form>
             <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
-        </DCCReference>
-        <DCCReference Include="FIlogin.pas">
-            <Form>fmLogin</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="FImail.pas">
             <Form>dmMail</Form>

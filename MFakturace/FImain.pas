@@ -108,24 +108,32 @@ type
     procedure rbTiskClick(Sender: TObject);
     procedure rbMailClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+  private
+    LogDir : string;
+    function getSqlTextFakturace() : string;
+    function getSqlTextPrevodMailTisk(FiltrovatPodle : string; ApNavic : boolean) : string;
   public
-    //F: TextFile;
 
     isDebugMode,
     Prerusit: boolean;
-
-
-    AbraOLE: variant;
-
-    User_Id: string[10]; //User_ID do ABRY
-
 
     fiVoipCustomersView,
     fiBBmaxView,
     fiBillingView,
     fiInvoiceView: ShortString;
 
+    procedure Zprava(TextZpravy: string);
+    procedure PlneniAsgMain;
+
   end;
+
+
+const
+
+  MyAddress_Id: string[10] = '7000000101';
+  MyUser_Id: string[10] = '2200000101';          // automatická fakturace
+  MyAccount_Id: string[10] = '1400000101';       // Fio
+  MyPayment_Id: string[10] = '1000000101';       // typ platby: na bankovní úèet
 
 var
   fmMain: TfmMain;
@@ -139,12 +147,15 @@ DesFastReports //pro test/demo jenom
 
 {$R *.dfm}
 
+// ------------------------------------------------------------------------------------------------
+// funkce prvkù formuláøe fmMain
+// ------------------------------------------------------------------------------------------------
+
 
 procedure TfmMain.FormShow(Sender: TObject);
 var
   FileHandle: integer;
   FIIni: TIniFile;
-  LogDir,
   LogFileName,
   FIFileName: string;
   abraVatIndex : TAbraVatIndex;
@@ -155,8 +166,8 @@ begin
   LogDir := DesU.PROGRAM_PATH + '\logy\Mìsíèní fakturace\';
   if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
   globalAA['LogFileName'] := LogDir + FormatDateTime('yyyy.mm".log"', Date);
-  DesUtils.appendToFile(globalAA['LogFileName'],''); //vloží prázdný øádek do logu
-  dmCommon.Zprava('Start programu "Mìsíèní fakturace".');
+  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), ''); //vloží prázdný øádek do logu
+  Zprava('Start programu "Mìsíèní fakturace".');
 
 
   // jména pro viewjsou unikátní, aby program nebyl omezen na jednu instanci
@@ -206,7 +217,7 @@ begin
 
 end;
 
-
+// ------------------------------------------------------------------------------------------------
 procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   with DesU.qrZakos do try
@@ -234,7 +245,7 @@ begin
   try
 
     // *** Naplnìní asgMain ***
-    if btVytvorit.Caption = '&Naèíst' then dmCommon.Plneni_asgMain
+    if btVytvorit.Caption = '&Naèíst' then fmMain.PlneniAsgMain
     else begin
 
       // *** Fakturace ***
@@ -260,10 +271,10 @@ procedure TfmMain.btKonecClick(Sender: TObject);
 begin
   if btKonec.Caption = '&Pøerušit' then begin
     Prerusit := True;
-    dmCommon.Zprava('Pøerušeno uživatelem.');
+    Zprava('Pøerušeno uživatelem.');
     btKonec.Caption := '&Konec';
   end else begin
-    dmCommon.Zprava('Konec programu "Mìsíèní fakturace".');
+    Zprava('Konec programu "Mìsíèní fakturace".');
     Close;
   end;
 end;
@@ -671,8 +682,254 @@ begin
   rbMailClick(nil);
 end;
 
+
+
+// ------------------------------------------------------------------------------------------------
+// funkce nespojené pøímo s konkrétním prvkem formuláøe
 // ------------------------------------------------------------------------------------------------
 
+
+procedure TfmMain.Zprava(TextZpravy: string);
+// do listboxu a logfile uloží èas a text zprávy
+begin
+  TextZpravy := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
+  lbxLog.Items.Add(TextZpravy);
+  lbxLog.ItemIndex := lbxLog.Count - 1;
+  Application.ProcessMessages;
+  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), TextZpravy);
+end;
+
+// ------------------------------------------------------------------------------------------------
+
+function TfmMain.getSqlTextFakturace() : string;
+var
+  SqlProcedureName : string;
+begin
+  if cbBezVoIP.Checked and not cbSVoIP.Checked then
+    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_nonvoip'
+  else if cbSVoIP.Checked and not cbBezVoIP.Checked then
+    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_voip'
+  else
+    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_all';
+
+  Result := 'CALL ' + SqlProcedureName + '('
+    + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
+    + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApC
+    + Ap + aedOd.Text + ApC
+    + Ap + aedDo.Text + ApZ;
+end;
+
+
+function TfmMain.getSqlTextPrevodMailTisk(FiltrovatPodle : string; ApNavic : boolean) : string;
+var
+  ApStr : string;
+begin
+  if ApNavic then
+    ApStr := Ap
+  else
+    ApStr := '';
+
+  // faktura(y) v Abøe v mìsíci aseMesic
+  Result := 'SELECT II.ID, F.Name as FirmName, F.Code as Abrakod, II.OrdNumber, II.VarSymbol, II.Amount, II.VATDate$DATE, II.DocDate$DATE '
+  + 'FROM IssuedInvoices II, Firms F'
+  + ' WHERE II.Firm_ID = F.ID'
+  + ' AND ' + FiltrovatPodle + ' >= ' + ApStr + aedOd.Text + ApStr
+  + ' AND ' + FiltrovatPodle + ' <= ' + ApStr + aedDo.Text + ApStr
+  + ' AND DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').id + Ap
+  + ' AND VATDate$DATE >= ' + FloatToStr(Trunc(StartOfAMonth(aseRok.Value, aseMesic.Value)))  // aby se odfiltrovaly fa z jiných mìsícù, pokud by se nìjak dostaly do øady
+  + ' AND VATDate$DATE <= ' + FloatToStr(Trunc(EndOfAMonth(aseRok.Value, aseMesic.Value))); // aby se odfiltrovaly fa z jiných mìsícù, pokud by se nìjak dostaly do øady
+
+  if cbBezVoIP.Checked and not cbSVoIP.Checked then
+    Result := Result + ' AND LOWER(II.Description) NOT LIKE ''%voip%''';
+  if cbSVoIP.Checked and not cbBezVoIP.Checked then
+    Result := Result + ' AND LOWER(II.Description) LIKE ''%voip%''';
+
+  if rbMail.Checked then Result := Result + ' AND F.Firm_ID IS NULL';  // TODO provìøit
+  Result := Result + ' ORDER BY VarSymbol';
+end;
+
+procedure TfmMain.PlneniAsgMain;
+var
+  Radek: integer;
+  VarSymbol : string[10];
+  SQLStr: string;
+begin
+  with fmMain do try
+    apnPrevod.Visible := False;
+    apnTisk.Visible := False;
+    apnMail.Visible := False;
+    Screen.Cursor := crHourGlass;
+
+    with asgMain do try
+      ClearNormalCells;
+      RowCount := 2;
+
+      // ********************//
+      // ***  Fakturace  *** //
+      // ********************//
+      if rbFakturace.Checked then begin          //výbìr zákazníkù/smluv k fakturaci
+        // kontrola mìsíce a roku fakturace
+        if (aseRok.Value * 12 + aseMesic.Value > YearOf(Date) * 12 + MonthOf(Date) + 1)     // vìtší než pøíští mìsíc, èi menší
+         or (aseRok.Value * 12 + aseMesic.Value < YearOf(Date) * 12 + MonthOf(Date) - 1) then begin       // než minulý mìsíc
+          SQLStr := Format('Opravdu fakturovat %d. mìsíc roku %d ?', [aseMesic.Value, aseRok.Value]);
+          if Application.MessageBox(PChar(SQLStr), 'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then begin
+            btVytvorit.Enabled := True;
+            btKonec.Caption := '&Konec';
+            Exit;
+          end;
+        end;
+
+        Zprava(Format('Naètení zákazníkù k fakturaci na období %s.%s od VS %s do %s.', [aseMesic.Text, aseRok.Text, aedOd.Text, aedDo.Text]));
+
+        if cbBezVoIP.Checked then Zprava('      - zákazníci bez VoIP');
+        if cbSVoIP.Checked then Zprava('      - zákazníci s VoIP');
+
+        Radek := 0;
+        apbProgress.Position := 0;
+        apbProgress.Visible := True;
+
+        DesU.qrZakos.SQL.Text := getSqlTextFakturace();
+
+        DesU.qrZakos.Open;
+        while not DesU.qrZakos.EOF do begin
+          VarSymbol := DesU.qrZakos.FieldByName('cu_variable_symbol').AsString;
+          apbProgress.Position := Round(100 * DesU.qrZakos.RecNo / DesU.qrZakos.RecordCount);
+          Application.ProcessMessages;
+
+          if Prerusit then begin
+            Prerusit := False;
+            apbProgress.Position := 0;
+            apbProgress.Visible := False;
+            btVytvorit.Enabled := True;
+            btKonec.Caption := '&Konec';
+            Break;  // konec while a tedy skok skoro na konec procedury a konec naèítání
+          end;
+
+          with DesU.qrAbra do begin
+            // uložení do asgMain
+            Inc(Radek);
+            RowCount := Radek + 1;
+            AddCheckBox(0, Radek, True, True);
+            Ints[0, Radek] := 1;                                                   // fajfka
+            Cells[1, Radek] := VarSymbol;                                          // VS
+            Cells[2, Radek] := '';                                                 // faktura
+            Cells[3, Radek] := '';                                                 // èástka
+            Cells[4, Radek] := DesU.qrZakos.FieldByName('cu_abra_code').AsString;             // jméno
+            Cells[5, Radek] := DesU.qrZakos.FieldByName('cu_postal_mail').AsString;                // mail
+            Ints[6, Radek] := DesU.qrZakos.FieldByName('cu_disable_mailings').AsInteger;             // reklama
+            Application.ProcessMessages;
+          end;  // with DesU.qrAbra
+          DesU.qrZakos.Next;
+        end;  // while not EOF
+        DesU.qrZakos.Close;
+
+      end
+      else // if rbFakturace.Checked
+
+      // *****************************//
+      // ***  Pøevod, Tisk, Mail  *** //
+      // *****************************//
+      with DesU.qrAbra do
+      begin
+        Radek := 0;
+        apbProgress.Position := 0;
+        apbProgress.Visible := True;
+
+        if rbVyberPodleVS.Checked then begin
+          SQL.Text := getSqlTextPrevodMailTisk('VarSymbol', true);
+          Zprava(Format('Naètení faktur s VS od %s do %s.', [aedOd.Text, aedDo.Text]));
+        end;
+        if rbVyberPodleFaktury.Checked then begin
+          SQL.Text := getSqlTextPrevodMailTisk('OrdNumber', false);
+          Zprava(Format('Naètení faktur s èísly od %s do %s.', [aedOd.Text, aedDo.Text]));
+        end;
+
+        Open;
+        while not EOF do begin
+          VarSymbol := FieldByName('VarSymbol').AsString;
+          apbProgress.Position := Round(100 * RecNo / RecordCount);
+          Application.ProcessMessages;
+          if Prerusit then begin
+            Prerusit := False;
+            apbProgress.Position := 0;
+            apbProgress.Visible := False;
+            btVytvorit.Enabled := True;
+            btKonec.Caption := '&Konec';
+            Break;
+          end;
+          with DesU.qrZakos do begin
+            Close;
+
+            SQLStr := 'SELECT postal_mail, disable_mailings FROM customers'
+            + ' WHERE variable_symbol = ' + VarSymbol;
+
+            if rbMail.Checked then SQLStr := SQLStr + ' AND invoice_sending_method_id = 9'; // hodnota v codebooks "Mailem"
+            if rbTisk.Checked then begin
+              if rbBezSlozenky.Checked then SQLStr := SQLStr + ' AND invoice_sending_method_id = 10' // hodnota v codebooks "Poštou"
+              else if rbSeSlozenkou.Checked then SQLStr := SQLStr + ' AND invoice_sending_method_id = 11' // hodnota v codebooks "Se složenkou"
+              else if rbKuryr.Checked then SQLStr := SQLStr + ' AND invoice_sending_method_id = 12'; // hodnota v codebooks "Kurýr"
+            end;
+
+            SQL.Text := SQLStr;
+            Open;
+            if RecordCount > 0 then begin
+              // uložení do asgMain
+              Inc(Radek);
+              RowCount := Radek + 1;
+              AddCheckBox(0, Radek, True, True);
+              Ints[0, Radek] := 1;                                                   // fajfka tisk - mail
+              Cells[1, Radek] := VarSymbol;                                          // smlouva
+              Cells[2, Radek] := Format('%5.5d', [DesU.qrAbra.FieldByName('OrdNumber').AsInteger]);     // faktura
+              Floats[3, Radek] := DesU.qrAbra.FieldByName('Amount').AsFloat;;             // èástka
+              Cells[4, Radek] := FieldByName('FirmName').AsString;                        // jméno
+              Cells[5, Radek] := FieldByName('postal_mail').AsString;                       // mail
+              Ints[6, Radek] := FieldByName('disable_mailings').AsInteger;                    // reklama
+              Cells[7, Radek] := DesU.qrAbra.FieldByName('ID').AsString;             // ID faktury
+              Cells[8, Radek] := DateToStr(DesU.qrAbra.FieldByName('VATDate$DATE').AsFloat);
+              Cells[9, Radek] := DateToStr(DesU.qrAbra.FieldByName('DocDate$DATE').AsFloat);
+            end;
+          end; //with DesU.qrZakos
+          Application.ProcessMessages;
+          Next;
+        end;  // while not EOF
+      end;  // with DesU.qrAbra
+
+      { vyreseno ORDER BY v selectu
+      if not rbFakturace.Checked then begin // TODO zeptat se, co a proc se sortuje, proc fakturace ne a ostatni ano
+        SortSettings.Column := 2;
+        SortSettings.Full := True;
+        //SortSettings.AutoFormat := False;
+        SortSettings.Direction := sdAscending;
+        QSort;
+      end;
+      }
+
+      Zprava(Format('Poèet faktur: %d', [RowCount-1]));
+      if rbFakturace.Checked then btVytvorit.Caption := '&Vytvoøit'
+      else if rbPrevod.Checked then btVytvorit.Caption := '&Pøevést'
+      else if rbTisk.Checked then btVytvorit.Caption := '&Vytisknout'
+      else if rbMail.Checked then btVytvorit.Caption := '&Odeslat';
+    except on E: Exception do
+      Zprava('Neošetøená chyba: ' + E.Message);
+    end;  // with DesU.qrZakos
+  finally
+    DesU.qrZakos.Close;
+    apbProgress.Position := 0;
+    apbProgress.Visible := False;
+    if rbPrevod.Checked then apnPrevod.Visible := True;
+    if rbTisk.Checked then apnTisk.Visible := True;
+    if rbMail.Checked then apnMail.Visible := True;
+    Screen.Cursor := crDefault;
+    btVytvorit.Enabled := True;
+    btVytvorit.SetFocus;
+  end;
+end;
+
+
+
+// ------------------------------------------------------------------------------------------------
+// testovací funkce
+// ------------------------------------------------------------------------------------------------
 
 procedure TfmMain.Button1Click(Sender: TObject);
 var
@@ -688,7 +945,7 @@ begin
 
     vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
     //  '1K6P200101' '4K6P200101' '7K6P200101'
-    dmCommon.Zprava(Format('%s', [vysledek.Messg]));
+    Zprava(Format('%s', [vysledek.Messg]));
 
 //ShowMessage('demooo_' +  BoolToStr(DesU.existujeVAbreDokladSPrazdnymVs(), true));
 //ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));

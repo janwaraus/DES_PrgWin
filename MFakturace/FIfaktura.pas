@@ -29,7 +29,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, FIcommon, FIlogin;
+uses DesUtils, FIcommon;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ var
   Radek: integer;
 begin
   with fmMain, fmMain.asgMain do try
-    dmCommon.Zprava(Format('Poèet faktur k vygenerování: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
+    fmMain.Zprava(Format('Poèet faktur k vygenerování: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
 
     Screen.Cursor := crHourGlass;
     apbProgress.Position := 0;
@@ -60,7 +60,7 @@ begin
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     Screen.Cursor := crDefault;
-    dmCommon.Zprava('Generování faktur ukonèeno');
+    fmMain.Zprava('Generování faktur ukonèeno');
   end;  //  with fmMain
 end;
 
@@ -115,7 +115,9 @@ begin
 
   with fmMain, qrSmlouva, asgMain do begin
   // faktura se nebude vytváøet, je-li ve smlouvách také fakturovaný VoIP a není zašrktnuté vytváøení VoIP faktur,
-  // nebo není zašrktlé vytváøení internet faktur a faktura nemé VoIP (tedy je internet)
+  // nebo není zašrktlé vytváøení internet faktur a faktura nemá VoIP (tedy je internet)
+  // HWTODO je tenhle check potreba?
+  {
     Close;
     SQLStr := 'SELECT COUNT(*) FROM ' + fiInvoiceView
     + ' WHERE (Tarif = ''EP-Home'' OR Tarif = ''EP-Profi'')'
@@ -127,27 +129,26 @@ begin
       Close;
       Exit;
     end;
+  }
 
 // není víc zákazníkù pro jeden VS ? 31.1.2017
     Close;
     SQLStr := 'SELECT COUNT(*) FROM customers'
-    + ' WHERE Variable_Symbol = ' + Ap + Cells[1, Radek] + Ap;
+    + ' WHERE variable_symbol = ' + Ap + Cells[1, Radek] + Ap;
     SQL.Text := SQLStr;
     Open;
     if Fields[0].AsInteger > 1 then begin
-      dmCommon.Zprava(Format('Variabilní symbol %s má více zákazníkù.', [Cells[1, Radek]]));
+      fmMain.Zprava(Format('Variabilní symbol %s má více zákazníkù.', [Cells[1, Radek]]));
       Close;
       Exit;
     end;
 
 // je pøenesená daòová povinnost ?  19.10.2016 - bude pro celou fakturu, ne pro jednotlivé smlouvy
     Close;
-    SQLStr := 'SELECT COUNT(*) FROM contracts_tags'
-    + ' WHERE Tag_Id = ' + IntToStr(DRCTag_Id)
-    + ' AND Contract_Id IN (SELECT Id FROM contracts'
-      + ' WHERE Invoice = 1'
-      + ' AND Customer_Id = (SELECT Id FROM customers'
-        + ' WHERE Variable_Symbol = ' + Ap + Cells[1, Radek] + ApZ + ')';
+    SQLStr := 'SELECT COUNT(*) FROM contracts'
+    + ' WHERE DRC = 1'
+    + ' AND Customer_Id = (SELECT Id FROM customers'
+      + ' WHERE Variable_Symbol = ' + Ap + Cells[1, Radek] + ApZ;
     SQL.Text := SQLStr;
     Open;
     isDRC := Fields[0].AsInteger > 0;
@@ -162,12 +163,12 @@ begin
     Open;
 // pøi lecjaké chybì v databázi (napø. Tariff_Id je NULL) konec
     if RecordCount = 0 then begin
-      dmCommon.Zprava(Format('Pro variabilní symbol %s není co fakturovat.', [FieldByName('VS').AsString]));
+      fmMain.Zprava(Format('Pro variabilní symbol %s není co fakturovat.', [FieldByName('VS').AsString]));
       Close;
       Exit;
     end;
     if FieldByName('AbraKod').AsString = '' then begin
-      dmCommon.Zprava(Format('Smlouva %s: zákazník nemá kód Abry.', [FieldByName('Smlouva').AsString]));
+      fmMain.Zprava(Format('Smlouva %s: zákazník nemá kód Abry.', [FieldByName('Smlouva').AsString]));
       Close;
       Exit;
     end;
@@ -184,7 +185,7 @@ begin
       SQL.Text := SQLStr;
       Open;
       if RecordCount = 0 then begin
-        dmCommon.Zprava(Format('Smlouva %s: zákazník s kódem %s není v adresáøi Abry.',
+        fmMain.Zprava(Format('Smlouva %s: zákazník s kódem %s není v adresáøi Abry.',
          [qrSmlouva.FieldByName('Smlouva').AsString, qrSmlouva.FieldByName('AbraKod').AsString]));
         Exit;
       end else begin
@@ -217,21 +218,21 @@ begin
       SQLStr := SQLStr + ' ORDER BY OrdNumber DESC';
       SQL.Text := SQLStr;
       Open;
-      if isDebugMode then dmCommon.Zprava('Vyhledána data z Abry');
+      if isDebugMode then fmMain.Zprava('Vyhledána data z Abry');
       if RecordCount > 0 then begin
-        dmCommon.Zprava(Format('%s (%s): %d. faktura se stejným datem.',
+        fmMain.Zprava(Format('%s (%s): %d. faktura se stejným datem.',
          [Zakaznik, Cells[1, Radek], RecordCount + 1]));
         Dotaz := Application.MessageBox(PChar(Format('Pro zákazníka "%s" existuje faktura %s-%s s datem %s na èástku %s Kè. Má se vytvoøit další?',
          [Zakaznik, globalAA['invoiceDocQueueCode'], FieldByName('OrdNumber').AsString, DateToStr(FieldByName('DocDate$DATE').AsFloat), FieldByName('Amount').AsString])),
           'Pozor', MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON1);
         if Dotaz = IDNO then begin
-          dmCommon.Zprava('Ruèní zásah - faktura nevytvoøena.');
+          fmMain.Zprava('Ruèní zásah - faktura nevytvoøena.');
           Exit;
         end else if Dotaz = IDCANCEL then begin
-          dmCommon.Zprava('Ruèní zásah - program ukonèen.');
+          fmMain.Zprava('Ruèní zásah - program ukonèen.');
           Prerusit := True;
           Exit;
-        end else dmCommon.Zprava('Ruèní zásah - faktura se vytvoøí.');
+        end else fmMain.Zprava('Ruèní zásah - faktura se vytvoøí.');
       end;  // RecordCount > 0
     end;  // with qrAbra
 
@@ -474,23 +475,23 @@ begin
     end;
     Description := Description + Cells[1, Radek];        // v Cells[1, Radek] je VS
     boAA['Description'] := Description;
-    if isDebugMode then dmCommon.Zprava('Data faktury pøipravena');
+    if isDebugMode then fmMain.Zprava('Data faktury pøipravena');
 
   cas02 := Now;
-  dmCommon.Zprava(debugRozdilCasu(cas01, cas02, ' - èas pøípravy dat fa'));
+  fmMain.Zprava(debugRozdilCasu(cas01, cas02, ' - èas pøípravy dat fa'));
 
 // vytvoøení faktury
     try
       abraWebApiResponse := DesU.abraBoCreateWebApi(boAA, 'issuedinvoice');
       if abraWebApiResponse.isOk then begin
         abraResponseSO := SO(abraWebApiResponse.Messg);
-        dmCommon.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [Zakaznik, Cells[1, Radek], abraResponseSO.S['displayname']]));
+        fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [Zakaznik, Cells[1, Radek], abraResponseSO.S['displayname']]));
         Ints[0, Radek] := 0;
         Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
         Cells[3, Radek] := abraResponseSO.S['amount'];                                                // èástka
         Cells[4, Radek] := Zakaznik;
       end else begin
-        dmCommon.Zprava(Format('%s (%s): Chyba %s: %s', [Zakaznik, Cells[1, Radek], abraWebApiResponse.Code, abraWebApiResponse.Messg]));
+        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [Zakaznik, Cells[1, Radek], abraWebApiResponse.Code, abraWebApiResponse.Messg]));
         if Dialogs.MessageDlg( '(' + abraWebApiResponse.Code + ') '
            + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
            mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
@@ -506,7 +507,7 @@ begin
   end;  // with
 
   cas03 := Now;
-  dmCommon.Zprava(debugRozdilCasu(cas02, cas03, ' - èas zapsání fa do ABRA'));
+  fmMain.Zprava(debugRozdilCasu(cas02, cas03, ' - èas zapsání fa do ABRA'));
 
 
 end;  // procedury FakturaAbraAA
