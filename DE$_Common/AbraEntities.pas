@@ -27,11 +27,11 @@ type
 
   TAbraBankAccount = class
   public
-    id : string[10];
-    name : string[50];
-    number : string[42];
-    accountId : string[10];
-    bankstatementDocqueueId : string[10];
+    ID : string[10];
+    Name : string[50];
+    Number : string[42];
+    AccountId : string[10];
+    BankstatementDocqueueId : string[10];
     constructor create();
   published
     procedure loadByNumber(baNumber : string);
@@ -45,10 +45,10 @@ type
 
   TAbraPeriod = class
   public
-    id : string[10];
-    code : string[4];
-    name : string[10];
-    number : string[42];
+    ID : string[10];
+    Code : string[4];
+    Name : string[10];
+    Number : string[42];
     dateFrom, dateTo : double;
     constructor create(pYear : string); overload;
     constructor create(pDate : double); overload;
@@ -69,18 +69,27 @@ type
     Code : string[10];
     Tariff : integer;
     VATRate_ID : string[10];
-    constructor Create(pCode : string);
+    constructor create(pCode : string);
   end;
 
   TAbraDrcArticle = class
   public
-    id : string[10];
-    code : string[20];
-    name : string;
+    ID : string[10];
+    Code : string[20];
+    Name : string;
     constructor create(iCode : string);
   end;
 
   TAbraBusOrder = class
+  public
+    ID : string[10];
+    Code : string[20];
+    Name : string;
+    Parent_ID : string;
+    constructor create(pGetBy, pValue : string);
+  end;
+
+  TAbraBusTransaction = class
   public
     ID : string[10];
     Code : string[20];
@@ -104,7 +113,7 @@ type
     Name,
     AbraCode,
     OrgIdentNumber,
-    VatIdentNumber : string;
+    VATIdentNumber : string;
     constructor create(ID, Name, AbraCode, OrgIdentNumber, VATIdentNumber : string);
   end;
 
@@ -134,6 +143,7 @@ type
     function getVatIndex(bvString : string) : TAbraVatIndex;
     function getDrcArticle(bvString : string) : TAbraDrcArticle;
     function getBusOrder(bvString : string) : TAbraBusOrder;
+    function getBusTransaction(bvString : string) : TAbraBusTransaction;
     function getIncomeType(bvString : string) : TAbraIncomeType;
   end;
 
@@ -324,17 +334,17 @@ begin
 
   with DesU.qrAbraOC do begin
 
-    SQL.Text := 'SELECT ID, CODE, NAME, DATEFROM$DATE, DATETO$DATE'
+    SQL.Text := 'SELECT ID, Code, Name, DateFrom$DATE, DateTo$DATE'
               + ' FROM PERIODS'
               + ' WHERE CODE = ''' + pYear  + '''';
 
     Open;
     if not Eof then begin
       self.id := FieldByName('ID').AsString;
-      self.code := FieldByName('CODE').AsString;
-      self.name := FieldByName('NAME').AsString;
-      self.dateFrom := FieldByName('DATEFROM$DATE').AsFloat;
-      self.dateTo := FieldByName('DATETO$DATE').AsFloat;
+      self.code := FieldByName('Code').AsString;
+      self.name := FieldByName('Name').AsString;
+      self.dateFrom := FieldByName('DateFrom$DATE').AsFloat;
+      self.dateTo := FieldByName('DateTo$DATE').AsFloat;
     end;
     Close;
   end;
@@ -345,18 +355,18 @@ begin
 
   with DesU.qrAbraOC do begin
 
-    SQL.Text := 'SELECT ID, CODE, NAME, DATEFROM$DATE, DATETO$DATE '
+    SQL.Text := 'SELECT ID, Code, Name, DateFrom$DATE, DateTo$DATE '
               + ' FROM PERIODS'
-              + ' WHERE DATEFROM$DATE <= ' + FloatToStr(pDate)
-              + ' AND DATETO$DATE > ' + FloatToStr(pDate);
+              + ' WHERE DateFrom$DATE <= ' + FloatToStr(pDate)
+              + ' AND DateTo$DATE > ' + FloatToStr(pDate);
 
     Open;
     if not Eof then begin
       self.id := FieldByName('ID').AsString;
-      self.code := FieldByName('CODE').AsString;
-      self.name := FieldByName('NAME').AsString;
-      self.dateFrom := FieldByName('DATEFROM$DATE').AsFloat;
-      self.dateTo := FieldByName('DATETO$DATE').AsFloat;
+      self.code := FieldByName('Code').AsString;
+      self.name := FieldByName('Name').AsString;
+      self.dateFrom := FieldByName('DateFrom$DATE').AsFloat;
+      self.dateTo := FieldByName('DateTo$DATE').AsFloat;
     end;
     Close;
   end;
@@ -368,7 +378,7 @@ end;
 constructor TAbraDocQueue.create(pGetBy, pValue : string);
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id, Code, DocumentType, Name FROM DocQueues'
+    SQL.Text := 'SELECT ID, Code, DocumentType, Name FROM DocQueues'
               + ' WHERE Hidden = ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
     Open;
     if not Eof then begin
@@ -387,12 +397,12 @@ end;
 constructor TAbraVatIndex.Create(pCode : string);
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id, Code, Tariff, Vatrate_Id'
+    SQL.Text := 'SELECT ID, Code, Tariff, VATRate_ID'
               + ' FROM VatIndexes'
               + ' WHERE Hidden = ''N'' AND Code = ''' + pCode  + '''';
     Open;
     if not Eof then begin
-      self.ID := FieldByName('Id').AsString;
+      self.ID := FieldByName('ID').AsString;
       self.Code := FieldByName('Code').AsString;
       self.Tariff := FieldByName('Tariff').AsInteger;
       self.VATRate_ID := FieldByName('VATRate_ID').AsString;
@@ -407,12 +417,12 @@ end;
 constructor TAbraDrcArticle.create(iCode : string);
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id, Code, Name'
+    SQL.Text := 'SELECT ID, Code, Name'
               + ' FROM DrcArticles'
               + ' WHERE Hidden = ''N'' AND Code = ''' + iCode  + '''';
     Open;
     if not Eof then begin
-      self.id := FieldByName('Id').AsString;
+      self.id := FieldByName('ID').AsString;
       self.code := FieldByName('Code').AsString;
       self.name := FieldByName('Name').AsString;
     end;
@@ -426,19 +436,37 @@ end;
 constructor TAbraBusOrder.create(pGetBy, pValue : string);
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id, Code, DocumentType, Name FROM BusOrdres'
-              + ' WHERE ' + pGetBy + ' = ''' + pValue + '''';
+    SQL.Text := 'SELECT ID, Code, Name, Parent_ID FROM BusOrdres'
+              + ' WHERE Closed <> ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
     Open;
     if not Eof then begin
       self.ID := FieldByName('ID').AsString;
       self.Code := FieldByName('Code').AsString;
       self.Name := FieldByName('Name').AsString;
-      self.Parent_ID := FieldByName('Name').AsString;
+      self.Parent_ID := FieldByName('Parent_ID').AsString;
     end;
     Close;
   end;
 end;
 
+
+{** class TAbraBusTransaction **}
+
+constructor TAbraBusTransaction.create(pGetBy, pValue : string);
+begin
+  with DesU.qrAbraOC do begin
+    SQL.Text := 'SELECT ID, Code, Name, Parent_ID FROM BusTransactions'
+              + ' WHERE Closed <> ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
+    Open;
+    if not Eof then begin
+      self.ID := FieldByName('ID').AsString;
+      self.Code := FieldByName('Code').AsString;
+      self.Name := FieldByName('Name').AsString;
+      self.Parent_ID := FieldByName('Parent_ID').AsString;
+    end;
+    Close;
+  end;
+end;
 
 {** class TAbraIncomeType **}
 
@@ -569,6 +597,19 @@ begin
   else begin
     Result := TAbraBusOrder.create(bvByPart, bvValuePart);
     OA.Add('BusOrder_' + bvString, Result);
+  end;
+end;
+
+function TAbraEnt.getBusTransaction(bvString : string) : TAbraBusTransaction;
+var
+  outAbraEntity : TObject;
+begin
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('BusTransaction_' + bvString, outAbraEntity) then
+    Result := TAbraBusTransaction(outAbraEntity)
+  else begin
+    Result := TAbraBusTransaction.create(bvByPart, bvValuePart);
+    OA.Add('Transaction_' + bvString, Result);
   end;
 end;
 

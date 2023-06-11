@@ -29,7 +29,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils;
+uses DesUtils, AbraEntities;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ var
   Speed,
   BusTransaction_Id,
   BusTransactionCode,
-  IC,
+  OrgIdentNumber,
   ID: string[10];
   FCena,
   CenaTarifu,
@@ -94,13 +94,11 @@ var
   PrvniFakturace: boolean;
   Dotaz,
   CisloFaktury: integer;
-  //FObject,
-  //FData,
-  //FRow,
-  //FRowsCollection: variant;
-  Zakaznik,
+
+  FirmName,
   Description,
-  SQLStr: AnsiString;
+  CustomerVarSymbol,
+  SQLStr: string;
 
   boAA, boRowAA: TAArray;
   abraResponseJSON,
@@ -121,7 +119,7 @@ begin
     Close;
     SQLStr := 'SELECT COUNT(*) FROM ' + fiInvoiceView
     + ' WHERE (Tarif = ''EP-Home'' OR Tarif = ''EP-Profi'')'
-    + ' AND VS = ' + Ap + Cells[1, Radek] + Ap;
+    + ' AND VS = ' + Ap + CustomerVarSymbol + Ap;
     SQL.Text := SQLStr;
     Open;
     FakturaVoIP := Fields[0].AsInteger > 0;
@@ -131,39 +129,37 @@ begin
     end;
   }
 
-// není víc zákazníkù pro jeden VS ? 31.1.2017
+    // není víc zákazníkù pro jeden VS ? 31.1.2017
+    //HWTODO mìlo by se kontrolovat v Denní kontrole
     Close;
-    SQLStr := 'SELECT COUNT(*) FROM customers'
-    + ' WHERE variable_symbol = ' + Ap + Cells[1, Radek] + Ap;
-    SQL.Text := SQLStr;
+    SQL.Text := 'SELECT COUNT(*) FROM customers'
+    + ' WHERE variable_symbol = ' + Ap + CustomerVarSymbol + Ap;
     Open;
     if Fields[0].AsInteger > 1 then begin
-      fmMain.Zprava(Format('Variabilní symbol %s má více zákazníkù.', [Cells[1, Radek]]));
+      fmMain.Zprava(Format('Variabilní symbol %s má více zákazníkù.', [CustomerVarSymbol]));
       Close;
       Exit;
     end;
 
-// je pøenesená daòová povinnost ?  19.10.2016 - bude pro celou fakturu, ne pro jednotlivé smlouvy
+    // je pøenesená daòová povinnost ?  19.10.2016 - bude pro celou fakturu, ne pro jednotlivé smlouvy
     Close;
-    SQLStr := 'SELECT COUNT(*) FROM contracts'
+    SQL.Text := 'SELECT COUNT(*) FROM contracts'
     + ' WHERE DRC = 1'
     + ' AND Customer_Id = (SELECT Id FROM customers'
-      + ' WHERE Variable_Symbol = ' + Ap + Cells[1, Radek] + ApZ;
-    SQL.Text := SQLStr;
+      + ' WHERE Variable_Symbol = ' + Ap + CustomerVarSymbol + ApZ;
     Open;
     isDRC := Fields[0].AsInteger > 0;
 
-// vyhledání údajù o smlouvách
+    // vyhledání údajù o smlouvách
     Close;
-    SQLStr := 'SELECT VS, AbraKod, Typ, Smlouva, AktivniOd, AktivniDo, FakturovatOd, Tarif, Posilani, Perioda, Text, Cena, DPH, Tarifni, CTU'
-    + ' FROM ' + fiInvoiceView
-    + ' WHERE VS = ' + Ap + Cells[1, Radek] + Ap
+    SQL.Text := 'SELECT VS, AbraKod, Typ, Smlouva, AktivniOd, AktivniDo, FakturovatOd, Tarif, Posilani, Perioda, Text, Cena, DPH, Tarifni, CTU'
+    + ' FROM ' // + fiInvoiceView
+    + ' WHERE VS = ' + Ap + CustomerVarSymbol + Ap
     + ' ORDER BY Smlouva, Tarifni DESC';
-    SQL.Text := SQLStr;
     Open;
-// pøi lecjaké chybì v databázi (napø. Tariff_Id je NULL) konec
+    // pøi lecjaké chybì v databázi (napø. Tariff_Id je NULL) konec
     if RecordCount = 0 then begin
-      fmMain.Zprava(Format('Pro variabilní symbol %s není co fakturovat.', [FieldByName('VS').AsString]));
+      fmMain.Zprava(Format('Pro variabilní symbol %s není co fakturovat.', [CustomerVarSymbol]));
       Close;
       Exit;
     end;
@@ -173,57 +169,60 @@ begin
       Exit;
     end;
 
-    with qrAbra do begin
-// kontrola kódu firmy, pøi chybì konec
+    { 1.9.2022 zakomentováno, nepotøebné
+    if (FieldByName('CTU').AsString = '') and (FieldByName('Typ').AsString = 'InternetContract') then begin
+      dmCommon.Zprava(Format('Smlouva %s: zákazník nemá kód pro ÈTÚ.', [FieldByName('Smlouva').AsString]));
       Close;
-      SQLStr := 'SELECT F.ID, F.Name, F.OrgIdentNumber, FO.Id FROM Firms F, FirmOffices FO'
+      Exit;
+    end;
+    }
+
+    with qrAbra do begin
+      // kontrola kódu firmy, pøi chybì konec, jinak naèteme
+      Close;
+      SQL.Text := 'SELECT F.ID as Firm_ID, F.Name as FirmName, F.OrgIdentNumber, FO.Id as FirmOffice_Id'
+      + ' FROM Firms F, FirmOffices FO'
       + ' WHERE Code = ' + Ap + qrSmlouva.FieldByName('AbraKod').AsString + Ap
       + ' AND F.Firm_ID IS NULL'         // bez pøedkù
       + ' AND F.Hidden = ''N'''
       + ' AND FO.Parent_Id = F.Id'
       + ' ORDER BY F.ID DESC';
-      SQL.Text := SQLStr;
       Open;
       if RecordCount = 0 then begin
         fmMain.Zprava(Format('Smlouva %s: zákazník s kódem %s není v adresáøi Abry.',
          [qrSmlouva.FieldByName('Smlouva').AsString, qrSmlouva.FieldByName('AbraKod').AsString]));
         Exit;
       end else begin
-        Firm_Id := Fields[0].AsString;
-        Zakaznik := Fields[1].AsString;
-        IC := Trim(Fields[2].AsString);
-        FirmOffice_Id := Fields[3].AsString; //
+        Firm_ID := FieldByName('Firm_ID').AsString;
+        FirmName := FieldByName('FirmName').AsString;
+        OrgIdentNumber := Trim(FieldByName('OrgIdentNumber').AsString);
+        FirmOffice_ID := FieldByName('FirmOffice_Id').AsString //HWTODO nebudeme pouzivat, vyhledove smazat
       end;
-// 24.1.2017 obchodní pøípady pro ÈTÚ - platí pro celou faktury
+
+      // 24.1.2017 obchodní pøípady pro ÈTÚ - platí pro celou faktury
       if isDRC then BusTransactionCode := 'VO'                  // velkoobchod (s DRC)
-      else if IC = '' then BusTransactionCode := 'F'         //  fyzická osoba
+      else if OrgIdentNumber = '' then BusTransactionCode := 'F'         //  fyzická osoba, nemá IÈ
       else BusTransactionCode := 'P';                         //  právnická osoba
-      with qrAbra do begin
-        Close;
-        SQLStr := 'SELECT Id FROM BusTransactions'
-        + ' WHERE Code = ' + Ap + BusTransactionCode + Ap;
-        SQL.Text := SQLStr;
-        Open;
-        BusTransaction_Id := Fields[0].AsString;
-        Close;
-      end;
+      BusTransaction_Id := AbraEnt.getBusTransaction('Code=' + BusTransactionCode).ID;
+
+
 
 // kontrola poslední faktury
       Close;
       SQLStr := 'SELECT OrdNumber, DocDate$DATE, VATDate$DATE, Amount FROM IssuedInvoices'
-      + ' WHERE VarSymbol = ' + Ap + qrSmlouva.FieldByName('VS').AsString + Ap
+      + ' WHERE VarSymbol = ' + Ap + CustomerVarSymbol + Ap
       + ' AND VATDate$DATE >= ' + FloatToStr(Trunc(StartOfAMonth(aseRok.Value, aseMesic.Value)))
       + ' AND VATDate$DATE <= ' + FloatToStr(Trunc(EndOfAMonth(aseRok.Value, aseMesic.Value)));
-      SQLStr := SQLStr + ' AND DocQueue_ID = ' + Ap + globalAA['abraIiDocQueue_Id'] + Ap;
+      SQLStr := SQLStr + ' AND DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').ID + Ap;
       SQLStr := SQLStr + ' ORDER BY OrdNumber DESC';
       SQL.Text := SQLStr;
       Open;
       if isDebugMode then fmMain.Zprava('Vyhledána data z Abry');
       if RecordCount > 0 then begin
         fmMain.Zprava(Format('%s (%s): %d. faktura se stejným datem.',
-         [Zakaznik, Cells[1, Radek], RecordCount + 1]));
+         [FirmName, CustomerVarSymbol, RecordCount + 1]));
         Dotaz := Application.MessageBox(PChar(Format('Pro zákazníka "%s" existuje faktura %s-%s s datem %s na èástku %s Kè. Má se vytvoøit další?',
-         [Zakaznik, globalAA['invoiceDocQueueCode'], FieldByName('OrdNumber').AsString, DateToStr(FieldByName('DocDate$DATE').AsFloat), FieldByName('Amount').AsString])),
+         [FirmName, globalAA['invoiceDocQueueCode'], FieldByName('OrdNumber').AsString, DateToStr(FieldByName('DocDate$DATE').AsFloat), FieldByName('Amount').AsString])),
           'Pozor', MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON1);
         if Dotaz = IDNO then begin
           fmMain.Zprava('Ruèní zásah - faktura nevytvoøena.');
@@ -233,7 +232,7 @@ begin
           Prerusit := True;
           Exit;
         end else fmMain.Zprava('Ruèní zásah - faktura se vytvoøí.');
-      end;  // RecordCount > 0
+      end;
     end;  // with qrAbra
 
     Description := Format('pøipojení %d/%d, ', [aseMesic.Value, aseRok.Value-2000]);
@@ -244,18 +243,18 @@ begin
     //FObject:= AbraOLE.CreateObject('@IssuedInvoice');
     //FData:= AbraOLE.CreateValues('@IssuedInvoice');
     //FObject.PrefillValues(FData);
-    boAA['DocQueue_ID'] := VarToStr(globalAA['abraIiDocQueue_Id']);
+    boAA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO1').ID; //VarToStr(globalAA['abraIiDocQueue_Id'])
     boAA['Period_ID'] := VarToStr(globalAA['abraIiPeriod_Id']);
     boAA['DocDate$DATE'] := Floor(deDatumDokladu.Date);
     boAA['AccDate$DATE'] := Floor(deDatumDokladu.Date);
     boAA['VATDate$DATE'] := Floor(deDatumPlneni.Date);
-    boAA['CreatedBy_ID'] := MyUser_Id; // TODO bylo jen User_Id ale to bylo prázdné, bez zalogování
+    // boAA['CreatedBy_ID'] := MyUser_Id; // vytvoøí se podle uživatele, který se hlásí k ABRA WebApi
     boAA['Firm_ID'] := Firm_Id;
-    boAA['FirmOffice_ID'] := FirmOffice_Id;
+    // boAA['FirmOffice_ID'] := FirmOffice_Id;
     boAA['Address_ID'] := MyAddress_Id; // FA CONST
-    boAA['BankAccount_ID'] := MyAccount_Id;
+    boAA['BankAccount_ID'] := MyAccount_Id; // FA CONST
     boAA['ConstSymbol_ID'] := '0000308000';
-    boAA['VarSymbol'] := FieldByName('VS').AsString;
+    boAA['VarSymbol'] := CustomerVarSymbol;
     boAA['TransportationType_ID'] := '1000000101'; // FA CONST
     boAA['DueTerm'] := aedSplatnost.Text;
     boAA['PaymentType_ID'] := MyPayment_Id;  // FA CONST
@@ -296,8 +295,8 @@ begin
         // už je nìjaká faktura ?
         Close;
         SQLStr := 'SELECT COUNT(*) FROM IssuedInvoices'
-        + ' WHERE DocQueue_ID = ' + Ap + globalAA['abraIiDocQueue_Id'] + Ap
-        + ' AND VarSymbol = ' + Ap + Cells[1, Radek] + Ap;
+        + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').ID + Ap
+        + ' AND VarSymbol = ' + Ap + CustomerVarSymbol + Ap;
         SQL.Text := SQLStr;
         Open;
 // zákazníkovi se ještì vùbec nefakturovalo
@@ -473,7 +472,7 @@ begin
       boRowAA['Text'] := 'manipulaèní poplatek';
       boRowAA['TotalPrice'] := '62';
     end;
-    Description := Description + Cells[1, Radek];        // v Cells[1, Radek] je VS
+    Description := Description + CustomerVarSymbol;
     boAA['Description'] := Description;
     if isDebugMode then fmMain.Zprava('Data faktury pøipravena');
 
@@ -485,13 +484,13 @@ begin
       abraWebApiResponse := DesU.abraBoCreateWebApi(boAA, 'issuedinvoice');
       if abraWebApiResponse.isOk then begin
         abraResponseSO := SO(abraWebApiResponse.Messg);
-        fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [Zakaznik, Cells[1, Radek], abraResponseSO.S['displayname']]));
+        fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));
         Ints[0, Radek] := 0;
         Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
         Cells[3, Radek] := abraResponseSO.S['amount'];                                                // èástka
-        Cells[4, Radek] := Zakaznik;
+        Cells[4, Radek] := FirmName;
       end else begin
-        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [Zakaznik, Cells[1, Radek], abraWebApiResponse.Code, abraWebApiResponse.Messg]));
+        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, abraWebApiResponse.Code, abraWebApiResponse.Messg]));
         if Dialogs.MessageDlg( '(' + abraWebApiResponse.Code + ') '
            + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
            mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;

@@ -72,6 +72,7 @@ type
     rbVyberPodleFaktury: TRadioButton;
     rbVyberPodleVS: TRadioButton;
     Button1: TButton;
+    lblPocetKNacteni: TLabel;
     procedure FormShow(Sender: TObject);
     procedure glbFakturaceClick(Sender: TObject);
     procedure glbPrevodClick(Sender: TObject);
@@ -107,20 +108,15 @@ type
     procedure rbTiskClick(Sender: TObject);
     procedure rbMailClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+
   private
     LogDir : string;
     function getSqlTextFakturace() : string;
     function getSqlTextPrevodMailTisk(FiltrovatPodle : string; ApNavic : boolean) : string;
-  public
 
+  public
     isDebugMode,
     Prerusit: boolean;
-
-    fiVoipCustomersView,
-    fiBBmaxView,
-    fiBillingView,
-    fiInvoiceView: ShortString;
-
     procedure Zprava(TextZpravy: string);
     procedure PlneniAsgMain;
 
@@ -161,6 +157,11 @@ var
   abraDrcArticle : TAbraDrcArticle;
 
 begin
+  //nastavení globálních promìnných pøi startu programu
+  globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
+  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
+
+
   //adresáø pro logy
   LogDir := DesU.PROGRAM_PATH + '\logy\Mìsíèní fakturace\';
   if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
@@ -168,12 +169,6 @@ begin
   DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), ''); //vloží prázdný øádek do logu
   Zprava('Start programu "Mìsíèní fakturace".');
 
-
-  // jména pro viewjsou unikátní, aby program nebyl omezen na jednu instanci
-  fiVoipCustomersView := FormatDateTime('fiVoIPyymmddhhnnss', Now);
-  fiBBmaxView := FormatDateTime('fiBByymmddhhnnss', Now);
-  fiBillingView := FormatDateTime('fiBVyymmddhhnnss', Now);
-  fiInvoiceView := FormatDateTime('fiIVyymmddhhnnss', Now);
 
   // do 25. se oèekává fakturace za minulý mìsíc, pak už za aktuální
   if DayOf(Date) > 25 then begin
@@ -192,11 +187,8 @@ begin
   aseRokChange(nil);
   rbFakturaceClick(nil);
 
-  //nastavení globálních promìnných pøi startu programu
-  globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
 
-  globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
-  globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03'); // L000000101
+  //globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03'); // L000000101
 
   abraVatIndex := TAbraVatIndex.create('Výst21');
   globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id 6521000000
@@ -455,7 +447,7 @@ begin
         SQL.Text := 'SELECT MIN(OrdNumber), MAX(OrdNumber) ';
 
       SQL.Text := SQL.Text + 'FROM IssuedInvoices'
-      + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').id + Ap
+      + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').ID + Ap
       + ' AND VATDate$DATE >= ' + FloatToStr(Trunc(StartOfAMonth(aseRok.Value, aseMesic.Value)))
       + ' AND VATDate$DATE <= ' + FloatToStr(Trunc(EndOfAMonth(aseRok.Value, aseMesic.Value)));
 
@@ -475,12 +467,32 @@ end;
 // ------------------------------------------------------------------------------------------------
 
 procedure TfmMain.aedOdChange(Sender: TObject);
+var
+  pocetFakturKNacteni : integer;
 begin
   if btVytvorit.Caption <> '&Naèíst' then begin
     asgMain.ClearNormalCells;
     asgMain.RowCount := 2;
     btVytvorit.Caption := '&Naèíst';
   end;
+
+
+  if rbFakturace.Checked then begin
+    DesU.qrZakosOC.SQL.Text := getSqlTextFakturace();
+    DesU.qrZakosOC.Open;
+    pocetFakturKNacteni := DesU.qrZakosOC.RecordCount;
+    DesU.qrZakosOC.Close;
+  end else begin
+    if rbVyberPodleVS.Checked then
+      DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('VarSymbol', true);
+    if rbVyberPodleFaktury.Checked then
+      DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('OrdNumber', false);
+    DesU.qrAbraOC.Open;
+    pocetFakturKNacteni := DesU.qrAbraOC.RecordCount;
+    DesU.qrAbraOC.Close;
+  end;
+
+  lblPocetKNacteni.Caption := 'Poèet faktur k naètení: ' + IntToStr(pocetFakturKNacteni);
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -735,7 +747,7 @@ var
   VarSymbol : string[10];
   SQLStr: string;
 begin
-  with fmMain do try
+  try
     apnPrevod.Visible := False;
     apnTisk.Visible := False;
     apnMail.Visible := False;

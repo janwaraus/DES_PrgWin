@@ -39,6 +39,7 @@ type
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
+    qrZakosOC: TZQuery;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string);

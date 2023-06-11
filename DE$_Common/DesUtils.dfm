@@ -132,4 +132,10 @@ object DesU: TDesU
     Left = 136
     Top = 216
   end
+  object qrZakosOC: TZQuery
+    Connection = dbZakos
+    Params = <>
+    Left = 112
+    Top = 80
+  end
 end
