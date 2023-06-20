@@ -436,8 +436,8 @@ end;
 constructor TAbraBusOrder.create(pGetBy, pValue : string);
 begin
   with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT ID, Code, Name, Parent_ID FROM BusOrdres'
-              + ' WHERE Closed <> ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
+    SQL.Text := 'SELECT ID, Code, Name, Parent_ID FROM BusOrders'
+              + ' WHERE Closed = ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
     Open;
     if not Eof then begin
       self.ID := FieldByName('ID').AsString;
@@ -456,7 +456,7 @@ constructor TAbraBusTransaction.create(pGetBy, pValue : string);
 begin
   with DesU.qrAbraOC do begin
     SQL.Text := 'SELECT ID, Code, Name, Parent_ID FROM BusTransactions'
-              + ' WHERE Closed <> ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
+              + ' WHERE Closed = ''N'' AND ' + pGetBy + ' = ''' + pValue + '''';
     Open;
     if not Eof then begin
       self.ID := FieldByName('ID').AsString;
@@ -609,7 +609,7 @@ begin
     Result := TAbraBusTransaction(outAbraEntity)
   else begin
     Result := TAbraBusTransaction.create(bvByPart, bvValuePart);
-    OA.Add('Transaction_' + bvString, Result);
+    OA.Add('BusTransaction_' + bvString, Result);
   end;
 end;
 

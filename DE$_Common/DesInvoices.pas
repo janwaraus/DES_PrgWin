@@ -329,16 +329,27 @@ end;
 
 constructor TNewDesInvoiceAA.create(DocDate : double; VarSymbol : string);
 begin
-  AA['DocDate'] := DocDate;
+  AA := TAArray.Create;
   AA['VarSymbol'] := VarSymbol;
+  AA['DocDate$DATE'] := DocDate;
+  AA['AccDate$DATE'] := DocDate;
+  AA['Address_ID'] := '7000000101'; // FA CONST
+  AA['BankAccount_ID'] := '1400000101';       // Fio
+  AA['ConstSymbol_ID'] := '0000308000';
+  AA['TransportationType_ID'] := '1000000101'; // FA CONST
+  AA['PaymentType_ID'] := '1000000101';       // typ platby: na bankovní úèet
+  AA['PricesWithVAT'] := True;
+  AA['VATFromAbovePrecision'] := 6; // nejvyšší pøesnost, ABRA nabízí 0 - 6
+  AA['TotalRounding'] := 259;                // zaokrouhlení na koruny dolù
 end;
+
 
 function TNewDesInvoiceAA.createNew0Row(RowText : string) : TAArray;
 var
   RowAA: TAArray;
 begin
   RowAA := AA.addRow();
-  RowAA['Rowtype'] := 0;
+  RowAA['RowType'] := 0;
   RowAA['Text'] := RowText;
   RowAA['Division_ID'] := AbraEnt.getDivisionId;
   Result := RowAA;
@@ -350,12 +361,12 @@ var
   RowAA: TAArray;
 begin
   RowAA := AA.addRow();
-  RowAA['Rowtype'] := 1;
+  RowAA['RowType'] := 1;
   RowAA['Text'] := RowText;
   RowAA['Division_ID'] := AbraEnt.getDivisionId;
-  RowAA['Vatrate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
-  RowAA['VatIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
-  RowAA['Incometype_ID'] := AbraEnt.getBusOrder('Code=SL').ID; // služby
+  RowAA['VATRate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
+  RowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
+  RowAA['Incometype_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // služby
   Result := RowAA;
 end;
 

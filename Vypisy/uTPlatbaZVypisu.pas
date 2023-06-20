@@ -243,6 +243,8 @@ begin
 end;
 
 
+{ naèítáme FO, pak ZL a pak dobropisy, øadíme; program poté pøi pøidìlování zaplacené èástky
+  postupuje pozpátku, od naposledy naèteného dokladu k prnímu }
 procedure TPlatbaZVypisu.loadDokladyPodleVS();
 var
   SQLiiSelect, SQLiiJenNezaplacene, SQLiiOrder,
@@ -279,7 +281,7 @@ begin
                  + ' WHERE ii.VarSymbol = ''' + self.VS  + '''';
 
     SQLiiJenNezaplacene :=  ' AND (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT) <> 0';
-    SQLiiOrder := ' order by ii.DocDate$Date DESC';
+    SQLiiOrder := ' order by (ii.LOCALAMOUNT - ii.LOCALPAIDAMOUNT)';
 
     if self.vsechnyDoklady then
       SQL.Text := SQLiiSelect +  SQLiiOrder

@@ -73,6 +73,8 @@ type
     rbVyberPodleVS: TRadioButton;
     Button1: TButton;
     lblPocetKNacteni: TLabel;
+    lblPocetOdChanges: TLabel;
+    chbFakturyKNacteni: TCheckBox;
     procedure FormShow(Sender: TObject);
     procedure glbFakturaceClick(Sender: TObject);
     procedure glbPrevodClick(Sender: TObject);
@@ -108,6 +110,7 @@ type
     procedure rbTiskClick(Sender: TObject);
     procedure rbMailClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure chbFakturyKNacteniClick(Sender: TObject);
 
   private
     LogDir : string;
@@ -117,18 +120,14 @@ type
   public
     isDebugMode,
     Prerusit: boolean;
+    pocetOdChanges : integer;
+    aedOdTextOld, aedDoTextOld : string;
     procedure Zprava(TextZpravy: string);
     procedure PlneniAsgMain;
 
   end;
 
 
-const
-
-  MyAddress_Id: string[10] = '7000000101';
-  MyUser_Id: string[10] = '2200000101';          // automatick· fakturace
-  MyAccount_Id: string[10] = '1400000101';       // Fio
-  MyPayment_Id: string[10] = '1000000101';       // typ platby: na bankovnÌ ˙Ëet
 
 var
   fmMain: TfmMain;
@@ -160,6 +159,7 @@ begin
   //nastavenÌ glob·lnÌch promÏnn˝ch p¯i startu programu
   globalAA['PDFDir'] := DesU.getIniValue('Preferences', 'PDFDir');
   globalAA['invoiceDocQueueCode'] := 'FO1'; //kÛd ¯ady faktur, tento program vystavuje pouze do tÈto ¯ady
+  globalAA['zakladniSazbaDPH'] := 21;
 
 
   //adres·¯ pro logy
@@ -184,7 +184,6 @@ begin
   asgMain.CheckFalse := '0';
   asgMain.CheckTrue := '1';
 
-  aseRokChange(nil);
   rbFakturaceClick(nil);
 
 
@@ -198,7 +197,7 @@ begin
   abraVatIndex := TAbraVatIndex.create('V˝stR21');
   globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id  6621000000
 
-  abraDrcArticle := TAbraDrcArticle.create('21');
+  abraDrcArticle := TAbraDrcArticle.create('21'); // 21 nem· spojitost s DPH
   globalAA['abraDrcArticle_Id'] := abraDrcArticle.id;
 
 
@@ -403,8 +402,8 @@ end;
 procedure TfmMain.aseRokChange(Sender: TObject);
 // p¯i zmÏnÏ (nejen) roku nastavÌ novÈ deDatumDokladu, deDatumPlneni, aedSplatnost, aedOd a aedDo
 begin
-  aedOd.Clear;
-  aedDo.Clear;
+  aedOd.Clear; // pro automatick˝ refresh tlaËÌtka NaËÌst (a poËtu faktur k naËtenÌ)
+  //aedDo.Clear;
   asgMain.ClearNormalCells;
   asgMain.RowCount := 2;
   btVytvorit.Caption := '&NaËÌst';
@@ -470,6 +469,8 @@ procedure TfmMain.aedOdChange(Sender: TObject);
 var
   pocetFakturKNacteni : integer;
 begin
+  Inc(pocetOdChanges);
+
   if btVytvorit.Caption <> '&NaËÌst' then begin
     asgMain.ClearNormalCells;
     asgMain.RowCount := 2;
@@ -477,22 +478,36 @@ begin
   end;
 
 
-  if rbFakturace.Checked then begin
-    DesU.qrZakosOC.SQL.Text := getSqlTextFakturace();
-    DesU.qrZakosOC.Open;
-    pocetFakturKNacteni := DesU.qrZakosOC.RecordCount;
-    DesU.qrZakosOC.Close;
-  end else begin
-    if rbVyberPodleVS.Checked then
-      DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('VarSymbol', true);
-    if rbVyberPodleFaktury.Checked then
-      DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('OrdNumber', false);
-    DesU.qrAbraOC.Open;
-    pocetFakturKNacteni := DesU.qrAbraOC.RecordCount;
-    DesU.qrAbraOC.Close;
+  if chbFakturyKNacteni.Checked then begin
+
+    if rbFakturace.Checked then begin
+      DesU.qrZakosOC.SQL.Text := getSqlTextFakturace();
+      DesU.qrZakosOC.Open;
+      pocetFakturKNacteni := DesU.qrZakosOC.RecordCount;
+      DesU.qrZakosOC.Close;
+    end else begin
+      if rbVyberPodleVS.Checked then
+        DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('VarSymbol', true);
+      if rbVyberPodleFaktury.Checked then
+        DesU.qrAbraOC.SQL.Text := getSqlTextPrevodMailTisk('OrdNumber', false);
+      DesU.qrAbraOC.Open;
+      pocetFakturKNacteni := DesU.qrAbraOC.RecordCount;
+      DesU.qrAbraOC.Close;
+    end;
+
+    lblPocetKNacteni.Caption := IntToStr(pocetFakturKNacteni);
+
+  end else
+    lblPocetKNacteni.Caption := 'nezjiöùov·no';
+
+
+  if isDebugMode then begin
+    lblPocetOdChanges.Caption := 'PoËet aedOdChange event˘: ' + IntToStr(pocetOdChanges);
+    lblPocetOdChanges.Visible := True;
+    aedOdTextOld := aedOd.Text;
+    aedDoTextOld := aedDo.Text;
   end;
 
-  lblPocetKNacteni.Caption := 'PoËet faktur k naËtenÌ: ' + IntToStr(pocetFakturKNacteni);
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -567,6 +582,11 @@ procedure TfmMain.cbSVoIPClick(Sender: TObject);
 begin
   if not (cbBezVoIP.Checked or cbSVoIP.Checked) then cbBezVoIP.Checked := True;
   aseRokChange(nil);
+end;
+
+procedure TfmMain.chbFakturyKNacteniClick(Sender: TObject);
+begin
+  aedOdChange(nil);
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -874,7 +894,7 @@ begin
               Cells[1, Radek] := VarSymbol;                                          // smlouva
               Cells[2, Radek] := Format('%5.5d', [DesU.qrAbra.FieldByName('OrdNumber').AsInteger]);     // faktura
               Floats[3, Radek] := DesU.qrAbra.FieldByName('Amount').AsFloat;;             // Ë·stka
-              Cells[4, Radek] := FieldByName('FirmName').AsString;                        // jmÈno
+              Cells[4, Radek] := DesU.qrAbra.FieldByName('FirmName').AsString;                        // jmÈno
               Cells[5, Radek] := FieldByName('postal_mail').AsString;                       // mail
               Ints[6, Radek] := FieldByName('disable_mailings').AsInteger;                    // reklama
               Cells[7, Radek] := DesU.qrAbra.FieldByName('ID').AsString;             // ID faktury

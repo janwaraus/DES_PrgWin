@@ -29,7 +29,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, AbraEntities;
+uses DesUtils, AbraEntities, DesInvoices;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -100,11 +100,13 @@ var
   CustomerVarSymbol,
   SQLStr: string;
 
-  boAA, boRowAA: TAArray;
+  boRowAA: TAArray;
   abraResponseJSON,
   newID: string;
   abraResponseSO : ISuperObject;
   abraWebApiResponse : TDesResult;
+
+  NewInvoice : TNewDesInvoiceAA;
 
   cas01, cas02, cas03: double;
 
@@ -112,6 +114,8 @@ begin
   cas01 := Now;
 
   with fmMain, qrSmlouva, asgMain do begin
+    CustomerVarSymbol := Cells[1, Radek];
+
   // faktura se nebude vytváøet, je-li ve smlouvách také fakturovaný VoIP a není zašrktnuté vytváøení VoIP faktur,
   // nebo není zašrktlé vytváøení internet faktur a faktura nemá VoIP (tedy je internet)
   // HWTODO je tenhle check potreba?
@@ -152,10 +156,16 @@ begin
 
     // vyhledání údajù o smlouvách
     Close;
-    SQL.Text := 'SELECT VS, AbraKod, Typ, Smlouva, AktivniOd, AktivniDo, FakturovatOd, Tarif, Posilani, Perioda, Text, Cena, DPH, Tarifni, CTU'
-    + ' FROM ' // + fiInvoiceView
-    + ' WHERE VS = ' + Ap + CustomerVarSymbol + Ap
-    + ' ORDER BY Smlouva, Tarifni DESC';
+
+    SQL.Text := 'CALL get_monthly_invoicing_by_vs('
+        + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
+        + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApC
+        + Ap + CustomerVarSymbol + ApZ;
+
+    // pøejmenováno takto: AbraKod (cu_abra_code), Typ (co_type), Smlouva (co_number), AktivniOd (co_activated_at), AktivniDo (co_canceled_at),
+    // FakturovatOd (co_invoice_from), Tarif (tariff_name), Posilani (cu_invoice_sending_method_name),
+    // Perioda (bb_period), Text (bi_description), Cena (bi_price), DPH (bi_vat_name), Tarifni (bi_is_tariff), CTU (co_ctu_category)'
+
     Open;
     // pøi lecjaké chybì v databázi (napø. Tariff_Id je NULL) konec
     if RecordCount = 0 then begin
@@ -163,15 +173,15 @@ begin
       Close;
       Exit;
     end;
-    if FieldByName('AbraKod').AsString = '' then begin
-      fmMain.Zprava(Format('Smlouva %s: zákazník nemá kód Abry.', [FieldByName('Smlouva').AsString]));
+    if FieldByName('cu_abra_code').AsString = '' then begin
+      fmMain.Zprava(Format('Smlouva %s: zákazník nemá kód Abry.', [FieldByName('co_number').AsString]));
       Close;
       Exit;
     end;
 
     { 1.9.2022 zakomentováno, nepotøebné
-    if (FieldByName('CTU').AsString = '') and (FieldByName('Typ').AsString = 'InternetContract') then begin
-      dmCommon.Zprava(Format('Smlouva %s: zákazník nemá kód pro ÈTÚ.', [FieldByName('Smlouva').AsString]));
+    if (FieldByName('co_ctu_category').AsString = '') and (FieldByName('co_type').AsString = 'InternetContract') then begin
+      dmCommon.Zprava(Format('Smlouva %s: zákazník nemá kód pro ÈTÚ.', [FieldByName('co_number').AsString]));
       Close;
       Exit;
     end;
@@ -182,7 +192,7 @@ begin
       Close;
       SQL.Text := 'SELECT F.ID as Firm_ID, F.Name as FirmName, F.OrgIdentNumber, FO.Id as FirmOffice_Id'
       + ' FROM Firms F, FirmOffices FO'
-      + ' WHERE Code = ' + Ap + qrSmlouva.FieldByName('AbraKod').AsString + Ap
+      + ' WHERE Code = ' + Ap + qrSmlouva.FieldByName('cu_abra_code').AsString + Ap
       + ' AND F.Firm_ID IS NULL'         // bez pøedkù
       + ' AND F.Hidden = ''N'''
       + ' AND FO.Parent_Id = F.Id'
@@ -190,13 +200,13 @@ begin
       Open;
       if RecordCount = 0 then begin
         fmMain.Zprava(Format('Smlouva %s: zákazník s kódem %s není v adresáøi Abry.',
-         [qrSmlouva.FieldByName('Smlouva').AsString, qrSmlouva.FieldByName('AbraKod').AsString]));
+         [qrSmlouva.FieldByName('co_number').AsString, qrSmlouva.FieldByName('cu_abra_code').AsString]));
         Exit;
       end else begin
         Firm_ID := FieldByName('Firm_ID').AsString;
         FirmName := FieldByName('FirmName').AsString;
         OrgIdentNumber := Trim(FieldByName('OrgIdentNumber').AsString);
-        FirmOffice_ID := FieldByName('FirmOffice_Id').AsString //HWTODO nebudeme pouzivat, vyhledove smazat
+        // FirmOffice_ID := FieldByName('FirmOffice_Id').AsString //HWTODO nebudeme pouzivat, vyhledove smazat
       end;
 
       // 24.1.2017 obchodní pøípady pro ÈTÚ - platí pro celou faktury
@@ -204,8 +214,6 @@ begin
       else if OrgIdentNumber = '' then BusTransactionCode := 'F'         //  fyzická osoba, nemá IÈ
       else BusTransactionCode := 'P';                         //  právnická osoba
       BusTransaction_Id := AbraEnt.getBusTransaction('Code=' + BusTransactionCode).ID;
-
-
 
 // kontrola poslední faktury
       Close;
@@ -236,61 +244,46 @@ begin
     end;  // with qrAbra
 
     Description := Format('pøipojení %d/%d, ', [aseMesic.Value, aseRok.Value-2000]);
-// vytvoøí se hlavièka faktury
 
-    boAA := TAArray.Create;
 
-    //FObject:= AbraOLE.CreateObject('@IssuedInvoice');
-    //FData:= AbraOLE.CreateValues('@IssuedInvoice');
-    //FObject.PrefillValues(FData);
-    boAA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO1').ID; //VarToStr(globalAA['abraIiDocQueue_Id'])
-    boAA['Period_ID'] := VarToStr(globalAA['abraIiPeriod_Id']);
-    boAA['DocDate$DATE'] := Floor(deDatumDokladu.Date);
-    boAA['AccDate$DATE'] := Floor(deDatumDokladu.Date);
-    boAA['VATDate$DATE'] := Floor(deDatumPlneni.Date);
+    // vytvoøí se objekt TNewDesInvoiceAA a pak zbytek hlavièky faktury
+    NewInvoice := TNewDesInvoiceAA.create(Floor(deDatumDokladu.Date), CustomerVarSymbol);
+
+    NewInvoice.AA['VATDate$DATE'] := Floor(deDatumPlneni.Date);
+    NewInvoice.AA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO1').ID; //VarToStr(globalAA['abraIiDocQueue_Id'])
+    NewInvoice.AA['Period_ID'] := VarToStr(globalAA['abraIiPeriod_Id']);
+    //boAA['DocDate$DATE'] := Floor(deDatumDokladu.Date);
+    //boAA['AccDate$DATE'] := Floor(deDatumDokladu.Date);
     // boAA['CreatedBy_ID'] := MyUser_Id; // vytvoøí se podle uživatele, který se hlásí k ABRA WebApi
-    boAA['Firm_ID'] := Firm_Id;
+    NewInvoice.AA['Firm_ID'] := Firm_Id;
     // boAA['FirmOffice_ID'] := FirmOffice_Id;
-    boAA['Address_ID'] := MyAddress_Id; // FA CONST
-    boAA['BankAccount_ID'] := MyAccount_Id; // FA CONST
-    boAA['ConstSymbol_ID'] := '0000308000';
-    boAA['VarSymbol'] := CustomerVarSymbol;
-    boAA['TransportationType_ID'] := '1000000101'; // FA CONST
-    boAA['DueTerm'] := aedSplatnost.Text;
-    boAA['PaymentType_ID'] := MyPayment_Id;  // FA CONST
-    boAA['PricesWithVAT'] := True;
-    boAA['VATFromAbovePrecision'] := 6;
-    boAA['TotalRounding'] := 259;                // zaokrouhlení na koruny dolù
+    NewInvoice.AA['DueTerm'] := aedSplatnost.Text;
     if isDRC then begin
-      boAA['IsReverseChargeDeclared'] := True;
-      boAA['VATFromAbovePrecision'] := 0;
-      boAA['TotalRounding'] := 0;
+      NewInvoice.AA['IsReverseChargeDeclared'] := True;
+      NewInvoice.AA['VATFromAbovePrecision'] := 0;
+      NewInvoice.AA['TotalRounding'] := 0;
     end;
-// kolekce pro øádky faktury
-    //FRowsCollection := FData.Value[dmCommon.IndexByName(FData, 'Rows')];
-// 1. øádek
 
-    //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-    boRowAA := boAA.addRow();
-    boRowAA['RowType'] := '0';
-    boRowAA['Division_ID'] := '1000000101';
-    if FieldByName('Perioda').AsInteger = 1 then
-      boRowAA['Text'] := Format('Fakturujeme Vám za období od 1.%d.%d do %d.%d.%d',
-       [aseMesic.Value, aseRok.Value, DayOfTheMonth(EndOfAMonth(aseRok.Value, aseMesic.Value)), aseMesic.Value, aseRok.Value]);
+    // 1. øádek
+    //boRowAA := boAA.addRow();
+    boRowAA := NewInvoice.createNew0Row(
+      Format('Fakturujeme Vám za období od 1.%d.%d do %d.%d.%d',
+       [aseMesic.Value, aseRok.Value, DayOfTheMonth(EndOfAMonth(aseRok.Value, aseMesic.Value)), aseMesic.Value, aseRok.Value])
+    );
 
-// ============  smlouvy zákazníka - další øádky faktury se vytvoøí z qrSmlouvy
+    // ============  smlouvy zákazníka - další øádky faktury se vytvoøí z qrSmlouvy
     while not EOF do begin  // qrSmlouva
       CenaTarifu := 0;
       PausalVoIP := 0;
       HovorneVoIP := 0;
-// je-li datum aktivace menší než datum fakturace, vybere se prvni platba hotovì a fakturuje se pak celý mìsíc, jinak
-// se platí jen èást mìsíce od data spuštìní
-      DatumSpusteni := FieldByName('AktivniOd').AsDateTime;
-      DatumUkonceni := FieldByName('AktivniDo').AsDateTime;
+      // je-li datum aktivace menší než datum fakturace, vybere se prvni platba hotovì a fakturuje se pak celý mìsíc, jinak
+      // se platí jen èást mìsíce od data spuštìní
+      DatumSpusteni := FieldByName('co_activated_at').AsDateTime;
+      DatumUkonceni := FieldByName('co_canceled_at').AsDateTime;
       Redukce := 1;
       PrvniFakturace := False;
 
-      if DatumSpusteni >= FieldByName('FakturovatOd').AsDateTime then
+      if DatumSpusteni >= FieldByName('co_invoice_from').AsDateTime then
       with qrAbra do begin
         // už je nìjaká faktura ?
         Close;
@@ -299,29 +292,29 @@ begin
         + ' AND VarSymbol = ' + Ap + CustomerVarSymbol + Ap;
         SQL.Text := SQLStr;
         Open;
-// zákazníkovi se ještì vùbec nefakturovalo
+        // zákazníkovi se ještì vùbec nefakturovalo
         PrvniFakturace := Fields[0].AsInteger = 0;
-      end;  // with qrAbra
+      end;
 
-// ještì podle data aktivace (po pauze se fakturuje znovu)
+      // ještì podle data aktivace (po pauze se fakturuje znovu)
       if not PrvniFakturace then
         PrvniFakturace := (MonthOf(DatumSpusteni) = MonthOf(deDatumDokladu.Date))
          and (YearOf(DatumSpusteni) = YearOf(deDatumDokladu.Date));
-// redukce ceny pøipojení
+      // redukce ceny pøipojení
       if PrvniFakturace then
         Redukce := ((YearOf(deDatumDokladu.Date) - YearOf(DatumSpusteni)) * 12          // rozdíl let * 12
           + MonthOf(deDatumDokladu.Date) - MonthOf(DatumSpusteni)                       // + rozdíl mìsícù + pomìrná èást 1. mìsíce
            + (DaysInMonth(DatumSpusteni) - DayOf(DatumSpusteni) + 1) / DaysInMonth(DatumSpusteni));
-// poslední fakturace
+      // poslední fakturace
       PosledniFakturace := (MonthOf(DatumUkonceni) = MonthOf(deDatumDokladu.Date))
         and (YearOf(DatumUkonceni) = YearOf(deDatumDokladu.Date));
       if PosledniFakturace then
         Redukce := DayOf(DatumUkonceni) / DaysInMonth(DatumUkonceni);             // pomìrná èást mìsíce
-// datum spuštìní i ukonèení je ve stejném mìsíci
+      // datum spuštìní i ukonèení je ve stejném mìsíci
       if PrvniFakturace and PosledniFakturace then
         Redukce := (DayOf(DatumUkonceni) - DayOf(DatumSpusteni) + 1) / DaysInMonth(DatumUkonceni); // pomìrná èást mìsíce
-// pro VoIP
-      SmlouvaVoIP := Copy(qrSmlouva.FieldByName('Tarif').AsString, 1, 2) = 'EP';
+      // pro VoIP
+      SmlouvaVoIP := Copy(qrSmlouva.FieldByName('tariff_name').AsString, 1, 2) = 'EP';
       HovorneVoIP := 0;
       // paušál (? TODO) a hovorné
 
@@ -331,7 +324,7 @@ begin
         {  TODO dodelat VoIP nepripojuje se
         Close;
         SQLStr := 'SELECT SUM(Amount) FROM VoIP.Invoices_flat'
-        + ' WHERE Num = ' + qrSmlouva.FieldByName('Smlouva').AsString
+        + ' WHERE Num = ' + qrSmlouva.FieldByName('co_number').AsString
         + ' AND Year = ' + aseRok.Text
         + ' AND Month = ' + aseMesic.Text;
         SQL.Text := SQLStr;
@@ -342,11 +335,11 @@ begin
       end;
 
       {  CTU, neni uz potreba
-// 24.1.2017 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
+      // 24.1.2017 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
       with qrAbra do begin
         Close;
-        BusOrderCode := qrSmlouva.FieldByName('CTU').AsString;
-// kódy z tabulky contracts se musí pøedìlat
+        BusOrderCode := qrSmlouva.FieldByName('co_ctu_category').AsString;
+        // kódy z tabulky contracts se musí pøedìlat
         Speed := Copy(BusOrderCode, Pos('_', BusOrderCode), 2);
         if Pos('WIFI', BusOrderCode) > 0 then BusOrderCode := 'W' + Speed
         else if Pos('FTTH', BusOrderCode) > 0 then BusOrderCode := 'A' + Speed
@@ -362,94 +355,75 @@ begin
       end;
       }
 
-// cena za tarif
-      if (FieldByName('Tarifni').AsInteger = 1) then begin
-        CenaTarifu := qrSmlouva.FieldByName('Cena').AsFloat;
-        if not SmlouvaVoIP then begin                    // pøipojení k Internetu
-          //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-          boRowAA := boAA.addRow();
-          boRowAA['RowType'] := '1';
+      // cena za tarif
+      if (FieldByName('bi_is_tariff').AsInteger = 1) then begin
+        CenaTarifu := qrSmlouva.FieldByName('bi_price').AsFloat;
+        if not SmlouvaVoIP then begin
+
+          // pøipojení k Internetu
+          boRowAA := NewInvoice.createNew1Row( Format('podle smlouvy  %s  službu  %s',
+              [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
           // boRowAA['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
-          if qrSmlouva.FieldByName('Typ').AsString = 'TvContract' then
+          if qrSmlouva.FieldByName('co_type').AsString = 'TvContract' then
             boRowAA['BusOrder_ID'] := '1700000101';
           boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['Division_ID'] := '1000000101';
-          boRowAA['VATRate_ID'] := VarToStr(globalAA['abraVatRate_Id']);
-          //boRowAA['VATRate'] := IntToStr(globalAA['abraVatRate']); // nesmi byt v requestu
-          boRowAA['IncomeType_ID'] := '2000000000';
-          boRowAA['Text'] :=
-            Format('podle smlouvy  %s  službu  %s', [FieldByName('Smlouva').AsString, FieldByName('Text').AsString]);
           boRowAA['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
           //FRowsCollection.Add(FRow);
-          if isDRC then begin                                              // 19.10.2016
+          if isDRC then begin
             boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraDrcVatIndex_Id']);
             boRowAA['DRCArticle_ID'] := VarToStr(globalAA['abraDrcArticle_Id']);          // typ plnìní 21
             boRowAA['VATMode'] := 1;
-            boRowAA['TotalPrice'] := Format('%f', [FieldByName('Cena').AsFloat * Redukce / 1.21]);
+            boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / (1 + globalAA['zakladniSazbaDPH']/100)]);
           end else boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraVatIndex_Id']);
         end else begin                                   // platby za VoIP
-          if HovorneVoIP > 0 then begin                                      // hovorné
-            //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-            boRowAA := boAA.addRow();
-            boRowAA['RowType'] := '1';
+          if HovorneVoIP > 0 then begin
+
+            // hovorné
+            boRowAA := NewInvoice.createNew1Row('hovorné VoIP');
             boRowAA['BusOrder_ID'] := '1500000101';
             boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-            boRowAA['Division_ID'] := '1000000101';
-            boRowAA['VATRate_ID'] := VarToStr(globalAA['abraVatRate_Id']);
-            boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraVatIndex_Id']);
             //boRowAA['VATRate'] := IntToStr(globalAA['abraVatRate']);
-            boRowAA['IncomeType_ID'] := '2000000000';
-            boRowAA['Text'] := 'hovorné VoIP';
             boRowAA['TotalPrice'] := Format('%f', [HovorneVoIP]);
-
             HovorneVoIP := 0;
           end;
-          //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');             // paušál
-          boRowAA := boAA.addRow();
-          boRowAA['RowType'] := '1';
+
+          /// paušál
+          boRowAA := NewInvoice.createNew1Row(Format('podle smlouvy  %s  mìsíèní platbu VoIP %s',
+              [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
           boRowAA['BusOrder_ID'] := '2000000101';
           boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['Division_ID'] := '1000000101';
           boRowAA['VATRate_ID'] := VarToStr(globalAA['abraVatRate_Id']);
           boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraVatIndex_Id']);
           //boRowAA['VATRate'] := IntToStr(globalAA['abraVatRate']);
-          boRowAA['IncomeType_ID'] := '2000000000';
-          boRowAA['Text'] := Format('podle smlouvy  %s  mìsíèní platbu VoIP %s',
-           [FieldByName('Smlouva').AsString, FieldByName('Text').AsString]);
           boRowAA['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
 
         end;  // tarif VoIP
-// nìco jiného než tarif
+      // nìco jiného než tarif
       end else begin
-        //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-        boRowAA := boAA.addRow();
+
+        boRowAA := NewInvoice.createNew1Row(FieldByName('bi_description').AsString);
         boRowAA['BusOrder_ID'] := BusOrder_Id;
-        if qrSmlouva.FieldByName('Typ').AsString = 'TvContract' then
+        if qrSmlouva.FieldByName('co_type').AsString = 'TvContract' then
           boRowAA['BusOrder_ID'] := '1700000101';
         boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-        boRowAA['Division_ID'] := '1000000101';
-        if Pos('auce', FieldByName('Text').AsString) > 0 then
-          boRowAA['IncomeType_ID'] := '1000000101'    // kauce
-        else
-          boRowAA['IncomeType_ID'] := '2000000000';
-        boRowAA['RowType'] := '1';
-        boRowAA['Text'] := FieldByName('Text').AsString;
-        boRowAA['TotalPrice'] := Format('%f', [FieldByName('Cena').AsFloat * Redukce]);
-        if FieldByName('DPH').AsString = '21%' then begin                   // 4.1.2013
+        if Pos('auce', FieldByName('bi_description').AsString) > 0 then
+          boRowAA['IncomeType_ID'] := '1000000101';    // kauce
+        boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce]);
+        if FieldByName('bi_vat_name').AsString = '21%' then begin                  // 4.1.2013, DPH je 21%
           boRowAA['VATRate_ID'] := VarToStr(globalAA['abraVatRate_Id']);
           if isDRC then begin                                              // 19.10.2016
             boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraDrcVatIndex_Id']);
             boRowAA['DRCArticle_ID'] := VarToStr(globalAA['abraDrcArticle_Id']);          // typ plnìní 21
             boRowAA['VATMode'] := 1;
-            boRowAA['TotalPrice'] := Format('%f', [FieldByName('Cena').AsFloat * Redukce / 1.21]);
+            boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / (1 + globalAA['zakladniSazbaDPH']/100)]);
           end else
             boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraVatIndex_Id']);
           //boRowAA['VATRate'] := IntToStr(globalAA['abraVatRate']);
-        end else begin
+        end else begin // DPH je 0%
           boRowAA['VATRate_ID'] := '00000X0000';
           boRowAA['VATIndex_ID'] := '7000000000';
           //boRowAA['VATRate'] := '0';
-          if Pos('dar ', FieldByName('Text').AsString) > 0 then
+          if Pos('dar ', FieldByName('bi_description').AsString) > 0 then
             boRowAA['IncomeType_ID'] := '3000000000';  // OS
         end;
 
@@ -457,23 +431,16 @@ begin
       Next;   //  qrSmlouva
     end;  //  while not qrSmlouva.EOF
 // pøípadnì øádek s poštovným
-    if (FieldByName('Posilani').AsString = 'Poštou')
-     or (FieldByName('Posilani').AsString = 'Se složenkou') then begin    // pošta, složenka
-      //FRow:= AbraOLE.CreateValues('@IssuedInvoiceRow');
-      boRowAA := boAA.addRow();
+    if (FieldByName('cu_invoice_sending_method_name').AsString = 'Poštou')
+     or (FieldByName('cu_invoice_sending_method_name').AsString = 'Se složenkou') then begin    // pošta, složenka
+
+      boRowAA := NewInvoice.createNew1Row('manipulaèní poplatek');
       boRowAA['BusOrder_ID'] := '1000000101';
       boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-      boRowAA['Division_ID'] := '1000000101';
-      boRowAA['VATRate_ID'] := VarToStr(globalAA['abraVatRate_Id']);
-      boRowAA['VATIndex_ID'] := VarToStr(globalAA['abraVatIndex_Id']);
-      //boRowAA['VATRate'] := IntToStr(globalAA['abraVatRate']);
-      boRowAA['IncomeType_ID'] := '2000000000';
-      boRowAA['RowType'] := '1';
-      boRowAA['Text'] := 'manipulaèní poplatek';
       boRowAA['TotalPrice'] := '62';
     end;
     Description := Description + CustomerVarSymbol;
-    boAA['Description'] := Description;
+    NewInvoice.AA['Description'] := Description;
     if isDebugMode then fmMain.Zprava('Data faktury pøipravena');
 
   cas02 := Now;
@@ -481,7 +448,7 @@ begin
 
 // vytvoøení faktury
     try
-      abraWebApiResponse := DesU.abraBoCreateWebApi(boAA, 'issuedinvoice');
+      abraWebApiResponse := DesU.abraBoCreateWebApi(NewInvoice.AA, 'issuedinvoice');
       if abraWebApiResponse.isOk then begin
         abraResponseSO := SO(abraWebApiResponse.Messg);
         fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));
@@ -509,7 +476,7 @@ begin
   fmMain.Zprava(debugRozdilCasu(cas02, cas03, ' - èas zapsání fa do ABRA'));
 
 
-end;  // procedury FakturaAbraAA
+end;
 
 
 
