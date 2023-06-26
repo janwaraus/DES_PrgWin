@@ -75,7 +75,7 @@ begin
       + ' JOIN Firms f ON ii.Firm_ID = f.ID'
       + ' JOIN Addresses a ON f.ResidenceAddress_ID = a.ID'
       + ' WHERE ii.ID = ''' + DocumentID + '''';
-    DesUtils.appendToFile(globalAA['LogFileName'], SQL.Text);
+    //DesUtils.appendToFile(globalAA['LogFileName'], SQL.Text);
 
     Open;
 
@@ -316,8 +316,8 @@ var
 begin
   DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
 
-  PdfFileName := Format('zyz14-%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]);
-  ExportDirName := Format('%s\i%s\%s\', [globalAA['PDFDir'], self.Year, FormatDateTime('mm', self.VATDate)]);
+  PdfFileName := Format('new-%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]);
+  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.VATDate)]);
   DesFastReport.setExportDirName(ExportDirName);
   FullPdfFileName := ExportDirName + PdfFileName;
 
@@ -333,14 +333,15 @@ begin
   AA['VarSymbol'] := VarSymbol;
   AA['DocDate$DATE'] := DocDate;
   AA['AccDate$DATE'] := DocDate;
+  AA['Period_ID'] := AbraEnt.getPeriod('Code=' + FormatDateTime('yyyy', DocDate)).ID;
   AA['Address_ID'] := '7000000101'; // FA CONST
   AA['BankAccount_ID'] := '1400000101';       // Fio
   AA['ConstSymbol_ID'] := '0000308000';
   AA['TransportationType_ID'] := '1000000101'; // FA CONST
   AA['PaymentType_ID'] := '1000000101';       // typ platby: na bankovní úèet
   AA['PricesWithVAT'] := True;
-  AA['VATFromAbovePrecision'] := 6; // nejvyšší pøesnost, ABRA nabízí 0 - 6
-  AA['TotalRounding'] := 259;                // zaokrouhlení na koruny dolù
+  AA['VATFromAbovePrecision'] := 0; // 6 je nejvyšší pøesnost, ABRA nabízí 0 - 6; v praxi jsou poloky faktury i v DB stejnì na 2 desetinná místa, ale tøeba je to takhle pøesnìjší vıpoèet
+  AA['TotalRounding'] := 259;                // zaokrouhlení na koruny dolù, a zákazníky nedrádíme haléøovımi "pøíplatky"
 end;
 
 
@@ -366,7 +367,7 @@ begin
   RowAA['Division_ID'] := AbraEnt.getDivisionId;
   RowAA['VATRate_ID'] := AbraEnt.getVatIndex('Code=Vıst21').VATRate_ID;
   RowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=Vıst21').ID;
-  RowAA['Incometype_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // sluby
+  RowAA['IncomeType_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // sluby
   Result := RowAA;
 end;
 

@@ -59,6 +59,7 @@ type
     public
       PROGRAM_PATH,
       GPC_PATH,
+      PDF_PATH,
       abraDefaultCommMethod,
       abraConnName,
       abraUserUN,
@@ -151,7 +152,7 @@ const
 
 var
   DesU : TDesU;
-  globalAA : TAArray;
+  //globalAA : TAArray;
 
 
 implementation
@@ -174,7 +175,7 @@ procedure TDesU.desUtilsInit(createOptions : string);
 
 begin
   AbraEnt := TAbraEnt.Create;
-  globalAA := TAArray.Create;
+  //globalAA := TAArray.Create;
   //abraValues := TAArray.Create; // asi se muze vyhodit
 
   PROGRAM_PATH := ExtractFilePath(ParamStr(0));
@@ -199,7 +200,9 @@ begin
     abraUserUN := ReadString('Preferences', 'AbraUserUN', '');
     abraUserPW := ReadString('Preferences', 'AbraUserPW', '');
     abraWebApiUrl := ReadString('Preferences', 'AbraWebApiUrl', '');
+
     GPC_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'GpcPath', ''));
+    PDF_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'PDFDir', ''));
 
     dbAbra.HostName := ReadString('Preferences', 'AbraHN', '');
     dbAbra.Database := ReadString('Preferences', 'AbraDB', '');
@@ -211,10 +214,16 @@ begin
     dbZakos.User := ReadString('Preferences', 'ZakUN', '');
     dbZakos.Password := ReadString('Preferences', 'ZakPW', '');
 
-    dbVoIP.HostName := DesU.getIniValue('Preferences', 'VoIPHN');
-    dbVoIP.Database := DesU.getIniValue('Preferences', 'VoIPDB');
-    dbVoIP.User := DesU.getIniValue('Preferences', 'VoIPUN');
-    dbVoIP.Password := DesU.getIniValue('Preferences', 'VoIPPW');
+    dbVoIP.HostName := ReadString('Preferences', 'VoIPHN', '');
+    dbVoIP.Database := ReadString('Preferences', 'VoIPDB', '');
+    dbVoIP.User := ReadString('Preferences', 'VoIPUN', '');
+    dbVoIP.Password := ReadString('Preferences', 'VoIPPW', '');
+
+    idSMTP.Host :=  ReadString('Mail', 'SMTPServer', '');
+    idSMTP.HeloName := idSMTP.Host; // táta to tak má, ale HeloName by mìlo být jméno klienta (volajícího), tedy tohoto programu. ale asi je úplnì jedno, co tam je
+    idSMTP.Username := ReadString('Mail', 'SMTPLogin', '');
+    idSMTP.Password := ReadString('Mail', 'SMTPPW', '');
+
   finally
     //adpIniFile.Free; //
   end;
@@ -494,9 +503,6 @@ var
   exceptionSO : ISuperObject;
   errMessage : string;
 begin
-
-  self.logJson(boAA.AsJSon(), 'abraBoCreateWebApi request - ' + abraWebApiUrl + abraBoName + 's');
-
   sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
   idHTTP := newAbraIdHttp(900, true);
   try
@@ -858,7 +864,7 @@ begin
   boRowAA['Vatrate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
   boRowAA['VatIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
   boRowAA['Incometype_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // služby
-  //boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit Internet'); //takový zakázka (BusOrder) není
+  //boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit Internet'); //taková zakázka (BusOrder) není
   boRowAA['Division_ID'] := AbraEnt.getDivisionId;
 
   //writeToFile(ExtractFilePath(ParamStr(0)) + '!json' + formatdatetime('hhnnss', Now) + '.txt', jsonBo.AsJSon(true));
@@ -947,11 +953,8 @@ end;
 
 
 function TDesU.getAbraPeriodId(pYear : string) : string;
-var
-    abraPeriod : TAbraPeriod;
 begin
-  abraPeriod := TAbraPeriod.create(pYear);
-  Result := abraPeriod.id;
+  Result := AbraEnt.getPeriod('Code=' + pYear).ID
 end;
 
 function TDesU.getAbraPeriodId(pDate : double) : string;
@@ -959,7 +962,7 @@ var
     abraPeriod : TAbraPeriod;
 begin
   abraPeriod := TAbraPeriod.create(pDate);
-  Result := abraPeriod.id;
+  Result := abraPeriod.ID;
 end;
 
 
@@ -1318,6 +1321,7 @@ end;
 function TDesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
 begin
   idSMTP.Host :=  self.getIniValue('Mail', 'SMTPServer');
+  idSMTP.HeloName := idSMTP.Host; // táta to tak má, ale HeloName by mìlo být jméno klienta (volajícího), tedy tohoto programu. ale asi je úplnì jedno, co tam je
   idSMTP.Username := self.getIniValue('Mail', 'SMTPLogin');
   idSMTP.Password := self.getIniValue('Mail', 'SMTPPW');
 
@@ -1352,17 +1356,10 @@ begin
     // pøidá se extra pøíloha, je-li vybrána
     if ExtraPrilohaFileName <> '' then
     with TIdAttachmentFile.Create(IdMessage.MessageParts, ExtraPrilohaFileName) do begin
-      ContentType := ''; //co je priloha za typ?
+      ContentType := 'application/pdf'; //pøípadná extra pøíloha má být dle zadání vždy jen pdf
       FileName := ExtraPrilohaFileName;
     end;
 
-    { uz bylo vyhozeny
-    with idSMTP do begin
-      Port := 25;
-      if Username = '' then AuthenticationType := atNone
-      else AuthenticationType := atLogin;
-    end;
-    }
 
     try
       if not idSMTP.Connected then idSMTP.Connect;

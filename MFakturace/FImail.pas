@@ -16,7 +16,7 @@ type
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
   private
-    procedure FakturaMail(Radek: integer);                // pošle jednu fakturu
+    procedure FakturaMail(Radek: integer); // pošle jednu fakturu
   public
     procedure PosliFaktury;
   end;
@@ -97,8 +97,8 @@ var
 begin
   with fmMain, fmMain.asgMain do begin
     // musí existovat PDF soubor s fakturou
-    FullPdfFileName := Format('%s\%4d\%2.2d\%s-%5.5d.pdf', [globalAA['PDFDir'], aseRok.Value, aseMesic.Value, globalAA['invoiceDocQueueCode'], Ints[2, Radek]]);
-    // PDFFileName := Format('%s-%5.5d.pdf', [globalAA['invoiceDocQueueCode'], Ints[2, Radek]]); // neni potreba doufam
+    FullPdfFileName := Format('%s%4d\%2.2d\%s-%5.5d.pdf', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, main_invoiceDocQueueCode, Ints[2, Radek]]);
+    // PDFFileName := Format('%s-%5.5d.pdf', [main_invoiceDocQueueCode, Ints[2, Radek]]); // neni potreba doufam
     if not FileExists(FullPdfFileName) then begin
       fmMain.Zprava(Format('%s (%s): Soubor %s neexistuje. Pøeskoèeno.', [Cells[4, Radek], Cells[1, Radek], FullPdfFileName]));
       Exit;

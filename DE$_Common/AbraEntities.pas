@@ -130,15 +130,10 @@ type
   public
     OA: TDictionary<string, TObject>;
     bvByPart, bvValuePart: string;
-    //VatIndex_Vyst21: TAbraVatIndex;
-    //VatIndex_VystR21: TAbraVatIndex;
-    //DrcArticle_21: TAbraDrcArticle;
-    //DocQueue_FO1: TAbraDocQueue;
     constructor create;
-    //procedure loadVatEntities;
-    //procedure loadDocQueueByCode(pCode : string);
     function getDivisionId : string;
     function getCurrencyId : string;
+    function getPeriod(bvString : string) : TAbraPeriod;
     function getDocQueue(bvString : string) : TAbraDocQueue;
     function getVatIndex(bvString : string) : TAbraVatIndex;
     function getDrcArticle(bvString : string) : TAbraDrcArticle;
@@ -336,7 +331,7 @@ begin
 
     SQL.Text := 'SELECT ID, Code, Name, DateFrom$DATE, DateTo$DATE'
               + ' FROM PERIODS'
-              + ' WHERE CODE = ''' + pYear  + '''';
+              + ' WHERE Code = ''' + pYear  + '''';
 
     Open;
     if not Eof then begin
@@ -527,26 +522,22 @@ begin
   Result := '0000CZK000'; //pouze CZK
 end;
 
-{
-procedure TAbraEnt.loadVatEntities;
+
+
+
+function TAbraEnt.getPeriod(bvString : string) : TAbraPeriod;
+var
+  outAbraEntity : TObject;
 begin
-  VatIndex_Vyst21 := TAbraVatIndex.create('Výst21');
-  VatIndex_VystR21 := TAbraVatIndex.create('VýstR21');
-  DrcArticle_21 :=  TAbraDrcArticle.create('21');
+  SplitStringInTwo(bvString, '=', bvByPart, bvValuePart);
+  if OA.TryGetValue('Period_' + bvString, outAbraEntity) then
+    Result := TAbraPeriod(outAbraEntity)
+  else begin
+    Result := TAbraPeriod.create(bvValuePart); // hledáme vždy podle Code
+    OA.Add('Period_' + bvString, Result);
+  end;
 end;
 
-procedure TAbraEnt.loadDocQueueByCode(pCode : string);
-begin
-  if pCode = 'FO1' then
-    DocQueue_FO1 := TAbraDocQueue.create(pCode,'Code')
-  else if pCode = 'FO2' then
-    DocQueue_FO2 := TAbraDocQueue.create(pCode,'Code')
-  else if pCode = 'FO3' then
-    DocQueue_FO3 := TAbraDocQueue.create(pCode,'Code')
-  else if pCode = 'FO4' then
-    DocQueue_FO4 := TAbraDocQueue.create(pCode,'Code');
-end;
-}
 
 function TAbraEnt.getDocQueue(bvString : string) : TAbraDocQueue;
 var
@@ -569,7 +560,7 @@ begin
   if OA.TryGetValue('VatIndex_' + bvString, outAbraEntity) then
     Result := TAbraVatIndex(outAbraEntity)
   else begin
-    Result := TAbraVatIndex.create(bvValuePart);
+    Result := TAbraVatIndex.create(bvValuePart); // hledáme vždy podle Code
     OA.Add('VatIndex_' + bvString, Result);
   end;
 end;
@@ -582,7 +573,7 @@ begin
   if OA.TryGetValue('DrcArticle_' + bvString, outAbraEntity) then
     Result := TAbraDrcArticle(outAbraEntity)
   else begin
-    Result := TAbraDrcArticle.create(bvValuePart);
+    Result := TAbraDrcArticle.create(bvValuePart); // hledáme vždy podle Code
     OA.Add('DrcArticle_' + bvString, Result);
   end;
 end;
