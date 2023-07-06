@@ -37,11 +37,11 @@ object DesFastReport: TDesFastReport
     IniFile = '\Software\Fast Reports'
     PreviewOptions.Buttons = [pbPrint, pbLoad, pbSave, pbExport, pbZoom, pbFind, pbOutline, pbPageSetup, pbTools, pbEdit, pbNavigator, pbExportQuick]
     PreviewOptions.Zoom = 1.000000000000000000
+    PrintOptions.Collate = False
     PrintOptions.Printer = 'Default'
     PrintOptions.PrintOnSheet = 0
-    PrintOptions.ShowDialog = False
     ReportOptions.CreateDate = 41751.679037013900000000
-    ReportOptions.LastChange = 45060.077223564800000000
+    ReportOptions.LastChange = 42706.445575486100000000
     ScriptLanguage = 'PascalScript'
     StoreInDFM = False
     OnBeginDoc = frxReportBeginDoc
@@ -68,25 +68,6 @@ object DesFastReport: TDesFastReport
     DataSetOptions = []
     Left = 88
     Top = 134
-  end
-  object idMessage: TIdMessage
-    AttachmentEncoding = 'MIME'
-    BccList = <>
-    CCList = <>
-    Encoding = meMIME
-    FromList = <
-      item
-      end>
-    Recipients = <>
-    ReplyTo = <>
-    ConvertPreamble = True
-    Left = 20
-    Top = 216
-  end
-  object idSMTP: TIdSMTP
-    SASLMechanisms = <>
-    Left = 82
-    Top = 216
   end
   object frxPDFExport1: TfrxPDFExport
     UseFileCache = True

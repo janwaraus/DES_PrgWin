@@ -3,14 +3,14 @@ unit FItisk;
 interface
 
 uses
-  Windows, Messages, Forms, Controls, Classes, Dialogs, SysUtils, DateUtils, Printers, FImain;
+  Windows, Messages, Forms, Controls, Classes, Dialogs, SysUtils, DateUtils, Printers,
+  DesUtils;
 
 type
   TdmTisk = class(TDataModule)
     dlgTisk: TPrintDialog;
-  private
-    procedure FakturaTisk(Radek: integer);                // vytiskne jednu fakturu
   public
+    function FakturaTisk(InvoiceId, Fr3FileName: string) : TDesResult; // vytiskne jednu fakturu
     procedure TiskniFaktury;
   end;
 
@@ -21,7 +21,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, AArray;
+uses DesInvoices, DesFastReports, AArray, FImain;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -30,6 +30,7 @@ procedure TdmTisk.TiskniFaktury;
 var
   Posilani: AnsiString;
   Radek: integer;
+  VysledekPrevedeni : TDesResult;
 begin
   with fmMain do try
 
@@ -41,14 +42,18 @@ begin
     else fmMain.Zprava(Format('Tisk faktur %s od èísla %s do %s', [Posilani, aedOd.Text, aedDo.Text]));
     with asgMain do begin
       fmMain.Zprava(Format('Poèet faktur k tisku: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
+      {
       if ColumnSum(0, 1, RowCount-1) >= 1 then
         if dlgTisk.Execute then
-          //frxReport.PrintOptions.Printer := Printer.Printers[Printer.PrinterIndex];
+          frxReport.PrintOptions.Printer := Printer.Printers[Printer.PrinterIndex];
+      }
       Screen.Cursor := crHourGlass;
       apnTisk.Visible := False;
       apbProgress.Position := 0;
       apbProgress.Visible := True;
-// hlavní smyèka
+      DesFastReport.resetPrintCount;
+
+      // hlavní smyèka
       for Radek := 1 to RowCount-1 do begin
         Row := Radek;
         apbProgress.Position := Round(100 * Radek / RowCount-1);
@@ -60,12 +65,30 @@ begin
           btVytvorit.Enabled := True;
           Break;
         end;
-        if Ints[0, Radek] = 1 then FakturaTisk(Radek);
+
+        //if Ints[0, Radek] = 1 then FakturaTisk(Radek);
+        if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
+
+          if rbSeSlozenkou.Checked then
+            VysledekPrevedeni := fakturaTisk(asgMain.Cells[7, Radek], 'FOseSlozenkou.fr3')
+          else
+            VysledekPrevedeni := fakturaTisk(asgMain.Cells[7, Radek], 'FOsPDP-104.fr3');
+
+          fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
+          if VysledekPrevedeni.isOk then begin
+            asgMain.Ints[0, Radek] := 0;
+            asgMain.Row := Radek;
+          end else begin
+            if Dialogs.MessageDlg( 'Chyba pøi tisku: '
+              + VysledekPrevedeni.Messg + sLineBreak + 'Pokraèovat?',
+              mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
+            end;
+        end;
+
       end;  // for
     end;
-// konec hlavní smyèky
+
   finally
-    Printer.PrinterIndex := -1;
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     apnTisk.Visible := True;
@@ -76,42 +99,13 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmTisk.FakturaTisk(Radek: integer);
+function TdmTisk.fakturaTisk(InvoiceId, Fr3FileName: string) : TDesResult;
 var
-
-  FullPdfFileName,
-  PdfDirName,
-  desFrxUtilsResult: string;
-  Mesic, i: integer;
-  reportData: TAArray;
+  Faktura : TDesInvoice;
 
 begin
-  desFrxUtilsResult := '';
-
-  with fmMain do begin
-    { TODO na novy Report
-    desFrxUtilsResult := DesFrxU.fakturaNactiData(asgMain.Cells[7, Radek]);
-    fmMain.Zprava(desFrxUtilsResult);
-
-    // !!! zde zavolání tisk !!!
-    if rbSeSlozenkou.Checked then
-      desFrxUtilsResult := DesFrxU.fakturaTisk('FOseSlozenkou.fr3')
-    else begin
-      DesFrxU.reportData['sQrKodem'] := true;
-      desFrxUtilsResult := DesFrxU.fakturaTisk('FOsPDP.fr3');
-    end;
-
-
-    fmMain.Zprava(Format('%s (%s): Faktura %s byla odeslána na tiskárnu.', [DesFrxU.reportData['OJmeno'], DesFrxU.reportData['VS'], DesFrxU.reportData['Cislo']]));
-    fmMain.Zprava(desFrxUtilsResult);
-    asgMain.Ints[0, Radek] := 0;
-
-    if desFrxUtilsResult <> 'Tisk OK' then
-      if Application.MessageBox(PChar('Chyba pøi tisku'), 'Pokraèovat?',
-         MB_YESNO + MB_ICONQUESTION) = IDNO then Prerusit := True;
-   }
-  end;
-
+  Faktura := TDesInvoice.create(InvoiceId);
+  Result := Faktura.printByFr3(Fr3FileName);
 end;
 
 end.

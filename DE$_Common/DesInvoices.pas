@@ -18,7 +18,7 @@ type
 
     OrdNumber : integer;
     VS : string;
-    IsReverseChargeDeclared : boolean;
+    isReverseChargeDeclared : boolean;
 
     DocDate,
     DueDate,
@@ -44,7 +44,8 @@ type
     ResidenceAddress : TAbraAddress;
 
     constructor create(DocumentID : string; DocumentType : string = '03');
-    function createPdf(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
+    function createPdfByFr3(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
+    function printByFr3(Fr3FileName : string) : TDesResult;
   end;
 
   TNewDesInvoiceAA = class
@@ -84,7 +85,7 @@ begin
 
       self.OrdNumber := FieldByName('OrdNumber').AsInteger;
       self.VS := FieldByName('VarSymbol').AsString;
-      IsReverseChargeDeclared := FieldByName('IsReverseChargeDeclared').AsString = 'A';
+      self.isReverseChargeDeclared := FieldByName('IsReverseChargeDeclared').AsString = 'A';
 
       self.DocDate := FieldByName('DocDate$Date').asFloat;
       self.DueDate := FieldByName('DueDate$Date').asFloat;
@@ -130,15 +131,11 @@ function TDesInvoice.prepareFastReportData : string;
 var
   slozenkaCastka,
   slozenkaVS,
-  slozenkaSS,
-  invoiceDocQueueId,
-  invoiceDocQueueCode,
-  SQLStr: string;
+  slozenkaSS: string;
   Celkem,
   Saldo,
-  Zaplatit,
-  Zaplaceno: double;
-  i, invoiceOrdNumber, invoiceRok: integer;
+  Zaplatit: double;
+  i: integer;
   reportAry: TAArray;
 
 
@@ -152,8 +149,18 @@ begin
   reportAry['OJmeno'] := self.Firm.Name;
   reportAry['OUlice'] := self.ResidenceAddress.Street;
   reportAry['OObec'] := self.ResidenceAddress.PostCode + ' ' + self.ResidenceAddress.City;
-  reportAry['OICO'] := self.Firm.OrgIdentNumber;
-  reportAry['ODIC'] := self.Firm.VATIdentNumber;
+
+  //reportAry['OICO'] := self.Firm.OrgIdentNumber;
+  if Trim(self.Firm.OrgIdentNumber) <> '' then
+    reportAry['OICO'] := 'IÈ: ' + Trim(self.Firm.OrgIdentNumber)
+  else
+    reportAry['OICO'] := ' ';
+
+  //reportAry['ODIC'] := self.Firm.VATIdentNumber;
+  if Trim(self.Firm.VATIdentNumber) <> '' then
+    reportAry['ODIC'] := 'DIÈ: ' + Trim(self.Firm.VATIdentNumber)
+  else
+    reportAry['ODIC'] := ' ';
 
   reportAry['ID'] := self.ID;
 
@@ -165,7 +172,7 @@ begin
   reportAry['Celkem'] := self.Castka;
   reportAry['Zaplaceno'] := self.CastkaZaplacenoZakaznikem;
   if self.IsReverseChargeDeclared then
-    reportAry['DRCText'] := 'Podle §92a zákona è. 235/2004 Sb. o DPH daò odvede zákazník.  '
+    reportAry['DRCText'] := 'Podle §92a zákona è. 235/2004 Sb. o DPH daò odvede zákazník. '
   else
     reportAry['DRCText'] := ' ';
 
@@ -177,7 +184,7 @@ begin
     SQL.Text := 'SELECT * FROM DE$_Code_To_Firm_Id (' + Ap + self.Firm.AbraCode + ApZ;
     Open;
 
-    { TODO tyhle kontroly dát jinam
+    { TODO tyhle kontroly dát jinam, resp. je vùbec potøeba? mám fakturu na Firmu, proè teï øešit MULTIPLE?
     if Fields[0].AsString = 'MULTIPLE' then begin
       Result := Format('%s (%s): Více zákazníkù pro kód %s.', [self.Firm.Name, self.VS, self.Firm.AbraCode]);
       Close;
@@ -197,7 +204,7 @@ begin
     end;
   end;  // with DesU.qrAbra
 
-  // právì pøevádìná faktura mùže být pøed splatností
+  // právì pøevádìná faktura mùže být pøed splatností *HWTODO probrat a vyhodit, faktura je vždy pøed splatností
   //    if Date <= DatumSplatnosti then begin
   Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          // Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
   Zaplatit := self.Castka - Saldo;          // Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
@@ -231,9 +238,8 @@ begin
   // naètení údajù z tabulky Smlouvy
   with DesU.qrZakos do begin
     Close;
-    SQLStr := 'SELECT Postal_name, Postal_street, Postal_PSC, Postal_city FROM customers'
-    + ' WHERE Variable_symbol = ' + Ap + reportAry['VS'] + Ap;
-    SQL.Text := SQLStr;
+    SQL.Text := 'SELECT Postal_name, Postal_street, Postal_PSC, Postal_city FROM customers'
+              + ' WHERE Variable_symbol = ' + Ap + reportAry['VS'] + Ap;
     Open;
     reportAry['PJmeno'] := FieldByName('Postal_name').AsString;
     reportAry['PUlice'] := FieldByName('Postal_street').AsString;
@@ -249,7 +255,7 @@ begin
   end;
 
   // text pro QR kód
-  reportAry['QRText'] := Format('SPD*1.0*ACC:CZ6020100000002100098382*AM:%d*CC:CZK*DT:%s*X-VS:%s*X-SS:%s*MSG:QR PLATBA EUROSIGNAL',[
+  reportAry['QRText'] := Format('SPD*1.0*ACC:CZ6020100000002100098382*AM:%d*CC:CZK*RN:EUROSIGNAL*DT:%s*X-VS:%s*X-SS:%s*MSG:QR PLATBA INTERNET',[
     Round(reportAry['ZaplatitCislo']),
     FormatDateTime('yyyymmdd', reportAry['DatumSplatnosti']),
     reportAry['VS'],
@@ -264,12 +270,16 @@ begin
     end;
 
   //pro starší osmimístná èísla smluv se pøidají dvì nuly na zaèátek
+  {
   if Length(self.VS) = 8 then
     slozenkaVS := '00' + self.VS
   else
     slozenkaVS := self.VS;
+  }
 
-  slozenkaSS := Format('%8.8d%2.2d', [invoiceOrdNumber, invoiceRok]);
+  slozenkaVS := self.VS.PadLeft(10, '0'); // pøidáme nuly na zaèátek pro VS s délkou kratší než 10 znakù
+
+  slozenkaSS := Format('%8.8d%s', [self.OrdNumber, RightStr(self.Year, 2)]);
 
   reportAry['C1'] := slozenkaCastka[1];
   reportAry['C2'] := slozenkaCastka[2];
@@ -307,7 +317,7 @@ begin
 end;
 
 
-function TDesInvoice.createPdf(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
+function TDesInvoice.createPdfByFr3(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
 var
     PdfFileName,
     ExportDirName,
@@ -316,7 +326,7 @@ var
 begin
   DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
 
-  PdfFileName := Format('new-%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]);
+  PdfFileName := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]); // pro test 'new-%s-%5.5d.pdf'
   ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.VATDate)]);
   DesFastReport.setExportDirName(ExportDirName);
   FullPdfFileName := ExportDirName + PdfFileName;
@@ -324,6 +334,24 @@ begin
   self.prepareFastReportData;
   DesFastReport.prepareInvoiceDataSets(self.ID);
   Result := DesFastReport.createPdf(FullPdfFileName, OverwriteExistingPdf);
+end;
+
+function TDesInvoice.printByFr3(Fr3FileName : string) : TDesResult;
+var
+    PdfFileName,
+    ExportDirName,
+    FullPdfFileName : string;
+    FVysledek : TDesResult;
+begin
+  DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
+
+  self.prepareFastReportData;
+  DesFastReport.prepareInvoiceDataSets(self.ID);
+
+  Result := DesFastReport.print();
+  if Result.Code = 'ok' then
+    Result.Messg := Format('Faktura %s byla odeslána na tiskárnu.', [self.CisloDokladu]);
+
 end;
 
 
@@ -335,13 +363,13 @@ begin
   AA['AccDate$DATE'] := DocDate;
   AA['Period_ID'] := AbraEnt.getPeriod('Code=' + FormatDateTime('yyyy', DocDate)).ID;
   AA['Address_ID'] := '7000000101'; // FA CONST
-  AA['BankAccount_ID'] := '1400000101';       // Fio
+  AA['BankAccount_ID'] := '1400000101'; // Fio
   AA['ConstSymbol_ID'] := '0000308000';
   AA['TransportationType_ID'] := '1000000101'; // FA CONST
-  AA['PaymentType_ID'] := '1000000101';       // typ platby: na bankovní úèet
+  AA['PaymentType_ID'] := '1000000101'; // typ platby: na bankovní úèet
   AA['PricesWithVAT'] := True;
   AA['VATFromAbovePrecision'] := 0; // 6 je nejvyšší pøesnost, ABRA nabízí 0 - 6; v praxi jsou položky faktury i v DB stejnì na 2 desetinná místa, ale tøeba je to takhle pøesnìjší výpoèet
-  AA['TotalRounding'] := 259;                // zaokrouhlení na koruny dolù, a zákazníky nedráždíme haléøovými "pøíplatky"
+  AA['TotalRounding'] := 259; // zaokrouhlení na koruny dolù, a zákazníky nedráždíme haléøovými "pøíplatky"
 end;
 
 

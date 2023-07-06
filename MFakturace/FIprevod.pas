@@ -7,7 +7,7 @@ uses
 type
   TdmPrevod = class(TDataModule)
   public
-    function fakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
+    function FakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
     procedure PrevedFaktury;
   end;
 
@@ -56,7 +56,6 @@ begin
           Break;
         end;
 
-        //if Ints[0, Radek] = 1 then FakturaPrevod_old(Radek)  // pokud zaškrtnuto, pøevádíme fa do PDF
         if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
           VysledekPrevedeni := fakturaPrevod(asgMain.Cells[7, Radek], not cbNeprepisovat.Checked);
           fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
@@ -70,7 +69,6 @@ begin
       end; // konec hlavní smyèky
     end;  // with asgMain
   finally
-    Printer.PrinterIndex := -1;  // default
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     apnPrevod.Visible := True;
@@ -79,25 +77,22 @@ begin
   end;
 end;
 // ------------------------------------------------------------------------------------------------
-function TdmPrevod.fakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
+function TdmPrevod.FakturaPrevod(InvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
 // podle faktury v Abøe a stavu pohledávek vytvoøí formuláø v PDF
 var
   Faktura : TDesInvoice;
 
 begin
-  // DesFastReport.setInvoiceById(invoiceId);
-  // Result := DesFastReport.createPdf(true);
-
   Faktura := TDesInvoice.create(InvoiceId);
 
-  if Faktura.Firm.AbraCode = '' then begin
+  if Faktura.Firm.AbraCode = '' then begin  // HWTODO opravdu je potreba kontrolovat?
     Result := TDesResult.create('err', Format('Faktura %d: zákazník nemá kód Abry.', [Faktura.OrdNumber]));
     Exit;
   end;
 
   // faktura se vytvoøí v defaultním adresáøi s defaultním jménem souboru.
   // TODO pokud by bylo potøeba ten default zmìnit, lze to udìlat pøedchozím pøiøazením jiných hodnot a hlídáním, zda již mají nìjakou hodnotu
-  Result := Faktura.createPdf('FOsPDP.fr3', OverwriteExistingPdf);
+  Result := Faktura.createPdfByFr3('FOsPDP-104.fr3', OverwriteExistingPdf);
 
 end;
 

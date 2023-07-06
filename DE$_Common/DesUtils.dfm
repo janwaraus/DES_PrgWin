@@ -76,13 +76,12 @@ object DesU: TDesU
     Catalog = ''
     Properties.Strings = (
       'controls_cp=GET_ACP')
-    ReadOnly = True
     HostName = ''
     Port = 0
     Database = ''
     User = ''
     Password = ''
-    Protocol = 'postgresql-7'
+    Protocol = 'postgresql'
     Left = 8
     Top = 152
   end

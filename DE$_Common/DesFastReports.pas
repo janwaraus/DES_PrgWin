@@ -9,10 +9,12 @@ uses
   AArray, StrUtils, Data.DB,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
 
+  {
   IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdSMTP, IdHTTP, IdMessage, IdMessageClient, IdText, IdMessageParts,
   IdAntiFreezeBase, IdAntiFreeze, IdIOHandler,
   IdIOHandlerSocket, IdSSLOpenSSL, IdExplicitTLSClientServerBase, IdSMTPBase, IdAttachmentFile,
+  }
 
   frxClass, frxDBSet, frxDesgn, frxBarcode, frxBarcode2d,
   frxExportBaseDialog, frxExportPDF, frxExportPDFHelpers,
@@ -28,8 +30,6 @@ type
     qrAbraRadky: TZQuery;
     fdsRadky: TfrxDBDataset;
     fdsDPH: TfrxDBDataset;
-    idMessage: TIdMessage;
-    idSMTP: TIdSMTP;
 
     procedure frxReportGetValue(const ParName: string; var ParValue: Variant);
     procedure frxReportBeginDoc(Sender: TObject);
@@ -43,6 +43,7 @@ type
     exportFileName,
     fr3FileName,
     invoiceId : string;
+    printCount : integer;
 
   published
     procedure init(pReportType, pFr3FileName : string);
@@ -50,7 +51,9 @@ type
     procedure loadFr3File(iFr3FileName : string = '');
     procedure prepareInvoiceDataSets(invoiceId : string);
     function createPdf(FullPdfFileName : string; OverwriteExistingPdf : boolean) : TDesResult;
-    function print(fr3FileName : string) : TDesResult;
+    function print: TDesResult;
+    procedure resetPrintCount;
+
 
   end;
 
@@ -80,7 +83,7 @@ end;
 { Do reportu natáhne FR3 soubor, tím umožní práci s promìnnými atd
   pokud je jako vstupní parametr náyev souboru, je použit tento nový soubor.
   FR3 soubor mùže být umístìný buï pøímo v adresáøi s programem,
-  nebo v ..\DE$_Common\resources\
+  nebo v podadresáøi FR3\
 }
 procedure TDesFastReport.loadFr3File(iFr3FileName : string = '');
 var
@@ -93,7 +96,8 @@ begin
 
   fr3File := DesU.PROGRAM_PATH + self.fr3FileName;
   if not(FileExists(fr3File)) then
-    fr3File := DesU.PROGRAM_PATH + '..\DE$_Common\resources\' + self.fr3FileName;
+    //fr3File := DesU.PROGRAM_PATH + '..\DE$_Common\resources\' + self.fr3FileName; //na disku p:, odkud se v praxi spouští, DE$_Common neni
+    fr3File := DesU.PROGRAM_PATH + 'FR3\' + self.fr3FileName;
 
   if not(FileExists(fr3File)) then begin
     MessageDlg('Nenalezen FR3 soubor ' + fr3File, mtError, [mbOk], 0);
@@ -156,14 +160,19 @@ begin
 
 end;
 
-function TDesFastReport.print(fr3FileName : string) : TDesResult;
+function TDesFastReport.print : TDesResult;
 begin
   try
-    frxReport.LoadFromFile(DesU.PROGRAM_PATH + fr3FileName);
     frxReport.PrepareReport;
-    //frxReport.PrintOptions.ShowDialog := true;
-    frxReport.PrintOptions.ShowDialog := false;
+    if printCount = 0 then
+      frxReport.PrintOptions.ShowDialog := true
+    else
+      frxReport.PrintOptions.ShowDialog := false;
+    //frxReport.PrintOptions.Printer := frxPrinters.Printers[Printer.PrinterIndex];
+    //frxReport.PrintOptions.ShowDialog := false;
     frxReport.Print;
+    Result := TDesResult.create('ok', 'Tisk OK');
+    printCount := printCount + 1;
   except on E: exception do
     begin
       Result := TDesResult.create('err', Format('%s (%s): Fakturu %s se nepodaøilo vytisknout. Chyba: %s',
@@ -172,7 +181,11 @@ begin
     end;
   end;
 
-  Result := TDesResult.create('ok', 'Tisk OK');
+end;
+
+procedure TDesFastReport.resetPrintCount;
+begin
+  self.printCount := 0;
 end;
 
 
@@ -200,10 +213,10 @@ procedure TDesFastReport.frxReportBeginDoc(Sender: TObject);
 var
     barcode: TfrxBarcode2DView;
 begin
-  //if varIsType(reportData['sQrKodem'], varBoolean) AND reportData['sQrKodem'] then begin   // takhle to mìl táta
   if reportData['QRText'] <> '' then begin // pokud  AArray nemá klíè hledané hodnoty, value je vždy '', to testujeme
    barcode := TfrxBarcode2DView(frxReport.FindObject('pQR'));
-   barcode.Text := reportData['QRText'];
+   if Assigned(barcode) then
+     barcode.Text := reportData['QRText'];
   end;
 end;
 

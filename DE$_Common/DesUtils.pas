@@ -114,7 +114,7 @@ type
       function sendSms(telCislo, smsText : string) : string;
 
       function getIniValue(iniGroup, iniItem : string) : string;
-      function getQrVoip() : TZQuery;
+      function connectDbVoip : TDesResult;
 
     private
       function newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
@@ -223,9 +223,8 @@ begin
     idSMTP.HeloName := idSMTP.Host; // táta to tak má, ale HeloName by mìlo být jméno klienta (volajícího), tedy tohoto programu. ale asi je úplnì jedno, co tam je
     idSMTP.Username := ReadString('Mail', 'SMTPLogin', '');
     idSMTP.Password := ReadString('Mail', 'SMTPPW', '');
-
   finally
-    //adpIniFile.Free; //
+    adpIniFile.Free;
   end;
 
 
@@ -252,18 +251,6 @@ begin
       Application.Terminate;
     end;
   end;
-
-  {
-  if (not dbVoIP.Connected) AND (dbVoIP.Database <> '') then try begin
-    dbVoIP.Connect;
-  end;
-  except on E: exception do
-    begin
-      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP, program ukonèen.' + ^M + E.Message), 'DesU DB VoIP', MB_ICONERROR + MB_OK);
-      Application.Terminate;
-    end;
-  end;
-  }
 
 end;
 
@@ -305,18 +292,19 @@ end;
 
 
 
-function TDesU.getQrVoip() : TZQuery; // TODO dodelat
+function TDesU.connectDbVoip : TDesResult;
 begin
-  Result := nil;
-  if (not dbZakos.Connected) AND (dbZakos.Database <> '') then try
-    dbZakos.Connect;
+  if (not dbVoIP.Connected) AND (dbVoIP.Database <> '') then try begin
+    dbVoIP.Connect;
+    Result := TDesResult.create('ok', 'Pøipojeno k databází VoIP');
+  end;
   except on E: exception do
     begin
-      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP, program ukonèen.' + ^M + E.Message), 'DesU DB VoIP', MB_ICONERROR + MB_OK);
-      Application.Terminate;
+      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP.' + ^M + E.Message), 'Abra', MB_ICONERROR + MB_OK);
+      Result := TDesResult.create('err', Format('Chyba pøipojení k databázi VoIP: %s', [E.Message]));
     end;
   end;
-  Result := qrVoip;
+
 end;
 
 
@@ -1224,10 +1212,14 @@ end;
 
 function TDesU.getIniValue(iniGroup, iniItem : string) : string;
 begin
-   Result :=  '';
+  if FileExists(PROGRAM_PATH + 'abraDesProgramy.ini') then
+    adpIniFile := TIniFile.Create(PROGRAM_PATH + 'abraDesProgramy.ini')
+  else
+    adpIniFile := TIniFile.Create(PROGRAM_PATH + '..\DE$_Common\abraDesProgramy.ini');
   try
     Result :=  adpIniFile.ReadString(iniGroup, iniItem, '');
-  except
+  finally
+    adpIniFile.Free;
   end;
 end;
 
@@ -1236,7 +1228,6 @@ end;
 
 function TDesU.isVoipKreditContract(cnumber : string) : boolean;
 begin
-
   with DesU.qrZakos do begin
     SQL.Text := 'SELECT co.id FROM contracts co  '
               + ' WHERE co.number = ''' + cnumber + ''''
@@ -1320,10 +1311,6 @@ end;
 
 function TDesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
 begin
-  idSMTP.Host :=  self.getIniValue('Mail', 'SMTPServer');
-  idSMTP.HeloName := idSMTP.Host; // táta to tak má, ale HeloName by mìlo být jméno klienta (volajícího), tedy tohoto programu. ale asi je úplnì jedno, co tam je
-  idSMTP.Username := self.getIniValue('Mail', 'SMTPLogin');
-  idSMTP.Password := self.getIniValue('Mail', 'SMTPPW');
 
   emailAddrStr := StringReplace(emailAddrStr, ',', ';', [rfReplaceAll]);    // èárky za støedníky
 
@@ -1359,7 +1346,6 @@ begin
       ContentType := 'application/pdf'; //pøípadná extra pøíloha má být dle zadání vždy jen pdf
       FileName := ExtraPrilohaFileName;
     end;
-
 
     try
       if not idSMTP.Connected then idSMTP.Connect;

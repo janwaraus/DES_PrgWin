@@ -28,7 +28,6 @@ type
   TfmMain = class(TForm)
     qrMain: TZQuery;
     qrSmlouva: TZQuery;
-    qrVoIP: TZQuery;
     qrAbra: TZQuery;
     qrAdresa: TZQuery;
     apnVyberCinnosti: TAdvPanel;
@@ -71,7 +70,7 @@ type
     lbVyber: TLabel;
     rbVyberPodleFaktury: TRadioButton;
     rbVyberPodleVS: TRadioButton;
-    Button1: TButton;
+    btnTest: TButton;
     lblPocetKNacteni: TLabel;
     lblPocetOdChanges: TLabel;
     chbFakturyKNacteni: TCheckBox;
@@ -109,7 +108,7 @@ type
     procedure rbPrevodClick(Sender: TObject);
     procedure rbTiskClick(Sender: TObject);
     procedure rbMailClick(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure btnTestClick(Sender: TObject);
     procedure chbFakturyKNacteniClick(Sender: TObject);
 
   private
@@ -137,9 +136,7 @@ var
 implementation
 
 uses DesUtils, AbraEntities, FIfaktura, FIPrevod, FITisk, FIMail,
-AArray,
-DesFastReports //pro test/demo jenom
-;
+AArray, DesFastReports;
 
 {$R *.dfm}
 
@@ -152,12 +149,9 @@ procedure TfmMain.FormShow(Sender: TObject);
 var
   abraVatIndex : TAbraVatIndex;
   abraDrcArticle : TAbraDrcArticle;
+  dbVoipConnectResult : TDesResult;
 
 begin
-
-  //nastavení globálních promìnných pøi startu programu
-  //globalAA['invoiceDocQueueCode'] := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
-  //globalAA['zakladniSazbaDPH'] := AbraEnt.getVatIndex('Code=Výst21').Tariff;
 
   main_invoiceDocQueueCode := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
   main_zakladniSazbaDPH  := AbraEnt.getVatIndex('Code=Výst21').Tariff;
@@ -179,24 +173,18 @@ begin
     aseRok.Value := YearOf(IncMonth(Date, -1));
   end;
 
-
   // fajfky v asgMain
   asgMain.CheckFalse := '0';
   asgMain.CheckTrue := '1';
 
   rbFakturaceClick(nil);
 
-
-  //globalAA['abraIiDocQueue_Id'] := DesU.getAbraDocqueueId('FO1', '03'); // L000000101
-
-  //abraVatIndex := TAbraVatIndex.create('Výst21');
-  // globalAA['abraVatIndex_Id'] := abraVatIndex.id; //VATIndex_Id 6521000000
-  // globalAA['abraVatRate_Id'] := abraVatIndex.vatrate_Id; //VATRate_Id 02100X0000
-  //abraVatIndex := TAbraVatIndex.create('VýstR21');
-  //globalAA['abraDrcVatIndex_Id'] := abraVatIndex.id; // DRCVATIndex_Id  6621000000
-
-  //abraDrcArticle := TAbraDrcArticle.create('21'); // 21 nemá spojitost s DPH
-  //globalAA['abraDrcArticle_Id'] := abraDrcArticle.id;
+  {
+  if cbSVoIP.Enabled then begin
+    dbVoipConnectResult := DesU.connectDbVoip;
+    Zprava(dbVoipConnectResult.Messg);
+  end;
+  }
 
   // pro test, TODO smazat
   aedOd.Text := '10200555';
@@ -253,7 +241,7 @@ end;
 
 procedure TfmMain.btSablonaClick(Sender: TObject);
 begin
-  // *hw* TODO frxReport.DesignReport(True, False);
+  DesFastReport.frxReport.DesignReport(True, False);
 end;
 
 procedure TfmMain.btOdeslatClick(Sender: TObject);
@@ -321,7 +309,7 @@ begin
   {* HW testovaci nastaveni TODO odstranit*}
   aseMesic.Value := 2;
   aedOd.Text := '5000';
-  aedDo.Text := '5003';
+  aedDo.Text := '5005';
 
 end;
 
@@ -349,8 +337,8 @@ begin
 
   {* HW testovaci nastaveni TODO odstranit *}
   aseMesic.Value := 2;
-  aedOd.Text := '5000';
-  aedDo.Text := '5003';
+  aedOd.Text := '6000';
+  aedDo.Text := '6250';
 
 
 end;
@@ -737,7 +725,7 @@ begin
     ApStr := '';
 
   // faktura(y) v Abøe v mìsíci aseMesic
-  Result := 'SELECT II.ID, F.Name as FirmName, F.Code as Abrakod, II.OrdNumber, II.VarSymbol, II.Amount, II.VATDate$DATE, II.DocDate$DATE '
+  Result := 'SELECT II.ID, F.Name as FirmName, F.Code as Abrakod, II.OrdNumber, II.VarSymbol, II.Amount '
   + 'FROM IssuedInvoices II, Firms F'
   + ' WHERE II.Firm_ID = F.ID'
   + ' AND ' + FiltrovatPodle + ' >= ' + ApStr + aedOd.Text + ApStr
@@ -892,8 +880,6 @@ begin
               Cells[5, Radek] := FieldByName('postal_mail').AsString;                       // mail
               Ints[6, Radek] := FieldByName('disable_mailings').AsInteger;                    // reklama
               Cells[7, Radek] := DesU.qrAbra.FieldByName('ID').AsString;             // ID faktury
-              Cells[8, Radek] := DateToStr(DesU.qrAbra.FieldByName('VATDate$DATE').AsFloat);
-              Cells[9, Radek] := DateToStr(DesU.qrAbra.FieldByName('DocDate$DATE').AsFloat);
             end;
           end; //with DesU.qrZakos
           Application.ProcessMessages;
@@ -938,7 +924,7 @@ end;
 // testovací funkce
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.Button1Click(Sender: TObject);
+procedure TfmMain.btnTestClick(Sender: TObject);
 var
   source : string;
   i: integer;
@@ -947,37 +933,17 @@ var
   vysledek : TDesResult;
 begin
 
-  DesFastReport.init('invoice', 'FOsPDP.fr3'); // nastavení typu reportu a fr3 souboru
-  DesFastReport.setExportDirName(Format('%s%4d\%2.2d\', [DesU.PDF_PATH, 2023, 15])); // 15 pro legraci
+  //vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
+  //  '1K6P200101' '4K6P200101' '7K6P200101'
+  //Zprava(Format('%s', [vysledek.Messg]));
 
-    vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
-    //  '1K6P200101' '4K6P200101' '7K6P200101'
-    Zprava(Format('%s', [vysledek.Messg]));
 
-//ShowMessage('demooo_' +  BoolToStr(DesU.existujeVAbreDokladSPrazdnymVs(), true));
-//ShowMessage('VRid_' +  DesU.getAbraVatrateId('Výst21'));
-//ShowMessage('VRid_' +  DesU.getAbraVatindexId('Výst21'));
-
-//Source := 'pakachar:ukulelee';
-//Copy(Source, 8, MaxInt);
-
-//ShowMessage('1_' +  Copy(Source, Pos(':', Source)+1, MaxInt) + '_');
-//ShowMessage('1_' +  Copy(Source, 1, Pos(':', Source)-1) + '_');
-//ShowMessage(inttostr(Pos('-', Source)) );
+  vysledek := dmTisk.FakturaTisk('6IOQ200101', 'FOseSlozenkou.fr3');    // 7X8P200101
+  Zprava(Format('%s', [vysledek.Messg]));
 
 
 {
-Zaplatit := 152.61;
 
-    C := Format('%6.0f', [Zaplatit]);
-    //nahradíme vlnovkou poslední mezeru, tedy dáme vlnovku pøed první èíslici
-    for i := 2 to 6 do
-      if C[i] <> ' ' then begin
-        C[i-1] := '~';
-        Break;
-      end;
-
-ShowMessage('-' + C + '-' );
 
 ShowMessage (
   '- -'
@@ -990,13 +956,6 @@ ShowMessage (
 
   );
 
-}
-
-{
-  rData := TAArray.Create;
-  rData['Title'] := 'Faktura za pøipojení k internetu';
-  rData['Author'] := 'Družstvo Eurosignal';
-  ShowMessage (rData['Title'] +' - '+rData['kuku']+'-');
 }
 
 end;

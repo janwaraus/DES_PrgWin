@@ -34,18 +34,9 @@ uses DesUtils, FImain;
 // ------------------------------------------------------------------------------------------------
 
 procedure TdmMail.PosliFaktury;
-// použije data z asgMain
 var
   Radek: integer;
 begin
-
-  { preneseno do DesUtils
-  idSMTP.Host :=  DesU.getIniValue('Mail', 'SMTPServer');
-  idSMTP.Username := DesU.getIniValue('Mail', 'SMTPLogin');
-  idSMTP.Password := DesU.getIniValue('Mail', 'SMTPPW');
-  }
-
-
   with fmMain do try
 
     if rbVyberPodleVS.Checked then
@@ -71,7 +62,7 @@ begin
           Break;
         end;
         if Ints[0, Radek] = 1 then FakturaMail(Radek);
-      end;  // konec hlavní smyèky
+      end;
     end;
 
   finally
@@ -112,9 +103,9 @@ begin
     end;
 
     emailOdesilatel := 'uctarna@eurosignal.cz';
-    emailPredmet := Format('Družstvo EUROSIGNAL, faktura za internet FO1-%5.5d/%d', [Ints[2, Radek], aseRok.Value]);
+    emailPredmet := Format('Družstvo EUROSIGNAL, faktura za internet FO1-%d/%d', [Ints[2, Radek], aseRok.Value]);
 
-    emailZprava := Format('Faktura FO1-%5.5d/%d za pøipojení k internetu je v pøiloženém PDF dokumentu.'
+    emailZprava := Format('Faktura FO1-%d/%d za pøipojení k internetu je v pøiloženém PDF dokumentu.'
       // + ' Poslední verze programu Adobe Reader, kterým mùžete PDF dokumenty zobrazit i vytisknout,'
       // + ' je zdarma ke stažení na http://get.adobe.com/reader/otherversions/.'
       , [Ints[2, Radek], aseRok.Value])
