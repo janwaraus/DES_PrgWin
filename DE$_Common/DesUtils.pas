@@ -33,9 +33,7 @@ type
     qrZakos: TZQuery;
     qrAbra2: TZQuery;
     qrAbra3: TZQuery;
-    qrAbraOC: TZQuery; //pro jednorázové servisní Open/Close použití
-    dbVoip: TZConnection;
-    qrVoip: TZQuery;
+    qrAbraOC: TZQuery;
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
@@ -54,6 +52,7 @@ type
     function zrusPenizeNaCeste(VS : string) : string;
     function ulozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
+    procedure syncAbraPdfToRemoteServer(year, month : integer);
 
 
     public
@@ -114,7 +113,6 @@ type
       function sendSms(telCislo, smsText : string) : string;
 
       function getIniValue(iniGroup, iniItem : string) : string;
-      function connectDbVoip : TDesResult;
 
     private
       function newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
@@ -142,6 +140,8 @@ function FloatToStrFD (pFloat : extended) : string;
 function RandString(const stringsize: integer): string;
 function debugRozdilCasu(cas01, cas02 : double; textZpravy : string) : string;
 procedure RunCMD(cmdLine: string; WindowMode: integer);
+function getWindowsUserName : string;
+function getWindowsCompName : string;
 
 
 const
@@ -152,7 +152,6 @@ const
 
 var
   DesU : TDesU;
-  //globalAA : TAArray;
 
 
 implementation
@@ -213,11 +212,6 @@ begin
     dbZakos.Database := ReadString('Preferences', 'ZakDB', '');
     dbZakos.User := ReadString('Preferences', 'ZakUN', '');
     dbZakos.Password := ReadString('Preferences', 'ZakPW', '');
-
-    dbVoIP.HostName := ReadString('Preferences', 'VoIPHN', '');
-    dbVoIP.Database := ReadString('Preferences', 'VoIPDB', '');
-    dbVoIP.User := ReadString('Preferences', 'VoIPUN', '');
-    dbVoIP.Password := ReadString('Preferences', 'VoIPPW', '');
 
     idSMTP.Host :=  ReadString('Mail', 'SMTPServer', '');
     idSMTP.HeloName := idSMTP.Host; // táta to tak má, ale HeloName by mìlo být jméno klienta (volajícího), tedy tohoto programu. ale asi je úplnì jedno, co tam je
@@ -288,23 +282,6 @@ begin
   except
   end;
   self.AbraOLE := Unassigned;
-end;
-
-
-
-function TDesU.connectDbVoip : TDesResult;
-begin
-  if (not dbVoIP.Connected) AND (dbVoIP.Database <> '') then try begin
-    dbVoIP.Connect;
-    Result := TDesResult.create('ok', 'Pøipojeno k databází VoIP');
-  end;
-  except on E: exception do
-    begin
-      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP.' + ^M + E.Message), 'Abra', MB_ICONERROR + MB_OK);
-      Result := TDesResult.create('err', Format('Chyba pøipojení k databázi VoIP: %s', [E.Message]));
-    end;
-  end;
-
 end;
 
 
@@ -1312,12 +1289,24 @@ end;
 function TDesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
 begin
 
+  if not FileExists(FullPdfFileName) then begin
+    Result := TDesResult.create('err', Format('Soubor %s neexistuje. Pøeskoèeno.', [FullPdfFileName]));
+    Exit;
+  end;
+
+  // alespoò nìjaká kontrola mailové adresy
+  if Pos('@', emailAddrStr) = 0 then begin
+    Result := TDesResult.create('err', Format('Neplatná mailová adresa "%s". Pøeskoèeno.', [emailAddrStr]));
+    Exit;
+  end;
+
+
   emailAddrStr := StringReplace(emailAddrStr, ',', ';', [rfReplaceAll]);    // èárky za støedníky
 
   with idMessage do begin
     Clear;
     From.Address := emailOdesilatel;
-    ReceiptRecipient.Text := emailOdesilatel;
+    // ReceiptRecipient.Text := emailOdesilatel;
 
     // více mailových adres oddìlených støedníky se rozdìlí
     while Pos(';', emailAddrStr) > 0 do begin
@@ -1350,7 +1339,7 @@ begin
     try
       if not idSMTP.Connected then idSMTP.Connect;
       idSMTP.Send(idMessage);  // ! samotné poslání mailu
-      Result :=TDesResult.create('ok', Format('Soubor %s byl odeslán na adresu %s.', [FullPdfFileName, emailAddrStr]));
+      Result := TDesResult.create('ok', Format('Soubor %s byl odeslán na adresu %s.', [FullPdfFileName, emailAddrStr]));
     except on E: exception do
       Result := TDesResult.create('err', Format('Soubor %s se nepodaøilo odeslat na adresu %s.' + #13#10 + 'Chyba: %s',
        [FullPdfFileName, emailAddrStr, E.Message]));
@@ -1358,6 +1347,13 @@ begin
 
   end;
 
+end;
+
+procedure TDesU.syncAbraPdfToRemoteServer(year, month : integer);
+// odeslání faktur pøevedených do PDF na vzdálený server
+begin
+  RunCMD (Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
+   + '%s%4d\%2.2d /home/abrapdf/%4d" "exit"', [DesU.PDF_PATH, year, month, year]), SW_SHOWNORMAL);
 end;
 
 
@@ -1671,7 +1667,6 @@ begin
 end;
 
 
-
 function FindInFolder(sFolder, sFile: string; bUseSubfolders: Boolean): string;
 var
   sr: TSearchRec;
@@ -1836,6 +1831,30 @@ begin
   end;
 
   ShowWindowsErrorMessage(err);
+end;
+
+function getWindowsUserName : string;
+// pøívìtivìjší GetUserName
+var
+  dwSize : DWord;
+begin
+  SetLength(Result, 32);
+  dwSize := 31;
+  GetUserName(PChar(Result), dwSize);
+  SetLength(Result, dwSize);
+end;
+
+// ------------------------------------------------------------------------------------------------
+
+function getWindowsCompName : string;
+// pøívìtivìjší GetComputerName
+var
+  dwSize : DWord;
+begin
+  SetLength(Result, 32);
+  dwSize := 31;
+  GetComputerName(PChar(Result), dwSize);
+  SetLength(Result, dwSize);
 end;
 
 

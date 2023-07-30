@@ -38,15 +38,13 @@ begin
     if rbSeSlozenkou.Checked then Posilani := 'se složenkou';
     if rbKuryr.Checked then Posilani := 'roznášených kurýrem';
 
-    if rbVyberPodleVS.Checked then fmMain.Zprava(Format('Tisk faktur %s od VS %s do %s', [Posilani, aedOd.Text, aedDo.Text]))
-    else fmMain.Zprava(Format('Tisk faktur %s od èísla %s do %s', [Posilani, aedOd.Text, aedDo.Text]));
+    if rbVyberPodleVS.Checked then
+      fmMain.Zprava(Format('Tisk faktur %s od VS %s do %s', [Posilani, aedOd.Text, aedDo.Text]))
+    else
+      fmMain.Zprava(Format('Tisk faktur %s od èísla %s do %s', [Posilani, aedOd.Text, aedDo.Text]));
+
     with asgMain do begin
       fmMain.Zprava(Format('Poèet faktur k tisku: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
-      {
-      if ColumnSum(0, 1, RowCount-1) >= 1 then
-        if dlgTisk.Execute then
-          frxReport.PrintOptions.Printer := Printer.Printers[Printer.PrinterIndex];
-      }
       Screen.Cursor := crHourGlass;
       apnTisk.Visible := False;
       apbProgress.Position := 0;
@@ -66,11 +64,10 @@ begin
           Break;
         end;
 
-        //if Ints[0, Radek] = 1 then FakturaTisk(Radek);
         if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
 
           if rbSeSlozenkou.Checked then
-            VysledekPrevedeni := fakturaTisk(asgMain.Cells[7, Radek], 'FOseSlozenkou.fr3')
+            VysledekPrevedeni := fakturaTisk(asgMain.Cells[7, Radek], 'FOseSlozenkou-104.fr3')
           else
             VysledekPrevedeni := fakturaTisk(asgMain.Cells[7, Radek], 'FOsPDP-104.fr3');
 
@@ -78,11 +75,13 @@ begin
           if VysledekPrevedeni.isOk then begin
             asgMain.Ints[0, Radek] := 0;
             asgMain.Row := Radek;
-          end else begin
+          end
+          else
+          begin
             if Dialogs.MessageDlg( 'Chyba pøi tisku: '
               + VysledekPrevedeni.Messg + sLineBreak + 'Pokraèovat?',
               mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
-            end;
+          end;
         end;
 
       end;  // for

@@ -71,27 +71,6 @@ object DesU: TDesU
     Left = 144
     Top = 8
   end
-  object dbVoip: TZConnection
-    ControlsCodePage = cCP_UTF16
-    Catalog = ''
-    Properties.Strings = (
-      'controls_cp=GET_ACP')
-    HostName = ''
-    Port = 0
-    Database = ''
-    User = ''
-    Password = ''
-    Protocol = 'postgresql'
-    Left = 8
-    Top = 152
-  end
-  object qrVoip: TZQuery
-    Connection = dbVoip
-    ReadOnly = True
-    Params = <>
-    Left = 56
-    Top = 152
-  end
   object qrAbraOC: TZQuery
     Connection = dbAbra
     Params = <>

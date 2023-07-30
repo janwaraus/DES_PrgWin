@@ -198,10 +198,16 @@ begin
       + ' ORDER BY F.ID DESC';
       Open;
       if RecordCount = 0 then begin
-        fmMain.Zprava(Format('Smlouva %s: zákazník s kódem %s není v adresáøi Abry.',
+        fmMain.Zprava(Format('Smlouva %s: Zákazník s kódem %s není v adresáøi Abry.',
          [qrSmlouva.FieldByName('co_number').AsString, qrSmlouva.FieldByName('cu_abra_code').AsString]));
         Exit;
-      end else begin
+      end
+      else if RecordCount > 1 then begin
+        fmMain.Zprava(Format('Smlouva %s: V Abøe je více zákazníkù s kódem %s.',
+          [qrSmlouva.FieldByName('co_number').AsString, qrSmlouva.FieldByName('cu_abra_code').AsString]));
+        Exit;
+      end
+      else begin
         Firm_ID := FieldByName('Firm_ID').AsString;
         FirmName := FieldByName('FirmName').AsString;
         OrgIdentNumber := Trim(FieldByName('OrgIdentNumber').AsString);
@@ -316,6 +322,7 @@ begin
         if not ContainsText(Description, 'VoIP,') then // zabránìní vícenásobnému vložení VoIP do Description
           Description := Description + 'VoIP, ';
 
+        {
         if DesU.dbVoIP.Connected then with DesU.qrVoIP do begin
           SQLStr := 'SELECT SUM(Amount) FROM VoIP.Invoices_flat'
           + ' WHERE Num = ' + qrSmlouva.FieldByName('co_number').AsString
@@ -330,6 +337,9 @@ begin
           HovorneVoIP := 10;
           fmMain.Zprava('Není pøipojena DB VoIP, hovorné nastaveno na 10 Kè');
         end;
+        }
+        HovorneVoIP := 10;
+        fmMain.Zprava('Jen test! Není pøipojena DB VoIP! Hovorné nastaveno na 10 Kè');
 
       end;
 
@@ -448,7 +458,7 @@ begin
         fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));
         Ints[0, Radek] := 0;
         Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
-        Cells[3, Radek] := abraResponseSO.S['amount'];                                                // èástka
+        Cells[3, Radek] := abraResponseSO.S['amount'];  // èástka
         Cells[4, Radek] := FirmName;
       end else begin
         fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, abraWebApiResponse.Code, abraWebApiResponse.Messg]));

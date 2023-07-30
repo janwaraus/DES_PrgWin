@@ -69,10 +69,11 @@ __recovery/
 # DES specific
 *.ini
 *.txt
-*.sql
+# *.sql
 # *.fr3
 *.frf
 Vypisy/HB
 /log
+/logy
 /zalohy
 /DE$_Common/*.com

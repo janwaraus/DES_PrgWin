@@ -3,7 +3,7 @@ unit FImail;
 interface
 
 uses
-  Forms, Controls, SysUtils, Classes,
+  Forms, Controls, SysUtils, Classes, Dialogs,
 
   IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdSMTP, IdHTTP, IdMessage, IdMessageClient, IdText, IdMessageParts,
@@ -89,28 +89,15 @@ begin
   with fmMain, fmMain.asgMain do begin
     // musí existovat PDF soubor s fakturou
     FullPdfFileName := Format('%s%4d\%2.2d\%s-%5.5d.pdf', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, main_invoiceDocQueueCode, Ints[2, Radek]]);
-    // PDFFileName := Format('%s-%5.5d.pdf', [main_invoiceDocQueueCode, Ints[2, Radek]]); // neni potreba doufam
-    if not FileExists(FullPdfFileName) then begin
-      fmMain.Zprava(Format('%s (%s): Soubor %s neexistuje. Pøeskoèeno.', [Cells[4, Radek], Cells[1, Radek], FullPdfFileName]));
-      Exit;
-    end;
 
     emailAddrStr := Cells[5, Radek];
-    // alespoò nìjaká kontrola mailové adresy
-    if Pos('@', emailAddrStr) = 0 then begin
-      fmMain.Zprava(Format('%s (%s): Neplatná mailová adresa "%s". Pøeskoèeno.', [Cells[4, Radek], Cells[1, Radek], Cells[5, Radek]]));
-      Exit;
-    end;
 
     emailOdesilatel := 'uctarna@eurosignal.cz';
     emailPredmet := Format('Družstvo EUROSIGNAL, faktura za internet FO1-%d/%d', [Ints[2, Radek], aseRok.Value]);
 
     emailZprava := Format('Faktura FO1-%d/%d za pøipojení k internetu je v pøiloženém PDF dokumentu.'
-      // + ' Poslední verze programu Adobe Reader, kterým mùžete PDF dokumenty zobrazit i vytisknout,'
-      // + ' je zdarma ke stažení na http://get.adobe.com/reader/otherversions/.'
       , [Ints[2, Radek], aseRok.Value])
       + sLineBreak + sLineBreak
-      // + 'Pokud dostanete tuto zprávu bez pøílohy, napište nám, prosím, my se to pokusíme napravit.' + sLineBreak + sLineBreak
       + 'Pøejeme pìkný den'
       + sLineBreak + sLineBreak
       + 'Váš Eurosignal';
@@ -122,10 +109,11 @@ begin
 
     VysledekZaslani := DesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel, ExtraPrilohaFileName);
     fmMain.Zprava(Format('%s (%s): %s', [Cells[4, Radek], Cells[1, Radek], VysledekZaslani.Messg]));
-    Ints[0, Radek] := 0;
-    Application.ProcessMessages;
+    if VysledekZaslani.isOk then begin
+      Ints[0, Radek] := 0;
+    end;
 
-  end;  // with fmMain
-end;  // procedury FakturaMail
+  end;
+end;
 
 end.

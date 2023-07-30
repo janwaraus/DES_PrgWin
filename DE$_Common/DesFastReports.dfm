@@ -37,17 +37,17 @@ object DesFastReport: TDesFastReport
     IniFile = '\Software\Fast Reports'
     PreviewOptions.Buttons = [pbPrint, pbLoad, pbSave, pbExport, pbZoom, pbFind, pbOutline, pbPageSetup, pbTools, pbEdit, pbNavigator, pbExportQuick]
     PreviewOptions.Zoom = 1.000000000000000000
-    PrintOptions.Collate = False
     PrintOptions.Printer = 'Default'
     PrintOptions.PrintOnSheet = 0
+    PrintOptions.ShowDialog = False
     ReportOptions.CreateDate = 41751.679037013900000000
-    ReportOptions.LastChange = 42706.445575486100000000
+    ReportOptions.LastChange = 45119.872353935180000000
     ScriptLanguage = 'PascalScript'
     StoreInDFM = False
     OnBeginDoc = frxReportBeginDoc
     OnGetValue = frxReportGetValue
     Left = 17
-    Top = 14
+    Top = 22
   end
   object fdsRadky: TfrxDBDataset
     UserName = 'fdsRadky'

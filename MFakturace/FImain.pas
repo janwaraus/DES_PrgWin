@@ -146,10 +146,6 @@ AArray, DesFastReports;
 
 
 procedure TfmMain.FormShow(Sender: TObject);
-var
-  abraVatIndex : TAbraVatIndex;
-  abraDrcArticle : TAbraDrcArticle;
-  dbVoipConnectResult : TDesResult;
 
 begin
 
@@ -187,8 +183,8 @@ begin
   }
 
   // pro test, TODO smazat
-  aedOd.Text := '10200555';
-  aedDo.Text := '10205555';
+  //aedOd.Text := '10200555';
+  //aedDo.Text := '10205555';
 
 end;
 
@@ -251,8 +247,10 @@ begin
   //WinExec(PChar(Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
   // + '%s\%4d\%2.2d /home/abrapdf/%4d" "exit"', [PDFDir, aseRok.Value, aseMesic.Value, aseRok.Value])), SW_SHOWNORMAL);
 
-  RunCMD (Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
-   + '%s%4d\%2.2d /home/abrapdf/%4d" "exit"', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, aseRok.Value]), SW_SHOWNORMAL);
+  //RunCMD (Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
+  // + '%s%4d\%2.2d /home/abrapdf/%4d" "exit"', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, aseRok.Value]), SW_SHOWNORMAL);
+
+  DesU.syncAbraPdfToRemoteServer(aseRok.Value, aseMesic.Value);
 
 end;
 
@@ -307,9 +305,9 @@ begin
 
 
   {* HW testovaci nastaveni TODO odstranit*}
-  aseMesic.Value := 2;
-  aedOd.Text := '5000';
-  aedDo.Text := '5005';
+  //aseMesic.Value := 2;
+  //aedOd.Text := '5000';
+  //aedDo.Text := '5005';
 
 end;
 
@@ -336,9 +334,9 @@ begin
   aseRokChange(Self);
 
   {* HW testovaci nastaveni TODO odstranit *}
-  aseMesic.Value := 2;
-  aedOd.Text := '6000';
-  aedDo.Text := '6250';
+  //aseMesic.Value := 2;
+  //aedOd.Text := '6000';
+  //aedDo.Text := '6250';
 
 
 end;
@@ -933,13 +931,14 @@ var
   vysledek : TDesResult;
 begin
 
+  //if DesU.appMode = 1 then Exit;
   //vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
   //  '1K6P200101' '4K6P200101' '7K6P200101'
   //Zprava(Format('%s', [vysledek.Messg]));
 
 
-  vysledek := dmTisk.FakturaTisk('6IOQ200101', 'FOseSlozenkou.fr3');    // 7X8P200101
-  Zprava(Format('%s', [vysledek.Messg]));
+  //vysledek := dmTisk.FakturaTisk('6IOQ200101', 'FOseSlozenkou.fr3');    // 7X8P200101
+  //Zprava(Format('%s', [vysledek.Messg]));
 
 
 {

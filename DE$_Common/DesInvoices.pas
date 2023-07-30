@@ -43,6 +43,8 @@ type
     Firm : TAbraFirm;
     ResidenceAddress : TAbraAddress;
 
+    reportAry: TAArray;
+
     constructor create(DocumentID : string; DocumentType : string = '03');
     function createPdfByFr3(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
     function printByFr3(Fr3FileName : string) : TDesResult;
@@ -124,6 +126,7 @@ begin
     end;
     Close;
   end;
+  reportAry := TAArray.create;
 end;
 
 
@@ -136,11 +139,10 @@ var
   Saldo,
   Zaplatit: double;
   i: integer;
-  reportAry: TAArray;
 
 
 begin
-  reportAry := TAArray.create;
+
   reportAry['Title'] := 'Faktura za pøipojení k internetu';
   reportAry['Author'] := 'Družstvo Eurosignal';
 
@@ -184,19 +186,16 @@ begin
     SQL.Text := 'SELECT * FROM DE$_Code_To_Firm_Id (' + Ap + self.Firm.AbraCode + ApZ;
     Open;
 
-    { TODO tyhle kontroly dát jinam, resp. je vùbec potøeba? mám fakturu na Firmu, proè teï øešit MULTIPLE?
-    if Fields[0].AsString = 'MULTIPLE' then begin
-      Result := Format('%s (%s): Více zákazníkù pro kód %s.', [self.Firm.Name, self.VS, self.Firm.AbraCode]);
-      Close;
-      Exit;  // tohle ale nestaèí, je tøeba vyskoèit z celého pøevodu faktury, nebo to udìlat nìjak jinak správnì
-             // by se mìlo zkontrolovat pøi naèítání faktur a vùbec nepouštìt do pøevodu
-    end;
-    }
-
     // a saldo pro všechny Firm_Id (saldo je záporné, pokud zákazník dluží)
     while not EOF do
     begin
-      DesU.qrAbra2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbra.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')';
+
+      if self.DocQueueCode = 'FO3' then begin
+        DesU.qrAbra2.SQL.Text := 'SELECT SaldoPo + SaldoZL + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbra.Fields[0].AsString + ApC + FloatToStr(Date) + ')'; //pro FO3
+      end else begin
+        DesU.qrAbra2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbra.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')'; //pro FO1
+      end;
+
       DesU.qrAbra2.Open;
       Saldo := Saldo + DesU.qrAbra2.Fields[0].AsFloat;
       DesU.qrAbra2.Close;
@@ -204,25 +203,37 @@ begin
     end;
   end;  // with DesU.qrAbra
 
-  // právì pøevádìná faktura mùže být pøed splatností *HWTODO probrat a vyhodit, faktura je vždy pøed splatností
-  //    if Date <= DatumSplatnosti then begin
-  Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          // Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
-  Zaplatit := self.Castka - Saldo;          // Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
-  // anebo je po splatnosti
-  {end else begin
+
+  if self.DocQueueCode = 'FO3' then begin
+    Zaplatit := -Saldo; // FO3
+  end else begin
+   Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          //FO1 - Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
+   Zaplatit := self.Castka - Saldo;          // FO1 - Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
+  end;
+
+
+  { //právì pøevádìná faktura mùže být pøed splatností *HWTODO probrat a vyhodit, faktura je vždy pøed splatností
+   if Date <= DatumSplatnosti then begin
+    Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          //FO1 - Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
+    Zaplatit := self.Castka - Saldo;          // FO1 - Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
+
+   //anebo je po splatnosti
+  end else begin
     Zaplatit := -Saldo;
     Saldo := Saldo + Celkem;             // èástka faktury se odeète ze salda, aby tam nebyla dvakrát
-  end;  }
+  end;
+  }
 
   if Zaplatit < 0 then Zaplatit := 0;
 
-  reportAry['Saldo'] :=  Saldo;
+  reportAry['Saldo'] := Saldo;
   reportAry['ZaplatitCislo'] := Zaplatit;
-  reportAry['Zaplatit'] := Format('%.2f Kè', [Zaplatit]);
+  //reportAry['Zaplatit'] := Format('%.2f Kè', [Zaplatit]);
+  reportAry['Zaplatit'] := Zaplatit;
 
   // text na fakturu
-  if Saldo > 0 then reportAry['Platek'] := 'pøeplatek'
-  else if Saldo < 0 then reportAry['Platek'] := 'nedoplatek'
+  if Saldo > 0 then reportAry['Platek'] := 'Pøeplatek'
+  else if Saldo < 0 then reportAry['Platek'] := 'Nedoplatek'
   else reportAry['Platek'] := ' ';
 
   reportAry['Vystaveni'] := FormatDateTime('dd.mm.yyyy', reportAry['DatumDokladu']);
@@ -269,14 +280,6 @@ begin
       Break;
     end;
 
-  //pro starší osmimístná èísla smluv se pøidají dvì nuly na zaèátek
-  {
-  if Length(self.VS) = 8 then
-    slozenkaVS := '00' + self.VS
-  else
-    slozenkaVS := self.VS;
-  }
-
   slozenkaVS := self.VS.PadLeft(10, '0'); // pøidáme nuly na zaèátek pro VS s délkou kratší než 10 znakù
 
   slozenkaSS := Format('%8.8d%s', [self.OrdNumber, RightStr(self.Year, 2)]);
@@ -309,7 +312,7 @@ begin
   reportAry['S10'] := slozenkaSS[10];
 
   reportAry['VS2'] := reportAry['VS']; // asi by staèil jeden VS, ale nevadí
-  reportAry['SS2'] := slozenkaSS; // SS2 se liší od SS tak, že má 8 míst. SS má 6 míst (zleva jsou vždy pøidané nuly)
+  reportAry['SS2'] := reportAry['SS']; // SS2 se liší od SS tak, že má 8 míst. SS má 6 míst (zleva jsou vždy pøidané nuly)
 
   reportAry['Castka'] := slozenkaCastka + ',-';
 
@@ -326,8 +329,12 @@ var
 begin
   DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
 
-  PdfFileName := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]); // pro test 'new-%s-%5.5d.pdf'
-  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.VATDate)]);
+  if self.DocQueueCode = 'FO1' then //FO1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
+    PdfFileName := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]) // pro test 'new-%s-%5.5d.pdf'
+  else
+    PdfFileName := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
+
+  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.DocDate)]); // teoreticky by mohlo být VATDate
   DesFastReport.setExportDirName(ExportDirName);
   FullPdfFileName := ExportDirName + PdfFileName;
 

@@ -61,7 +61,7 @@ begin
           fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
           if VysledekPrevedeni.isOk then begin
             asgMain.Ints[0, Radek] := 0;
-            asgMain.Row := Radek;
+            asgMain.Row := Radek; // proè?
           end;
         end;
 
