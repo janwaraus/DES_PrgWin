@@ -28,15 +28,18 @@ FROM (
 JOIN billing_items bi ON bi.billing_batch_id = bb.id
 JOIN contracts co ON co.id = bb.contract_id
 JOIN customers cu ON cu.id = co.customer_id 
+LEFT JOIN tariffs ON co.tariff_id = tariffs.id
 LEFT JOIN (
-	SELECT co2.customer_id, count(*) AS voip_count 
+	SELECT co2.customer_id, COUNT(*) AS voip_count 
 	FROM contracts co2
 	WHERE co2.tariff_id IN (1, 3)
-	AND ((co2.Invoice = 1) OR (co2.State = 'canceled' AND co2.Canceled_at >= in_month_start_date)) 	
+	AND ((co2.invoice = 1) OR (co2.state = 'canceled' AND co2.canceled_at >= in_month_start_date)) 	
 	GROUP BY co2.customer_id 
 ) AS voip_cnt ON voip_cnt.customer_id = co.customer_id   
 WHERE 
-	bb.Period = 1
+	bb.period = 1
+	AND IF(co.credit, 1, 0) = 0
+	AND IF(tariffs.credit, 1, 0) = 0	
 	AND ((co.invoice = 1) or (co.state = 'canceled' AND co.canceled_at >= in_month_start_date)) 
 	AND (co.invoice_from IS NULL OR co.invoice_from <= in_month_end_date) 
 	AND co.activated_at <= in_month_end_date 	
@@ -80,28 +83,31 @@ FROM (
 JOIN billing_items bi ON bi.billing_batch_id = bb.id
 JOIN contracts co ON co.id = bb.contract_id
 JOIN customers cu ON cu.id = co.customer_id 
+LEFT JOIN tariffs ON co.tariff_id = tariffs.id
 LEFT JOIN (
-	SELECT co2.customer_id, count(*) AS voip_count 
+	SELECT co2.customer_id, COUNT(*) AS voip_count 
 	FROM contracts co2
 	WHERE co2.tariff_id IN (1, 3)
-	AND ((co2.Invoice = 1) OR (co2.State = 'canceled' AND co2.Canceled_at >= in_month_start_date)) 	
+	AND ((co2.invoice = 1) OR (co2.state = 'canceled' AND co2.canceled_at >= in_month_start_date)) 	
 	GROUP BY co2.customer_id 
 ) AS voip_cnt ON voip_cnt.customer_id = co.customer_id   
 WHERE 
-	bb.Period = 1
+	bb.period = 1
+	AND IF(co.credit, 1, 0) = 0
+	AND IF(tariffs.credit, 1, 0) = 0	
 	AND ((co.invoice = 1) or (co.state = 'canceled' AND co.canceled_at >= in_month_start_date)) 
 	AND (co.invoice_from IS NULL OR co.invoice_from <= in_month_end_date) 
 	AND co.activated_at <= in_month_end_date 	
 	AND cu.variable_symbol >= in_variable_symbol_from
 	AND cu.variable_symbol <= in_variable_symbol_to	
-	AND (IF (voip_cnt.voip_count,1,0)) = 1
+	AND (IF (voip_cnt.voip_count, 1, 0)) = 1
 ORDER BY cu.variable_symbol;
 END //
 DELIMITER ;
 
 CALL get_monthly_invoicing_cu_by_vsrange_voip('2023-05-01','2023-05-31','1','7961230002')
 
-DROP PROCEDURE get_monthly_invoicing_cu_by_vsrange_nonvoip
+DROP PROCEDURE get_monthly_invoicing_cu_by_vsrange_voip
 
 -- -- -- -- --
 
@@ -132,21 +138,24 @@ FROM (
 JOIN billing_items bi ON bi.billing_batch_id = bb.id
 JOIN contracts co ON co.id = bb.contract_id
 JOIN customers cu ON cu.id = co.customer_id 
+LEFT JOIN tariffs ON co.tariff_id = tariffs.id
 LEFT JOIN (
-	SELECT co2.customer_id, count(*) AS voip_count 
+	SELECT co2.customer_id, COUNT(*) AS voip_count 
 	FROM contracts co2
 	WHERE co2.tariff_id IN (1, 3)
-	AND ((co2.Invoice = 1) OR (co2.State = 'canceled' AND co2.Canceled_at >= in_month_start_date)) 	
+	AND ((co2.invoice = 1) OR (co2.state = 'canceled' AND co2.canceled_at >= in_month_start_date)) 	
 	GROUP BY co2.customer_id 
 ) AS voip_cnt ON voip_cnt.customer_id = co.customer_id   
 WHERE 
-	bb.Period = 1
+	bb.period = 1
+	AND IF(co.credit, 1, 0) = 0
+	AND IF(tariffs.credit, 1, 0) = 0	
 	AND ((co.invoice = 1) or (co.state = 'canceled' AND co.canceled_at >= in_month_start_date)) 
 	AND (co.invoice_from IS NULL OR co.invoice_from <= in_month_end_date) 
 	AND co.activated_at <= in_month_end_date 	
 	AND cu.variable_symbol >= in_variable_symbol_from
 	AND cu.variable_symbol <= in_variable_symbol_to	
-	AND (IF (voip_cnt.voip_count,1,0)) = 0
+	AND (IF (voip_cnt.voip_count, 1, 0)) = 0
 ORDER BY cu.variable_symbol;
 END //
 DELIMITER ;

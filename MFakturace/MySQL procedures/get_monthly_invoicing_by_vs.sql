@@ -13,8 +13,8 @@ SELECT
 	bb.contract_id,
 	bi.billing_batch_id,
 	bi.id AS billing_item_id,
-	IFNULL (voip_cnt.voip_count,0) AS cu_voip_count,
-	IF (voip_cnt.voip_count,1,0) AS cu_has_active_voip,
+	IFNULL (voip_cnt.voip_count, 0) AS cu_voip_count,
+	IF (voip_cnt.voip_count, 1, 0) AS cu_has_active_voip,
 	co.customer_id AS co_customer_id ,
 	co.`number` AS co_number,
 	co.`type` AS co_type,
@@ -50,21 +50,23 @@ FROM (
 JOIN billing_items bi ON bi.billing_batch_id = bb.id
 JOIN contracts co ON co.id = bb.contract_id
 JOIN customers cu ON cu.id = co.customer_id 
-LEFT JOIN tariffs ON co.Tariff_id = tariffs.id
+LEFT JOIN tariffs ON co.tariff_id = tariffs.id
 LEFT JOIN codebooks cb1 ON cu.invoice_sending_method_id = cb1.id 
 LEFT JOIN codebooks cb2 ON bi.vat_id = cb2.id 
 LEFT JOIN (
-	SELECT co2.customer_id, count(*) AS voip_count 
+	SELECT co2.customer_id, COUNT(*) AS voip_count 
 	FROM contracts co2
 	WHERE co2.tariff_id IN (1, 3)
-	AND ((co2.Invoice = 1) OR (co2.State = 'canceled' AND co2.Canceled_at >= in_month_start_date)) 	
+	AND ((co2.invoice = 1) OR (co2.state = 'canceled' AND co2.canceled_at >= in_month_start_date)) 	
 	GROUP BY co2.customer_id 
 ) AS voip_cnt ON voip_cnt.customer_id = co.customer_id   
 WHERE 
-	bb.Period = 1
+	bb.period = 1
+	AND IF(co.credit, 1, 0) = 0
+	AND IF(tariffs.credit, 1, 0) = 0	
 	AND ((co.invoice = 1) or (co.state = 'canceled' AND co.canceled_at >= in_month_start_date)) 
 	AND (co.invoice_from IS NULL OR co.invoice_from <= in_month_end_date) 
-	AND co.activated_at <= in_month_end_date 	
+	AND co.activated_at <= in_month_end_date
 	AND cu.variable_symbol = in_variable_symbol
 ORDER BY co.`number`, bi.tariff DESC;
 END //
