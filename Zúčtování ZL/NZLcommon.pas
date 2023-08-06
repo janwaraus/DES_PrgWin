@@ -11,19 +11,7 @@ type
     procedure Plneni_asgMain;
   end;
 
-const
-  Ap = chr(39);
-  ApC = Ap + ',';
-  ApZ = Ap + ')';
-  //FOQueue_Id: string[10] = 'H000000101';         // FO
-  //FO3Queue_Id: string[10] = '1D10000101';        // FO3
-  //MyAddress_Id: string[10] = '7000000101';
-  //MyAccount_Id: string[10] = '1400000101';       // Fio
-  User_Id: string[10] = '2200000101';            // automatická fakturace
-  Payment_Id: string[10] = '1000000101';         // typ platby: na bankovní úèet
-  VATIndex_Id: string[10] = '6521000000';
-  VATRate_Id: string[10] = '02100X0000';
-  VATRate = '21';
+
 var
   dmCommon: TdmCommon;
 
@@ -66,7 +54,7 @@ begin
         + ' AND IDI.Firm_Id = F.Id'
         + ' AND F.Firm_ID IS NULL'         // bez následovníkù
         + ' AND F.Hidden = ''N'''
-        + ' AND LocalUsedAmount <> LocalPaidAmount'; //HWTODO nojo ale takhle to nenajde jen èásteènì zaplacený, který má na tu èást zúèovanou fakturu. asi porovnat s LocalAmount
+        + ' AND LocalUsedAmount <> LocalPaidAmount'; // aby se vybraly jen nezúètované
         if cbCast.Checked then
           SQLStr := SQLStr + ' AND LocalAmount >= LocalPaidAmount' // aby se neobjevil pøeplacený ZL
         else

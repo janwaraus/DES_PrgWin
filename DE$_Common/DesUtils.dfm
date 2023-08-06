@@ -39,11 +39,12 @@ object DesU: TDesU
   end
   object dbZakos: TZConnection
     ControlsCodePage = cCP_UTF16
+    ClientCodepage = 'utf8'
     Catalog = ''
     Properties.Strings = (
       'controls_cp=GET_ACP'
-      'CLIENT_MULTI_STATEMENTS=1')
-    ReadOnly = True
+      'CLIENT_MULTI_STATEMENTS=1'
+      'codepage=utf8')
     HostName = ''
     Port = 0
     Database = ''
@@ -74,7 +75,7 @@ object DesU: TDesU
   object qrAbraOC: TZQuery
     Connection = dbAbra
     Params = <>
-    Left = 208
+    Left = 216
     Top = 8
   end
   object idMessage: TIdMessage
@@ -115,5 +116,11 @@ object DesU: TDesU
     Params = <>
     Left = 112
     Top = 80
+  end
+  object qrAbraOC2: TZQuery
+    Connection = dbAbra
+    Params = <>
+    Left = 272
+    Top = 8
   end
 end

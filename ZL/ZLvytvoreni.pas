@@ -7,7 +7,8 @@ unit ZLvytvoreni;
 interface
 
 uses
-  Windows, Messages, Classes, Forms, Controls, SysUtils, DateUtils, Variants, ComObj, Math, ZLmain;
+  Windows, Messages, Classes, Forms, Controls, SysUtils, DateUtils, Variants, ComObj, Math,
+  DesUtils;
 
 type
   TdmVytvoreni = class(TDataModule)
@@ -24,7 +25,7 @@ implementation
 
 {$R *.dfm}
 
-uses ZLcommon;
+uses DesInvoices, DesFastReports, AArray, ZLmain;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -59,10 +60,7 @@ begin
     end;  // for
 // konec hlavní smyèky
   finally
-    try
-      AbraOLE.Logout;
-    except
-    end;
+
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     asgMain.Visible := False;
@@ -215,13 +213,13 @@ begin
     ZLObject.PrefillValues(ZLData);
     ZLData.ValueByName('DocQueue_ID') := AbraEnt.getDocQueue('Code=ZL1').ID;
     //ZLData.ValueByName('Period_ID') := Period_Id; // *HW* automaticky z data dokladu
-    ZLData.ValueByName('DocDate$DATE') := Floor(DatumDokladu);
+    ZLData.ValueByName('DocDate$DATE') := Floor(deDatumDokladu.Date);
 //    ZLData.ValueByName('DueDate$DATE') := Floor(DatumSplatnosti);
     ZLData.ValueByName('Description') := Format('Pøipojení %s, %s', [Obdobi, Cells[1, Radek]]);
     ZLData.ValueByName('Firm_ID') := Firm_Id;
     ZLData.ValueByName('ConstSymbol_ID') := '0000308000';
     ZLData.ValueByName('VarSymbol') := Cells[1, Radek];
-    ZLData.ValueByName('DueDate$DATE') := Floor(DatumSplatnosti);        // 16.9.22 musí být až tady
+    ZLData.ValueByName('DueDate$DATE') := Floor(deDatumSplatnosti.Date);        // 16.9.22 musí být až tady
 // 28.6.2018 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
     with qrAbra do begin
       Close;

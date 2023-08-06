@@ -102,17 +102,20 @@ type
 
   public
     Prerusit: boolean;
+    VystavenoOd,
+    VystavenoDo: double;
 
     //ID,
     //Period_Idsmazat,
     //DocQueue_Id: string[10];
     //PDFDir,
-    BBmax,
-    BillingView,
-    ZLView: ShortString;
+    //BBmax,
+    //BillingView,
+    //ZLView: ShortString;
 
 
     procedure Zprava(TextZpravy: string);
+    procedure PlneniAsgMain;
   end;
 
 var
@@ -120,7 +123,7 @@ var
 
 implementation
 
-uses ZLCommon, ZLvytvoreni, ZLprevod, ZLtisk, ZLmail, DesUtils, DesFastReports;
+uses ZLCommon, ZLvytvoreni, ZLprevod, ZLtisk, ZLmail, DesUtils, AbraEntities, DesFastReports;
 
 {$R *.dfm}
 
@@ -141,9 +144,9 @@ var
   Month: integer;
 begin
 // jména pro view jsou unikátní, aby program nebyl omezen na jednu instanci
-  BBmax := FormatDateTime('BByymmddhhnnss', Now);
-  BillingView := FormatDateTime('BVyymmddhhnnss', Now);
-  ZLView := FormatDateTime('"ZV"yymmddhhnnss', Now);
+  //BBmax := FormatDateTime('BByymmddhhnnss', Now);
+  //BillingView := FormatDateTime('BVyymmddhhnnss', Now);
+  //ZLView := FormatDateTime('"ZV"yymmddhhnnss', Now);
 // jméno FI.ini
 
   LogDir := DesU.PROGRAM_PATH + 'Logy\Zálohové listy\';
@@ -159,15 +162,18 @@ begin
   asgMain.CheckTrue := '1';
 
   // pøedvyplnìní formuláøe
-  aseRok.Value := YearOf(Date);                            // aktuální rok
+  aseRok.Value := YearOf(Date); // aktuální rok
+
+  // 2.-4. mìsíc = index 0; 5.-7. mìsíc = index 1; 8.-10. mìsíc = index 2; 11.-1. mìsíc = index 3;
   Month := MonthOf(Date);
   if Month = 1 then begin
     Month := 13;
     aseRok.Value := aseRok.Value - 1;
   end;
   argMesic.ItemIndex := Floor((Month+1)/3) - 1;             // tolerance -2 / +1 mìsíc
-  deDatumDokladu.Date := Trunc(StrToDate(Format('15.%d.%d', [3*(argMesic.ItemIndex + 1), aseRok.Value])));
-  deDatumSplatnosti.Date := Trunc(EndOfTheMonth(deDatumDokladu.Date));
+
+  //deDatumDokladu.Date := Trunc(StrToDate(Format('15.%d.%d', [3*(argMesic.ItemIndex + 1), aseRok.Value])));
+  //deDatumSplatnosti.Date := Trunc(EndOfTheMonth(deDatumDokladu.Date));
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -336,32 +342,35 @@ begin
     Close;
   end;  // with qrAbra
   }
-// datum dokladu je 15.3., 15.6., 15.9. a 15.12., datum splatnosti poslední den v témže mìsíci
+  // datum dokladu je 15.3., 15.6., 15.9. a 15.12., datum splatnosti poslední den v témže mìsíci
   deDatumDokladu.Date := Trunc(StrToDate(Format('15.%d.%d', [3*(argMesic.ItemIndex+1), aseRok.Value])));
   deDatumSplatnosti.Date := Trunc(EndOfTheMonth(deDatumDokladu.Date));
-// VystavenoOd pro hledání vystavených ZL je 1.3., 1.6., 1.9., 1.12.,
+  // VystavenoOd pro hledání vystavených ZL je 1.3., 1.6., 1.9., 1.12.,
   VystavenoOd := StrToDate(Format('1.%d.%d', [3*(argMesic.ItemIndex + 1 ), aseRok.Value]));
-// VystavenoDo pro hledání vystavených ZL je 30.5., 31.8., 30.11. a 28/29.2. v dalším roce,
+  // VystavenoDo pro hledání vystavených ZL je 30.5., 31.8., 30.11. a 28/29.2. v dalším roce,
   VystavenoDo := EndOfTheMonth(IncMonth(VystavenoOd, 2));
-// *** výbìr ZL podle smlouvy
-  if arbVytvoreni.Checked then with qrMain do try
-    Screen.Cursor := crSQLWait;
-// view pro generování
-    dmCommon.AktualizaceView;
-// první a poslední èíslo smlouvy
-    SQL.Text := 'SELECT MIN(VS), MAX(VS) FROM ' + ZLView;
-    Open;
-    aedOd.Text := Fields[0].AsString;
-    aedDo.Text := Fields[1].AsString;
-    Close;
+
+  // *** výbìr ZL podle VS
+  if arbVytvoreni.Checked then begin
+    with DesU.qrZakos do try
+      Screen.Cursor := crSQLWait;
+      // první a poslední VS
+      SQL.Text := 'CALL get_deposit_invoicing_minmaxvs('
+        + Ap + FormatDateTime('yyyy-mm-dd', deDatumDokladu.Date + 30) + ApC
+        + Ap + FormatDateTime('yyyy-mm-dd', deDatumSplatnosti.Date) + ApZ;
+      Open;
+      aedOd.Text := FieldByName('min_vs').AsString;
+      aedDo.Text := FieldByName('max_vs').AsString;
+      Close;
     finally
       Screen.Cursor := crDefault;
-    end  // arbVytvoreni.Checked
-// *** výbìr podle ZL (pøevod, tisk, mail)
+    end;
+  end
+  // *** výbìr podle ZL (pøevod, tisk, mail)
   else begin
-    dbAbra.Reconnect;
-    with qrAbra do begin
-// rozpìtí èísel ZL v období VystavenoOd až VystavenoDo
+    DesU.dbAbra.Reconnect;
+    with DesU.qrAbraOC do begin
+      // rozpìtí èísel ZL v období VystavenoOd až VystavenoDo
       SQLStr := 'SELECT MIN(OrdNumber) FROM IssuedDInvoices, Periods'
       + ' WHERE DocDate$DATE >= ' + FloatToStr(Trunc(VystavenoOd))
       + ' AND Periods.ID = Period_ID'
@@ -382,6 +391,7 @@ begin
         Open;
         aedOd.Text := Fields[0].AsString;
       end;
+
       SQLStr := 'SELECT MAX(OrdNumber) FROM IssuedDInvoices, Periods'
       + ' WHERE DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
       + ' AND Periods.ID = Period_ID'
@@ -392,10 +402,11 @@ begin
       Open;
       if Fields[0].AsInteger > 0 then begin
         aedDo.Text := Fields[0].AsString;
-// vystaveno do mùže být v dalším roce, pak se pøidá rok do aedDo.Text
+        // vystaveno do mùže být v dalším roce, pak se pøidá rok do aedDo.Text
         if  YearOf(VystavenoDo) > YearOf(VystavenoOd) then aedDo.Text := aedDo.Text + '/' + FloatToStr(YearOf(VystavenoDo))
-// když není ZL, zkusí se ještì YearOf(VystavenoOd)
-      end else begin
+      // když není ZL, zkusí se ještì YearOf(VystavenoOd)
+      end
+      else begin   // když není ZL, zkusí se ještì YearOf(VystavenoOd)
         SQLStr := 'SELECT MAX(OrdNumber) FROM IssuedDInvoices, Periods'
         + ' WHERE DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
         + ' AND Periods.ID = Period_ID'
@@ -407,7 +418,6 @@ begin
         aedDo.Text := Fields[0].AsString;
       end;
       Close;
-      if aedOd.Text = '0' then
     end;  // with qrAbra
   end;  // if ... else arbVytvoreni.Checked
 end;
@@ -416,9 +426,9 @@ end;
 
 procedure TfmMain.deDatumDokladuChange(Sender: TObject);
 begin
-  DatumDokladu := deDatumDokladu.Date;
+  //DatumDokladu := deDatumDokladu.Date;
 //  16.9.22  deDatumSplatnosti.Date := Trunc(EndOfTheMonth(deDatumDokladu.Date));
-  DatumSplatnosti := deDatumSplatnosti.Date;
+  //DatumSplatnosti := deDatumSplatnosti.Date;
 
   {
   // Id období
@@ -436,7 +446,7 @@ end;
 
 procedure TfmMain.deDatumSplatnostiChange(Sender: TObject);
 begin
-  DatumSplatnosti := deDatumSplatnosti.Date;
+  //DatumSplatnosti := deDatumSplatnosti.Date;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -558,7 +568,7 @@ begin
   Application.ProcessMessages;
   try
 // *** Naplnìní asgMain ***
-    if btVytvorit.Caption = '&Naèíst' then dmCommon.Plneni_asgMain
+    if btVytvorit.Caption = '&Naèíst' then PlneniAsgMain
     else begin
 // *** Fakturace ***
       if arbVytvoreni.Checked then dmVytvoreni.VytvorZL;
@@ -607,18 +617,6 @@ begin
   end;
 end;
 
-procedure TfmMain.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  with qrMain do try
-    SQL.Text := 'DROP VIEW ' + ZLView;
-    ExecSQL;
-    SQL.Text := 'DROP VIEW ' + BillingView;
-    ExecSQL;
-    SQL.Text := 'DROP VIEW ' + BBmax;
-    ExecSQL;
-  except
-  end;
-end;
 
 // ------------------------------------------------------------------------------------------------
 // funkce nespojené pøímo s konkrétním prvkem formuláøe
@@ -638,6 +636,171 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
+procedure TdmCommon.PlneniAsgMain;
+var
+  Radek: integer;
+  VarSymbol,
+  Zakaznik,
+  SQLStr: string;
+begin
+  with fmMain do try
+    asgMain.Visible := True;
+    lbxLog.Visible := False;
+    apnPrevod.Visible := False;
+    apnTisk.Visible := False;
+    apnMail.Visible := False;
+    Screen.Cursor := crHourGlass;
+    with asgMain do try
+      ClearNormalCells;
+      RowCount := 2;
+      Close;
+      // ************************//
+      // ***  Generování ZL  *** //
+      // ************************//
+      if arbVytvoreni.Checked then begin
+        fmMain.Zprava(Format('Naètení zákazníkù od VS %s do %s.', [aedOd.Text, aedDo.Text]));
 
+        SQLStr := 'CALL get_deposit_invoicing_cu_by_vsrange('
+          + Ap + FormatDateTime('yyyy-mm-dd', deDatumDokladu.Date + 30) + ApC
+          + Ap + FormatDateTime('yyyy-mm-dd', deDatumSplatnosti.Date) + ApC
+          + Ap + aedOd.Text + ApC
+          + Ap + aedDo.Text + ApC;
+
+
+        case argMesic.ItemIndex of
+          0, 2: SQLStr := SQLStr + 'false,false)'; //první parametr øíká, zda naèítáme 6m periady, druhý, zda 12m periody
+          1: SQLStr := SQLStr +  'true,false)'; // dtto
+          3: SQLStr := SQLStr +  'true,true)'; // dtto
+        end;
+
+        DesU.qrZakos.SQL.Text := SQLStr;
+        DesU.qrZakos.Open;
+
+        Radek := 0;
+        apbProgress.Position := 0;
+        apbProgress.Visible := True;
+        while not EOF do begin
+          //VarSymbol := FieldByName('VS').AsString;
+          apbProgress.Position := Round(100 * DesU.qrZakos.RecNo / DesU.qrZakos.RecordCount);
+          Application.ProcessMessages;
+          if Prerusit then begin
+            Prerusit := False;
+            apbProgress.Position := 0;
+            apbProgress.Visible := False;
+            btVytvorit.Enabled := True;
+            btKonec.Caption := '&Konec';
+            Break;
+          end;
+          Inc(Radek);
+          RowCount := Radek + 1;
+          AddCheckBox(0, Radek, True, True);
+          Ints[0, Radek] := 1;                                                   // fajfka
+          Cells[1, Radek] := DesU.qrZakos.FieldByName('cu_variable_symbol').AsString;    // VS
+          Cells[2, Radek] := '';                                                 // ZL
+          Cells[3, Radek] := '';                                                 // èástka
+          Cells[4, Radek] := DesU.qrZakos.FieldByName('cu_abra_code').AsString;            // jméno
+          Cells[5, Radek] := DesU.qrZakos.FieldByName('cu_postal_mail').AsString;                // mail
+          Ints[6, Radek] := DesU.qrZakos.FieldByName('cu_disable_mailings').AsInteger;             // reklama
+          Application.ProcessMessages;
+          Next;
+        end;  // while not EOF
+      end
+      else
+
+      // *****************************//
+      // ***  Pøevod, Tisk, Mail  *** //
+      // *****************************//
+      with DesU.qrAbra do begin              // if arbVytvoreni.Checked
+        fmMain.Zprava(Format('Naètení ZL od %s do %s.', [aedOd.Text, aedDo.Text]));
+        Close;
+        dbAbra.Reconnect;
+        SQLStr := 'SELECT F.Name, OrdNumber, P.Code, VarSymbol, Amount, DocDate$DATE FROM Firms F, IssuedDInvoices II, Periods P'
+        + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=ZL1').ID + Ap
+        + ' AND F.ID = II.Firm_ID'
+        + ' AND F.Firm_ID IS NULL'
+        + ' AND P.ID = II.Period_ID'
+        + ' AND (P.Code = ' + Ap + FloatToStr(YearOf(VystavenoOd)) + Ap
+         + ' OR P.Code = ' + Ap + FloatToStr(YearOf(VystavenoDo)) + ApZ;
+
+
+        if Pos('/', aedDo.Text) = 0 then // ZL jsou z jednoho roku
+        SQLStr := SQLStr
+          + ' AND OrdNumber >= ' + aedOd.Text
+          + ' AND OrdNumber <= ' + aedDo.Text
+
+        else // v aedDo jsou ZL už z dalšího roku
+        SQLStr := SQLStr + ' AND (OrdNumber <= (SELECT MAX(OrdNumber) FROM IssuedDInvoices, Periods'
+            + ' WHERE DocDate$DATE >= ' + FloatToStr(Trunc(VystavenoOd))
+            + ' AND Periods.ID = Period_ID'
+            + ' AND Periods.Code = ' + Ap + FloatToStr(YearOf(VystavenoOd)) + Ap
+            + ' AND DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=ZL1').ID + ApZ
+          + ' OR OrdNumber <= ' + Copy(aedDo.Text, 0, Pos('/', aedDo.Text)-1) + ')';
+        SQLStr := SQLStr + ' AND (DocDate$DATE >= ' + FloatToStr(Trunc(VystavenoOd))
+        + ' AND DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
+        + ' OR DocDate$Date = ' + FloatToStr(Floor(deDatumDokladu.Date)) + ')'       // 12.5.17 - aby se dal pøevést i doklad mimo
+        + ' ORDER BY OrdNumber';                                                     // øádné období
+        SQL.Text := SQLStr;
+        Open;
+        Radek := 0;
+        apbProgress.Position := 0;
+        apbProgress.Visible := True;
+        while not EOF do begin
+          VarSymbol := FieldByName('VarSymbol').AsString;
+          Zakaznik := FieldByName('Name').AsString;
+          apbProgress.Position := Round(100 * RecNo / RecordCount);
+          Application.ProcessMessages;
+          if Prerusit then begin
+            Prerusit := False;
+            apbProgress.Position := 0;
+            apbProgress.Visible := False;
+            btVytvorit.Enabled := True;
+            btKonec.Caption := '&Konec';
+            Break;
+          end;
+          with DesU.qrZakos do begin
+            Close;
+            SQL.Text := 'SELECT DISTINCT postal_mail, disable_mailings --Postal_mail AS Mail, Disable_mailings AS Reklama-- FROM customers'
+            + ' WHERE variable_symbol = ' + VarSymbol;
+            Open;
+            if RecordCount > 0 then begin
+              Inc(Radek);
+              RowCount := Radek + 1;
+              AddCheckBox(0, Radek, True, True);
+              Ints[0, Radek] := 1;                                                   // fajfka tisk - mail
+              Cells[1, Radek] := VarSymbol;                                          // VS
+              Cells[2, Radek] := Format('%4.4d/%d',                                  // ZL
+               [DesU.qrAbra.FieldByName('OrdNumber').AsInteger, DesU.qrAbra.FieldByName('Code').AsInteger]);
+              Floats[3, Radek] := DesU.qrAbra.FieldByName('Amount').AsFloat;              // èástka
+              Cells[4, Radek] := Zakaznik;                                           // jméno
+              Cells[5, Radek] := FieldByName('postal_mail').AsString;                       // mail
+              Ints[6, Radek] := FieldByName('disable_mailings').AsInteger;                    // reklama
+              Cells[7, Radek] := DesU.qrAbra.FieldByName('DocDate$DATE').AsString;        // datum ZL
+              Application.ProcessMessages;
+            end;
+            Close;
+          end;  //  with qrMain
+          Next;
+        end;  // while not EOF
+      end;  //  .. else with qrAbra
+      fmMain.Zprava(Format('Poèet ZL: %d', [RowCount-1]));
+      if arbVytvoreni.Checked then btVytvorit.Caption := '&Vytvoøit'
+      else if arbPrevod.Checked then btVytvorit.Caption := '&Pøevést'
+      else if arbTisk.Checked then btVytvorit.Caption := '&Vytisknout'
+      else if arbMail.Checked then btVytvorit.Caption := '&Odeslat';
+    except on E: Exception do
+      Zprava('Neošetøená chyba: ' + E.Message);
+    end;  // with qrMain
+  finally
+    qrMain.Close;
+    apbProgress.Position := 0;
+    apbProgress.Visible := False;
+    if arbPrevod.Checked then apnPrevod.Visible := True;
+    if arbTisk.Checked then apnTisk.Visible := True;
+    if arbMail.Checked then apnMail.Visible := True;
+    Screen.Cursor := crDefault;
+    btVytvorit.Enabled := True;
+    btVytvorit.SetFocus;
+  end;
+end;
 
 end.

@@ -51,7 +51,6 @@ object fmMain: TfmMain
     StatusBar.Font.Name = 'Tahoma'
     StatusBar.Font.Style = []
     Text = ''
-    ExplicitWidth = 664
     DesignSize = (
       825
       132)
@@ -118,7 +117,6 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 503
       DesignSize = (
         664
         37)
@@ -172,7 +170,6 @@ object fmMain: TfmMain
         FilterIndex = 0
         DialogOptions = []
         DialogKind = fdOpen
-        ExplicitWidth = 277
       end
     end
     object apnPrevod: TAdvPanel
@@ -202,7 +199,6 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 503
       DesignSize = (
         664
         37)
@@ -234,7 +230,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btOdeslatClick
-        ExplicitLeft = 417
       end
       object btSablona: TButton
         Left = 469
@@ -252,7 +247,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btSablonaClick
-        ExplicitLeft = 308
       end
     end
     object apnTisk: TAdvPanel
@@ -282,7 +276,6 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 503
       FullHeight = 95
     end
     object apnMain: TAdvPanel
@@ -312,14 +305,13 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 503
       DesignSize = (
         664
         96)
       FullHeight = 200
       object aseRok: TAdvSpinEdit
         Left = 84
-        Top = 58
+        Top = 54
         Width = 55
         Height = 21
         Color = clWindow
@@ -366,7 +358,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btVytvoritClick
-        ExplicitLeft = 417
       end
       object btKonec: TButton
         Left = 578
@@ -383,7 +374,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btKonecClick
-        ExplicitLeft = 417
       end
       object deDatumDokladu: TAdvDateTimePicker
         Left = 274
@@ -403,6 +393,7 @@ object fmMain: TfmMain
         ParentDoubleBuffered = False
         ParentFont = False
         TabOrder = 3
+        OnChange = deDatumDokladuChange
         BorderStyle = bsSingle
         Ctl3D = True
         DateTime = 41908.472326388890000000
@@ -419,9 +410,9 @@ object fmMain: TfmMain
       object cbCast: TCheckBox
         Left = 186
         Top = 22
-        Width = 172
-        Height = 17
-        Caption = 'i jen '#269#225'ste'#269'n'#283' zaplacen'#233
+        Width = 180
+        Height = 19
+        Caption = 'i jen '#269#225'ste'#269'n'#283' zaplacen'#233'   '
         TabOrder = 4
       end
       object acbRada: TAdvComboBox
@@ -648,7 +639,6 @@ object fmMain: TfmMain
     ScrollWidth = 1600
     TabOrder = 0
     OnDblClick = lbxLogDblClick
-    ExplicitWidth = 664
   end
   object asgMain: TAdvStringGrid
     Left = 0
@@ -788,7 +778,6 @@ object fmMain: TfmMain
     SortSettings.Column = 2
     SortSettings.Show = True
     Version = '8.7.0.0'
-    ExplicitWidth = 664
     ColWidths = (
       28
       64

@@ -68,6 +68,7 @@ type
     procedure btOdeslatClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
     procedure btKonecClick(Sender: TObject);
+    procedure deDatumDokladuChange(Sender: TObject);
 
 
   private
@@ -219,6 +220,8 @@ begin
   glbPrevod.Color := clWhite;
   glbPrevod.ColorTo := clMenu;
   apnPrevod.Visible := True;
+  glbVytvoreni.Color := clSilver;
+  glbVytvoreni.ColorTo := clGray;
   glbTisk.Color := clSilver;
   glbTisk.ColorTo := clGray;
   apnTisk.Visible := False;
@@ -399,6 +402,11 @@ begin
     btKonec.Caption := '&Konec';
     btVytvorit.Enabled := True;
   end;
+end;
+
+procedure TfmMain.deDatumDokladuChange(Sender: TObject);
+begin
+  self.aseRokChange(nil);
 end;
 
 // ------------------------------------------------------------------------------------------------

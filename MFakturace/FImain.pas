@@ -26,10 +26,8 @@ uses
 
 type
   TfmMain = class(TForm)
-    qrMain: TZQuery;
     qrSmlouva: TZQuery;
     qrAbra: TZQuery;
-    qrAdresa: TZQuery;
     apnVyberCinnosti: TAdvPanel;
     rbFakturace: TRadioButton;
     rbPrevod: TRadioButton;
@@ -185,6 +183,7 @@ begin
   // pro test, TODO smazat
   //aedOd.Text := '10200555';
   //aedDo.Text := '10205555';
+  btnTest.Visible := true;
 
 end;
 
@@ -689,7 +688,8 @@ begin
   lbxLog.Items.Add(TextZpravy);
   lbxLog.ItemIndex := lbxLog.Count - 1;
   Application.ProcessMessages;
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), TextZpravy);
+  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date),
+    Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + TextZpravy);
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -930,6 +930,7 @@ var
   temps : string;
   vysledek : TDesResult;
 begin
+
 
   //if DesU.appMode = 1 then Exit;
   //vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF

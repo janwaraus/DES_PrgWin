@@ -83,16 +83,11 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\DE$_Common\AArray.pas"/>
         <DCCReference Include="..\DE$_Common\AbraEntities.pas"/>
         <DCCReference Include="..\DE$_Common\DesUtils.pas">
             <Form>DesU</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\DE$_Common\Superdate.pas"/>
-        <DCCReference Include="..\DE$_Common\Superobject.pas"/>
-        <DCCReference Include="..\DE$_Common\Supertimezone.pas"/>
-        <DCCReference Include="..\DE$_Common\Supertypes.pas"/>
         <DCCReference Include="FIfaktura.pas">
             <Form>dmFaktura</Form>
             <FormType>dfm</FormType>

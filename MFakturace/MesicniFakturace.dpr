@@ -1,13 +1,8 @@
 program MesicniFakturace;
 uses
   Forms,
-  AArray in '..\DE$_Common\AArray.pas',
   AbraEntities in '..\DE$_Common\AbraEntities.pas',
   DesUtils in '..\DE$_Common\DesUtils.pas' {DesU},
-  Superdate in '..\DE$_Common\Superdate.pas',
-  Superobject in '..\DE$_Common\Superobject.pas',
-  Supertimezone in '..\DE$_Common\Supertimezone.pas',
-  Supertypes in '..\DE$_Common\Supertypes.pas',
   FIfaktura in 'FIfaktura.pas' {dmFaktura: TDataModule},
   FImail in 'FImail.pas' {dmMail: TDataModule},
   FIprevod in 'FIprevod.pas' {dmPrevod: TDataModule},

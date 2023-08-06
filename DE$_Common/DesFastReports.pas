@@ -9,13 +9,6 @@ uses
   AArray, StrUtils, Data.DB,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
 
-  {
-  IdBaseComponent, IdComponent, IdTCPConnection,
-  IdTCPClient, IdSMTP, IdHTTP, IdMessage, IdMessageClient, IdText, IdMessageParts,
-  IdAntiFreezeBase, IdAntiFreeze, IdIOHandler,
-  IdIOHandlerSocket, IdSSLOpenSSL, IdExplicitTLSClientServerBase, IdSMTPBase, IdAttachmentFile,
-  }
-
   frxClass, frxDBSet, frxDesgn, frxBarcode, frxBarcode2d,
   frxExportBaseDialog, frxExportPDF, frxExportPDFHelpers,
 
@@ -201,9 +194,8 @@ if ParName = 'Value = 0' then Exit; //pro jistotu, ve fr3 souboru toto bylo v hi
   try
     ParValue := self.reportData[ParName];
   except
-    ShowMessage('Lehlo to na ' + ParName); //nefunguje mi
-    //on E: Exception do
-    //  ShowMessage(ParName + ' Chyba frxReportGetValue: '#13#10 + e.Message);
+    on E: Exception do
+      ShowMessage('Chyba frxReportGetValue, parametr: ' + ParName + sLineBreak + e.Message);
   end;
 
 end;
@@ -230,7 +222,7 @@ begin
     SQL.Text := 'SELECT Text, TAmountWithoutVAT AS BezDane, VATRate AS Sazba, TAmount - TAmountWithoutVAT AS DPH, TAmount AS SDani FROM IssuedInvoices2'
     + ' WHERE Parent_ID = ' + Ap + invoiceId + Ap
     // + ' AND NOT (Text = ''Zaokrouhlení'' AND TAmount = 0)'
-    + ' AND NOT ((RowType = 4) AND (TAmount = 0))' // nebereme nulové zaokrouhlení
+    + ' AND NOT (RowType = 4 AND TAmount = 0)' // nebereme nulové zaokrouhlení
     + ' ORDER BY PosIndex';
     Open;
   end;

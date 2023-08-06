@@ -189,12 +189,11 @@ begin
     with qrAbra do begin
       // kontrola kódu firmy, pøi chybì konec, jinak naèteme
       Close;
-      SQL.Text := 'SELECT F.ID as Firm_ID, F.Name as FirmName, F.OrgIdentNumber, FO.Id as FirmOffice_Id'
-      + ' FROM Firms F, FirmOffices FO'
+      SQL.Text := 'SELECT F.ID as Firm_ID, F.Name as FirmName, F.OrgIdentNumber'
+      + ' FROM Firms F'
       + ' WHERE Code = ' + Ap + qrSmlouva.FieldByName('cu_abra_code').AsString + Ap
       + ' AND F.Firm_ID IS NULL'         // bez následovníkù
       + ' AND F.Hidden = ''N'''
-      + ' AND FO.Parent_Id = F.Id'
       + ' ORDER BY F.ID DESC';
       Open;
       if RecordCount = 0 then begin
@@ -211,7 +210,6 @@ begin
         Firm_ID := FieldByName('Firm_ID').AsString;
         FirmName := FieldByName('FirmName').AsString;
         OrgIdentNumber := Trim(FieldByName('OrgIdentNumber').AsString);
-        // FirmOffice_ID := FieldByName('FirmOffice_Id').AsString // nebudeme pouzivat, ABRA si sama do faktury zanese nejvhodnìjší FirmOffice
       end;
 
       // 24.1.2017 obchodní pøípady pro ÈTÚ - platí pro celou faktury
@@ -220,7 +218,7 @@ begin
       else BusTransactionCode := 'P';                         //  právnická osoba
       BusTransaction_Id := AbraEnt.getBusTransaction('Code=' + BusTransactionCode).ID;
 
-// kontrola poslední faktury
+      // kontrola poslední faktury
       Close;
       SQLStr := 'SELECT OrdNumber, DocDate$DATE, VATDate$DATE, Amount FROM IssuedInvoices'
       + ' WHERE VarSymbol = ' + Ap + CustomerVarSymbol + Ap
@@ -285,16 +283,15 @@ begin
       PrvniFakturace := False;
 
       if DatumSpusteni >= FieldByName('co_invoice_from').AsDateTime then
-      with qrAbra do begin
+      with DesU.qrAbraOC do begin
         // už je nìjaká faktura ?
-        Close;
-        SQLStr := 'SELECT COUNT(*) FROM IssuedInvoices'
+        SQL.Text := 'SELECT COUNT(*) FROM IssuedInvoices'
         + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO1').ID + Ap
         + ' AND VarSymbol = ' + Ap + CustomerVarSymbol + Ap;
-        SQL.Text := SQLStr;
         Open;
         // zákazníkovi se ještì vùbec nefakturovalo
         PrvniFakturace := Fields[0].AsInteger = 0;
+        Close;
       end;
 
       // ještì podle data aktivace (po pauze se fakturuje znovu)
@@ -315,7 +312,8 @@ begin
       if PrvniFakturace and PosledniFakturace then
         Redukce := (DayOf(DatumUkonceni) - DayOf(DatumSpusteni) + 1) / DaysInMonth(DatumUkonceni); // pomìrná èást mìsíce
       // pro VoIP
-      SmlouvaVoIP := Copy(qrSmlouva.FieldByName('tariff_name').AsString, 1, 2) = 'EP';
+      //SmlouvaVoIP := Copy(qrSmlouva.FieldByName('tariff_name').AsString, 1, 2) = 'EP'; // potøeba vynechat kreditni VoIP (tariff_id = 2)
+      SmlouvaVoIP := (qrSmlouva.FieldByName('co_tariff_id').AsInteger = 1) OR (qrSmlouva.FieldByName('co_tariff_id').AsInteger = 3);
       HovorneVoIP := 0;
 
       if SmlouvaVoIP then begin

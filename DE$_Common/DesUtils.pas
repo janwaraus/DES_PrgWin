@@ -38,6 +38,7 @@ type
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
     qrZakosOC: TZQuery;
+    qrAbraOC2: TZQuery;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string);
@@ -225,7 +226,6 @@ begin
 
   if not dbAbra.Connected then try
     dbAbra.Connect;
-    // dbAbra.Reconnect; // tímto se vyøeší problém s Unicode (UTF-8/16), po reconnectu už bìží
   except on E: exception do
     begin
       Application.MessageBox(PChar('Nedá se pøipojit k databázi Abry, program ukonèen.' + ^M + E.Message), 'DesU DB Abra', MB_ICONERROR + MB_OK);
@@ -235,9 +235,9 @@ begin
 
   if (not dbZakos.Connected) AND (dbZakos.Database <> '') then try begin
     dbZakos.Connect;
-    qrZakos.SQL.Text := 'SET CHARACTER SET cp1250';
-    // SQL.Text := 'SET AUTOCOMMIT = 1';       // 16.9.21 táta, HWTODO probrat, je potøeba proè? pøidat?
-    qrZakos.ExecSQL;
+    //qrZakos.SQL.Text := 'SET CHARACTER SET cp1250'; // pøesunuto do vlastností TZConnection
+    //qrZakos.SQL.Text := 'SET AUTOCOMMIT = 1';       // pøesunuto do vlastností TZConnection
+    //qrZakos.ExecSQL;
   end;
   except on E: exception do
     begin

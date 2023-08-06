@@ -846,6 +846,8 @@ object fmMain: TfmMain
     SortSettings.Column = 2
     SortSettings.Show = True
     Version = '8.7.0.0'
+    ExplicitLeft = 80
+    ExplicitTop = 124
     ColWidths = (
       28
       64
@@ -871,8 +873,8 @@ object fmMain: TfmMain
     User = ''
     Password = ''
     Protocol = 'mysql-5'
-    Left = 41
-    Top = 258
+    Left = 33
+    Top = 186
   end
   object qrMain: TZQuery
     Connection = dbMain
@@ -881,8 +883,8 @@ object fmMain: TfmMain
     SQL.Strings = (
       '')
     Params = <>
-    Left = 68
-    Top = 257
+    Left = 84
+    Top = 185
   end
   object qrSmlouva: TZQuery
     Connection = dbMain
@@ -891,8 +893,8 @@ object fmMain: TfmMain
     SQL.Strings = (
       '')
     Params = <>
-    Left = 96
-    Top = 257
+    Left = 168
+    Top = 185
   end
   object dbAbra: TZConnection
     ControlsCodePage = cCP_UTF16
@@ -906,8 +908,8 @@ object fmMain: TfmMain
     User = ''
     Password = ''
     Protocol = 'firebird-2.1'
-    Left = 40
-    Top = 286
+    Left = 8
+    Top = 262
   end
   object qrAbra: TZQuery
     Connection = dbAbra
@@ -916,8 +918,8 @@ object fmMain: TfmMain
     SQL.Strings = (
       '')
     Params = <>
-    Left = 68
-    Top = 286
+    Left = 60
+    Top = 246
   end
   object qrAdresa: TZQuery
     Connection = dbAbra
@@ -926,8 +928,8 @@ object fmMain: TfmMain
     SQL.Strings = (
       '')
     Params = <>
-    Left = 96
-    Top = 286
+    Left = 104
+    Top = 246
   end
   object qrRadky: TZQuery
     Connection = dbAbra
@@ -935,8 +937,8 @@ object fmMain: TfmMain
     SQL.Strings = (
       '')
     Params = <>
-    Left = 124
-    Top = 286
+    Left = 164
+    Top = 238
   end
   object frxReport: TfrxReport
     Version = '2023.1.3'
@@ -954,8 +956,8 @@ object fmMain: TfmMain
     OnBeginDoc = frxReportBeginDoc
     OnEndDoc = frxReportEndDoc
     OnGetValue = frxReportGetValue
-    Left = 40
-    Top = 314
+    Left = 288
+    Top = 250
   end
   object fdsRadky: TfrxDBDataset
     UserName = 'fdsRadky'
@@ -964,8 +966,8 @@ object fmMain: TfmMain
     DataSet = qrRadky
     BCDToCurrency = False
     DataSetOptions = []
-    Left = 96
-    Top = 314
+    Left = 416
+    Top = 258
   end
   object frxDesigner: TfrxDesigner
     DefaultScriptLanguage = 'PascalScript'
@@ -986,8 +988,8 @@ object fmMain: TfmMain
     Restrictions = []
     RTLLanguage = False
     MemoParentFont = False
-    Left = 68
-    Top = 314
+    Left = 340
+    Top = 250
   end
   object qrTmp: TZQuery
     Connection = dbAbra

@@ -180,7 +180,7 @@ begin
 
   Saldo := 0;
 
-  with DesU.qrAbra do begin
+  with DesU.qrAbraOC do begin
 
     // všechny Firm_Id pro Abrakód firmy
     SQL.Text := 'SELECT * FROM DE$_Code_To_Firm_Id (' + Ap + self.Firm.AbraCode + ApZ;
@@ -191,17 +191,17 @@ begin
     begin
 
       if self.DocQueueCode = 'FO3' then begin
-        DesU.qrAbra2.SQL.Text := 'SELECT SaldoPo + SaldoZL + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbra.Fields[0].AsString + ApC + FloatToStr(Date) + ')'; //pro FO3
+        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZL + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(Date) + ')'; //pro FO3
       end else begin
-        DesU.qrAbra2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbra.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')'; //pro FO1
+        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')'; //pro FO1
       end;
 
-      DesU.qrAbra2.Open;
-      Saldo := Saldo + DesU.qrAbra2.Fields[0].AsFloat;
-      DesU.qrAbra2.Close;
+      DesU.qrAbraOC2.Open;
+      Saldo := Saldo + DesU.qrAbraOC2.Fields[0].AsFloat;
+      DesU.qrAbraOC2.Close;
       Next;
     end;
-  end;  // with DesU.qrAbra
+  end;  // with DesU.qrAbraOC
 
 
   if self.DocQueueCode = 'FO3' then begin
