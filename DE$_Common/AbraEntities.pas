@@ -222,7 +222,7 @@ begin
       self.name := FieldByName('NAME').AsString;
       self.number := FieldByName('BANKACCOUNT').AsString;
       self.accountId := FieldByName('ACCOUNT_ID').AsString;
-      self.bankStatementDocqueueId := FieldByName('BANKSTATEMENT_ID').AsString;
+      self.bankStatementDocqueueId := FieldByName('BANKSTATEMENT_ID').AsString; // v BankStatement_ID je ID øady dokladù
     end;
     Close;
   end;

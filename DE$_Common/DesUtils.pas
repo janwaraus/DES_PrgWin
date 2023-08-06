@@ -11,7 +11,6 @@ uses
   IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL, IdBaseComponent, IdComponent,
   IdTCPConnection, IdTCPClient, IdHTTP, IdSMTP, IdExplicitTLSClientServerBase, IdSMTPBase,
   IdText, IdMessage, IdMessageParts, IdMessageClient, IdAttachmentFile,
-  //IdAntiFreezeBase, IdAntiFreeze,
   Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
   Superobject, AArray;
 
@@ -29,19 +28,21 @@ type
   TDesU = class(TForm)
     dbAbra: TZConnection;
     qrAbra: TZQuery;
-    dbZakos: TZConnection;
-    qrZakos: TZQuery;
     qrAbra2: TZQuery;
     qrAbra3: TZQuery;
     qrAbraOC: TZQuery;
+    qrAbraOC2: TZQuery;
+    dbZakos: TZConnection;
+    qrZakos: TZQuery;
+    qrZakosOC: TZQuery;
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
-    qrZakosOC: TZQuery;
-    qrAbraOC2: TZQuery;
 
     procedure FormCreate(Sender: TObject);
-    procedure desUtilsInit(createOptions : string);
+    procedure desUtilsInit(createOptions : string = '');
+    procedure programInit(programName : string);
+    function zalogujZpravu(TextZpravy: string): string;
 
     function odstranNulyZCislaUctu(cisloU : string) : string;
     function prevedCisloUctuNaText(cisloU : string) : string;
@@ -57,7 +58,10 @@ type
 
 
     public
+      PROGRAM_NAME,
       PROGRAM_PATH,
+      LOG_PATH,
+      LOG_FILENAME,
       GPC_PATH,
       PDF_PATH,
       abraDefaultCommMethod,
@@ -168,15 +172,13 @@ uses AbraEntities;
 
 procedure TDesU.FormCreate(Sender: TObject);
 begin
-  desUtilsInit('');
+  desUtilsInit();
 end;
 
 procedure TDesU.desUtilsInit(createOptions : string);
 
 begin
   AbraEnt := TAbraEnt.Create;
-  //globalAA := TAArray.Create;
-  //abraValues := TAArray.Create; // asi se muze vyhodit
 
   PROGRAM_PATH := ExtractFilePath(ParamStr(0));
 
@@ -223,7 +225,6 @@ begin
   end;
 
 
-
   if not dbAbra.Connected then try
     dbAbra.Connect;
   except on E: exception do
@@ -246,6 +247,21 @@ begin
     end;
   end;
 
+end;
+
+procedure TDesU.programInit(programName : string);
+begin
+  PROGRAM_NAME := programName;
+  LOG_PATH := PROGRAM_PATH + 'Logy\' + PROGRAM_NAME + '\';
+  if not DirectoryExists(LOG_PATH) then Forcedirectories(LOG_PATH);
+  LOG_FILENAME := LOG_PATH + FormatDateTime('yyyy.mm".log"', Date);
+end;
+
+function TDesU.zalogujZpravu(TextZpravy: string): string;
+begin
+  Result := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
+  DesUtils.appendToFile(LOG_FILENAME,
+    Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + Result);
 end;
 
 
@@ -1034,7 +1050,7 @@ end;
 
 function TDesU.getAbracodeByVs(vs : string) : string;
 begin
-  with DesU.qrZakos do begin
+  with DesU.qrZakosOC do begin
     SQL.Text := 'SELECT abra_code FROM customers'
               + ' WHERE variable_symbol = ''' + vs + '''';
     Open;
@@ -1047,7 +1063,7 @@ end;
 
 function TDesU.getAbracodeByContractNumber(cnumber : string) : string;
 begin
-  with DesU.qrZakos do begin
+  with DesU.qrZakosOC do begin
     SQL.Text := 'SELECT cu.abra_code FROM customers cu, contracts co '
               + ' WHERE co.number = ''' + cnumber + ''''
               + ' AND cu.id = co.customer_id';
@@ -1205,7 +1221,7 @@ end;
 
 function TDesU.isVoipKreditContract(cnumber : string) : boolean;
 begin
-  with DesU.qrZakos do begin
+  with DesU.qrZakosOC do begin
     SQL.Text := 'SELECT co.id FROM contracts co  '
               + ' WHERE co.number = ''' + cnumber + ''''
              // + ' AND co.credit = 1' kredit
@@ -1221,7 +1237,7 @@ end;
 
 function TDesU.isCreditContract(cnumber : string) : boolean;
 begin
-  with DesU.qrZakos do begin
+  with DesU.qrZakosOC do begin
     SQL.Text := 'SELECT co.id FROM contracts co  '
               + ' WHERE co.number = ''' + cnumber + ''''
               + ' AND co.credit = 1';
@@ -1241,7 +1257,7 @@ var
   boAA, boRowAA: TAArray;
   newId, firmAbraCode: String;
 begin
-  with DesU.qrZakos do begin
+  with DesU.qrZakosOC do begin
     SQL.Text := 'UPDATE customers SET pay_u_payment = 0 where variable_symbol = ''' + VS + '''';
     ExecSQL;
     Close;
@@ -1257,7 +1273,7 @@ var
   SQLStr: string;
 begin
   Result := '';
-  with DesU.qrZakos do try
+  with DesU.qrZakosOC do try
     Close;
     SQL.Text := 'SELECT MAX(Id) FROM communications';
     Open;

@@ -131,10 +131,8 @@ end;
 procedure TfmMain.FormShow(Sender: TObject);
 
 begin
-  LogDir := DesU.PROGRAM_PATH +  'Logy\Nezúètované ZL\';
-  if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
-
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), ''); //vloží prázdný øádek do logu
+  DesU.programInit('Nezúètované ZL');
+  DesUtils.appendToFile(DesU.LOG_FILENAME, ''); //vloží prázdný øádek do logu
   fmMain.Zprava('Start programu "Nezúètované zálohové listy".');
 
   Prerusit := True;                   // pøíznak startu
@@ -453,14 +451,9 @@ end;
 procedure TfmMain.Zprava(TextZpravy: string);
 // do listboxu a logfile uloží èas a text zprávy
 begin
-  TextZpravy := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
-  with fmMain do begin
-    lbxLog.Items.Add(TextZpravy);
-    lbxLog.ItemIndex := lbxLog.Count - 1;
-    Application.ProcessMessages;
-    DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date),
-      Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + TextZpravy);
-  end;
+  lbxLog.Items.Add(DesU.zalogujZpravu(TextZpravy));
+  lbxLog.ItemIndex := lbxLog.Count - 1;
+  Application.ProcessMessages;
 end;
 
 end.

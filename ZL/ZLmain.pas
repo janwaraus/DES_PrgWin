@@ -148,11 +148,8 @@ begin
   //BillingView := FormatDateTime('BVyymmddhhnnss', Now);
   //ZLView := FormatDateTime('"ZV"yymmddhhnnss', Now);
 // jméno FI.ini
-
-  LogDir := DesU.PROGRAM_PATH + 'Logy\Zálohové listy\';
-  if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
-
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), ''); //vloží prázdný øádek do logu
+  DesU.programInit('Zálohové listy');
+  DesUtils.appendToFile(DesU.LOG_FILENAME, ''); //vloží prázdný øádek do logu
   fmMain.Zprava('Start programu "Zálohové listy".');
 
   Prerusit := True; // pøíznak startu
@@ -626,12 +623,9 @@ end;
 procedure TfmMain.Zprava(TextZpravy: string);
 // do listboxu a logfile uloží èas a text zprávy
 begin
-  TextZpravy := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
-  lbxLog.Items.Add(TextZpravy);
+  lbxLog.Items.Add(DesU.zalogujZpravu(TextZpravy));
   lbxLog.ItemIndex := lbxLog.Count - 1;
   Application.ProcessMessages;
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date),
-    Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + TextZpravy);
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -668,7 +662,7 @@ begin
 
 
         case argMesic.ItemIndex of
-          0, 2: SQLStr := SQLStr + 'false,false)'; //první parametr øíká, zda naèítáme 6m periady, druhý, zda 12m periody
+          0, 2: SQLStr := SQLStr + 'false,false)'; //první parametr øíká, zda naèítáme 6m periody, druhý, zda 12m periody
           1: SQLStr := SQLStr +  'true,false)'; // dtto
           3: SQLStr := SQLStr +  'true,true)'; // dtto
         end;

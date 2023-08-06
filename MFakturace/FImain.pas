@@ -26,8 +26,6 @@ uses
 
 type
   TfmMain = class(TForm)
-    qrSmlouva: TZQuery;
-    qrAbra: TZQuery;
     apnVyberCinnosti: TAdvPanel;
     rbFakturace: TRadioButton;
     rbPrevod: TRadioButton;
@@ -147,15 +145,12 @@ procedure TfmMain.FormShow(Sender: TObject);
 
 begin
 
+  DesU.programInit('Mìsíèní fakturace');
+
   main_invoiceDocQueueCode := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
   main_zakladniSazbaDPH  := AbraEnt.getVatIndex('Code=Výst21').Tariff;
 
-  //adresáø pro logy
-  LogDir := DesU.PROGRAM_PATH + 'Logy\Mìsíèní fakturace\';
-  if not DirectoryExists(LogDir) then Forcedirectories(LogDir);
-  //globalAA['LogFileName'] := LogDir + FormatDateTime('yyyy.mm".log"', Date);
-
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date), ''); //vloží prázdný øádek do logu
+  DesUtils.appendToFile(DesU.LOG_FILENAME, ''); //vloží prázdný øádek do logu
   Zprava('Start programu "Mìsíèní fakturace".');
 
   // do 25. se oèekává fakturace za minulý mìsíc, pak už za aktuální
@@ -183,7 +178,7 @@ begin
   // pro test, TODO smazat
   //aedOd.Text := '10200555';
   //aedDo.Text := '10205555';
-  btnTest.Visible := true;
+  if DesU.appMode > 1 then btnTest.Visible := true;
 
 end;
 
@@ -684,32 +679,27 @@ end;
 procedure TfmMain.Zprava(TextZpravy: string);
 // do listboxu a logfile uloží èas a text zprávy
 begin
-  TextZpravy := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
-  lbxLog.Items.Add(TextZpravy);
+  lbxLog.Items.Add(DesU.zalogujZpravu(TextZpravy));
   lbxLog.ItemIndex := lbxLog.Count - 1;
   Application.ProcessMessages;
-  DesUtils.appendToFile(LogDir + FormatDateTime('yyyy.mm".log"', Date),
-    Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + TextZpravy);
 end;
 
 // ------------------------------------------------------------------------------------------------
 
 function TfmMain.getSqlTextFakturace() : string;
-var
-  SqlProcedureName : string;
 begin
-  if cbBezVoIP.Checked and not cbSVoIP.Checked then
-    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_nonvoip'
-  else if cbSVoIP.Checked and not cbBezVoIP.Checked then
-    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_voip'
-  else
-    SqlProcedureName := 'get_monthly_invoicing_cu_by_vsrange_all';
-
-  Result := 'CALL ' + SqlProcedureName + '('
+  Result := 'CALL get_monthly_invoicing_cu_by_vsrange('
     + Ap + FormatDateTime('yyyy-mm-dd', StartOfTheMonth(deDatumPlneni.Date)) + ApC
     + Ap + FormatDateTime('yyyy-mm-dd', deDatumPlneni.Date) + ApC
     + Ap + aedOd.Text + ApC
-    + Ap + aedDo.Text + ApZ;
+    + Ap + aedDo.Text + ApC;
+
+  if cbBezVoIP.Checked and not cbSVoIP.Checked then
+    Result := Result + 'true,false)' //první parametr øíká, zda naèítáme non-VoIP zákazníky, druhý, zda VoIP
+  else if cbSVoIP.Checked and not cbBezVoIP.Checked then
+    Result := Result + 'false,true)'
+  else
+    Result := Result + 'true,true)';
 end;
 
 
@@ -932,7 +922,7 @@ var
 begin
 
 
-  //if DesU.appMode = 1 then Exit;
+  if DesU.appMode = 1 then Exit;
   //vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
   //  '1K6P200101' '4K6P200101' '7K6P200101'
   //Zprava(Format('%s', [vysledek.Messg]));

@@ -112,25 +112,8 @@ var
 begin
   cas01 := Now;
 
-  with fmMain, qrSmlouva, asgMain do begin
+  with fmMain, DesU.qrZakos, asgMain do begin
     CustomerVarSymbol := Cells[1, Radek];
-
-  // faktura se nebude vytváøet, je-li ve smlouvách také fakturovaný VoIP a není zašrktnuté vytváøení VoIP faktur,
-  // nebo není zašrktlé vytváøení internet faktur a faktura nemá VoIP (tedy je internet)
-  // HWTODO je tenhle check potreba?
-  {
-    Close;
-    SQLStr := 'SELECT COUNT(*) FROM ' + fiInvoiceView
-    + ' WHERE (Tarif = ''EP-Home'' OR Tarif = ''EP-Profi'')'
-    + ' AND VS = ' + Ap + CustomerVarSymbol + Ap;
-    SQL.Text := SQLStr;
-    Open;
-    FakturaVoIP := Fields[0].AsInteger > 0;
-    if (not cbSVoIP.Checked and FakturaVoIP) or (not cbBezVoIP.Checked and not FakturaVoIP) then begin
-      Close;
-      Exit;
-    end;
-  }
 
     // není víc zákazníkù pro jeden VS ? 31.1.2017
     //HWTODO mìlo by se kontrolovat v Denní kontrole
@@ -186,24 +169,24 @@ begin
     end;
     }
 
-    with qrAbra do begin
+    with DesU.qrAbra do begin
       // kontrola kódu firmy, pøi chybì konec, jinak naèteme
       Close;
       SQL.Text := 'SELECT F.ID as Firm_ID, F.Name as FirmName, F.OrgIdentNumber'
       + ' FROM Firms F'
-      + ' WHERE Code = ' + Ap + qrSmlouva.FieldByName('cu_abra_code').AsString + Ap
+      + ' WHERE Code = ' + Ap + DesU.qrZakos.FieldByName('cu_abra_code').AsString + Ap
       + ' AND F.Firm_ID IS NULL'         // bez následovníkù
       + ' AND F.Hidden = ''N'''
       + ' ORDER BY F.ID DESC';
       Open;
       if RecordCount = 0 then begin
         fmMain.Zprava(Format('Smlouva %s: Zákazník s kódem %s není v adresáøi Abry.',
-         [qrSmlouva.FieldByName('co_number').AsString, qrSmlouva.FieldByName('cu_abra_code').AsString]));
+         [DesU.qrZakos.FieldByName('co_number').AsString, DesU.qrZakos.FieldByName('cu_abra_code').AsString]));
         Exit;
       end
       else if RecordCount > 1 then begin
         fmMain.Zprava(Format('Smlouva %s: V Abøe je více zákazníkù s kódem %s.',
-          [qrSmlouva.FieldByName('co_number').AsString, qrSmlouva.FieldByName('cu_abra_code').AsString]));
+          [DesU.qrZakos.FieldByName('co_number').AsString, DesU.qrZakos.FieldByName('cu_abra_code').AsString]));
         Exit;
       end
       else begin
@@ -271,7 +254,7 @@ begin
     );
 
     // ============  smlouvy zákazníka - další øádky faktury se vytvoøí z qrSmlouvy
-    while not EOF do begin  // qrSmlouva
+    while not EOF do begin  // DesU.qrZakos
       CenaTarifu := 0;
       PausalVoIP := 0;
       HovorneVoIP := 0;
@@ -312,8 +295,8 @@ begin
       if PrvniFakturace and PosledniFakturace then
         Redukce := (DayOf(DatumUkonceni) - DayOf(DatumSpusteni) + 1) / DaysInMonth(DatumUkonceni); // pomìrná èást mìsíce
       // pro VoIP
-      //SmlouvaVoIP := Copy(qrSmlouva.FieldByName('tariff_name').AsString, 1, 2) = 'EP'; // potøeba vynechat kreditni VoIP (tariff_id = 2)
-      SmlouvaVoIP := (qrSmlouva.FieldByName('co_tariff_id').AsInteger = 1) OR (qrSmlouva.FieldByName('co_tariff_id').AsInteger = 3);
+      //SmlouvaVoIP := Copy(DesU.qrZakos.FieldByName('tariff_name').AsString, 1, 2) = 'EP'; // potøeba vynechat kreditni VoIP (tariff_id = 2)
+      SmlouvaVoIP := (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger = 1) OR (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger = 3);
       HovorneVoIP := 0;
 
       if SmlouvaVoIP then begin
@@ -323,7 +306,7 @@ begin
         {
         if DesU.dbVoIP.Connected then with DesU.qrVoIP do begin
           SQLStr := 'SELECT SUM(Amount) FROM VoIP.Invoices_flat'
-          + ' WHERE Num = ' + qrSmlouva.FieldByName('co_number').AsString
+          + ' WHERE Num = ' + DesU.qrZakos.FieldByName('co_number').AsString
           + ' AND Year = ' + aseRok.Text
           + ' AND Month = ' + aseMesic.Text;
           SQL.Text := SQLStr;
@@ -345,7 +328,7 @@ begin
       // 24.1.2017 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
       with qrAbra do begin
         Close;
-        BusOrderCode := qrSmlouva.FieldByName('co_ctu_category').AsString;
+        BusOrderCode := DesU.qrZakos.FieldByName('co_ctu_category').AsString;
         // kódy z tabulky contracts se musí pøedìlat
         Speed := Copy(BusOrderCode, Pos('_', BusOrderCode), 2);
         if Pos('WIFI', BusOrderCode) > 0 then BusOrderCode := 'W' + Speed
@@ -364,14 +347,14 @@ begin
 
       // cena za tarif
       if (FieldByName('bi_is_tariff').AsInteger = 1) then begin
-        CenaTarifu := qrSmlouva.FieldByName('bi_price').AsFloat;
+        CenaTarifu := DesU.qrZakos.FieldByName('bi_price').AsFloat;
         if not SmlouvaVoIP then begin
 
           // pøipojení k Internetu
           boRowAA := NewInvoice.createNew1Row( Format('podle smlouvy  %s  službu  %s',
               [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
           // boRowAA['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
-          if qrSmlouva.FieldByName('co_type').AsString = 'TvContract' then
+          if DesU.qrZakos.FieldByName('co_type').AsString = 'TvContract' then
             boRowAA['BusOrder_ID'] := '1700000101';
           boRowAA['BusTransaction_ID'] := BusTransaction_Id;
           boRowAA['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
@@ -408,7 +391,7 @@ begin
 
         boRowAA := NewInvoice.createNew1Row(FieldByName('bi_description').AsString);
         // boRowAA['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
-        if qrSmlouva.FieldByName('co_type').AsString = 'TvContract' then
+        if DesU.qrZakos.FieldByName('co_type').AsString = 'TvContract' then
           boRowAA['BusOrder_ID'] := '1700000101';
         boRowAA['BusTransaction_ID'] := BusTransaction_Id;
         if Pos('auce', FieldByName('bi_description').AsString) > 0 then
@@ -429,8 +412,8 @@ begin
         end;
 
       end; // if tarif else
-      Next;   //  qrSmlouva
-    end;  //  while not qrSmlouva.EOF
+      Next;   //  DesU.qrZakos
+    end;  //  while not DesU.qrZakos.EOF
 // pøípadnì øádek s poštovným
     if (FieldByName('cu_invoice_sending_method_name').AsString = 'Poštou')
      or (FieldByName('cu_invoice_sending_method_name').AsString = 'Se složenkou') then begin    // pošta, složenka
@@ -470,7 +453,7 @@ begin
       end;
     end;
 
-    Close;   // qrSmlouva
+    Close;   // DesU.qrZakos
 
     if isDebugMode then begin
       cas03 := Now;
