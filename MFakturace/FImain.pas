@@ -117,8 +117,6 @@ type
     Prerusit: boolean;
     pocetOdChanges : integer;
     aedOdTextOld, aedDoTextOld : string;
-    main_invoiceDocQueueCode : string;
-    main_zakladniSazbaDPH : integer;
     procedure Zprava(TextZpravy: string);
     procedure PlneniAsgMain;
 
@@ -146,10 +144,6 @@ procedure TfmMain.FormShow(Sender: TObject);
 begin
 
   DesU.programInit('Mìsíèní fakturace');
-
-  main_invoiceDocQueueCode := 'FO1'; //kód øady faktur, tento program vystavuje pouze do této øady
-  main_zakladniSazbaDPH  := AbraEnt.getVatIndex('Code=Výst21').Tariff;
-
   DesUtils.appendToFile(DesU.LOG_FILENAME, ''); //vloží prázdný øádek do logu
   Zprava('Start programu "Mìsíèní fakturace".');
 
@@ -920,6 +914,39 @@ var
   temps : string;
   vysledek : TDesResult;
 begin
+
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT description FROM billing_items'
+              + ' WHERE id = 87693'; //  87693, 19
+    Open;
+    if not Eof then begin
+      Zprava('Táøèždy: ' + FieldByName('description').AsString);
+    end;
+    Close;
+  end;
+
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT billing_city FROM customers'
+              + ' WHERE id = 5';
+    Open;
+    if not Eof then begin
+      Zprava('Táøèždy: ' + FieldByName('billing_city').AsString);
+    end;
+    Close;
+  end;
+
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT postal_name FROM customers'
+              + ' WHERE id = 24';
+    Open;
+    if not Eof then begin
+      Zprava('Táøèždy: ' + FieldByName('postal_name').AsString);
+    end;
+    Close;
+  end;
+
+
+  //Zprava(Format('%s', [vysledek.Messg]));
 
 
   if DesU.appMode = 1 then Exit;

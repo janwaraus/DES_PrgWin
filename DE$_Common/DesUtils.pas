@@ -64,6 +64,7 @@ type
       LOG_FILENAME,
       GPC_PATH,
       PDF_PATH,
+      VAT_RATE,
       abraDefaultCommMethod,
       abraConnName,
       abraUserUN,
@@ -71,6 +72,7 @@ type
       abraWebApiUrl : string;
       appMode: integer;
       AbraOLE: variant;
+      VAT_MULTIPLIER: double;
       adpIniFile: TIniFile;
 
       //abraValues : TAArray;
@@ -178,7 +180,9 @@ end;
 procedure TDesU.desUtilsInit(createOptions : string);
 
 begin
-  AbraEnt := TAbraEnt.Create;
+
+  VAT_RATE := '21'; // globání nastavení sazby DPH!
+  VAT_MULTIPLIER := (100 + StrToInt(VAT_RATE))/100;
 
   PROGRAM_PATH := ExtractFilePath(ParamStr(0));
 
@@ -224,7 +228,6 @@ begin
     adpIniFile.Free;
   end;
 
-
   if not dbAbra.Connected then try
     dbAbra.Connect;
   except on E: exception do
@@ -236,9 +239,9 @@ begin
 
   if (not dbZakos.Connected) AND (dbZakos.Database <> '') then try begin
     dbZakos.Connect;
-    //qrZakos.SQL.Text := 'SET CHARACTER SET cp1250'; // pøesunuto do vlastností TZConnection
+    //qrZakos.SQL.Text := 'SET CHARACTER SET utf8'; // pøesunuto do vlastností TZConnection
     //qrZakos.SQL.Text := 'SET AUTOCOMMIT = 1';       // pøesunuto do vlastností TZConnection
-    //qrZakos.ExecSQL;
+   // qrZakos.ExecSQL;
   end;
   except on E: exception do
     begin
@@ -246,6 +249,8 @@ begin
       Application.Terminate;
     end;
   end;
+
+  AbraEnt := TAbraEnt.Create;
 
 end;
 

@@ -17,7 +17,7 @@ uses
 
 begin
   Application.Initialize;
-  Application.Title := 'Zúètování ZL s UTF8';
+  Application.Title := 'Zúètování ZL';
   Application.CreateForm(TfmMain, fmMain);
   Application.CreateForm(TdmCommon, dmCommon);
   Application.CreateForm(TdmVytvoreni, dmVytvoreni);

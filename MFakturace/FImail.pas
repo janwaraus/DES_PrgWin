@@ -88,7 +88,7 @@ var
 begin
   with fmMain, fmMain.asgMain do begin
     // musí existovat PDF soubor s fakturou
-    FullPdfFileName := Format('%s%4d\%2.2d\%s-%5.5d.pdf', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, main_invoiceDocQueueCode, Ints[2, Radek]]);
+    FullPdfFileName := Format('%s%4d\%2.2d\%s-%5.5d.pdf', [DesU.PDF_PATH, aseRok.Value, aseMesic.Value, 'FO1', Ints[2, Radek]]);
 
     emailAddrStr := Cells[5, Radek];
 

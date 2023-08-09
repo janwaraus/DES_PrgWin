@@ -39,12 +39,12 @@ object DesU: TDesU
   end
   object dbZakos: TZConnection
     ControlsCodePage = cCP_UTF16
-    ClientCodepage = 'utf8'
+    ClientCodepage = 'cp1250'
     Catalog = ''
     Properties.Strings = (
       'controls_cp=GET_ACP'
       'CLIENT_MULTI_STATEMENTS=1'
-      'codepage=utf8')
+      'codepage=cp1250')
     HostName = ''
     Port = 0
     Database = ''

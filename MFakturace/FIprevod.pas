@@ -42,8 +42,6 @@ begin
       apbProgress.Position := 0;
       apbProgress.Visible := True;
 
-
-      // hlavní smyèka
       for Radek := 1 to RowCount-1 do begin
         Row := Radek;
         apbProgress.Position := Round(100 * Radek / RowCount-1);

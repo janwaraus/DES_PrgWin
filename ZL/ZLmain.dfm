@@ -2,8 +2,8 @@ object fmMain: TfmMain
   Left = 553
   Top = 194
   Caption = 'Z'#225'lohov'#233' listy za p'#345'ipojen'#237' k internetu'
-  ClientHeight = 361
-  ClientWidth = 834
+  ClientHeight = 366
+  ClientWidth = 923
   Color = clBtnFace
   Constraints.MinHeight = 400
   Constraints.MinWidth = 850
@@ -14,7 +14,6 @@ object fmMain: TfmMain
   Font.Style = []
   OldCreateOrder = False
   OnActivate = FormActivate
-  OnClose = FormClose
   OnCreate = FormCreate
   OnShow = FormShow
   PixelsPerInch = 96
@@ -22,7 +21,7 @@ object fmMain: TfmMain
   object apnTop: TAdvPanel
     Left = 0
     Top = 0
-    Width = 834
+    Width = 923
     Height = 132
     Align = alTop
     Color = 16772326
@@ -52,8 +51,9 @@ object fmMain: TfmMain
     StatusBar.Font.Name = 'Tahoma'
     StatusBar.Font.Style = []
     Text = ''
+    ExplicitWidth = 834
     DesignSize = (
-      834
+      923
       132)
     FullHeight = 200
     object apbProgress: TAdvProgressBar
@@ -83,7 +83,7 @@ object fmMain: TfmMain
     object apnMail: TAdvPanel
       Left = 168
       Top = 95
-      Width = 673
+      Width = 762
       Height = 37
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -107,14 +107,15 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 673
       DesignSize = (
-        673
+        762
         37)
       FullHeight = 95
       object fePriloha: TAdvFileNameEdit
         Left = 211
         Top = 8
-        Width = 447
+        Width = 536
         Height = 21
         EmptyTextStyle = []
         LabelCaption = 'p'#345#237'loha'
@@ -160,12 +161,13 @@ object fmMain: TfmMain
         FilterIndex = 0
         DialogOptions = []
         DialogKind = fdOpen
+        ExplicitWidth = 447
       end
     end
     object apnPrevod: TAdvPanel
       Left = 168
       Top = 96
-      Width = 673
+      Width = 762
       Height = 37
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -189,8 +191,9 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 673
       DesignSize = (
-        673
+        762
         37)
       FullHeight = 95
       object cbNeprepisovat: TCheckBox
@@ -205,7 +208,7 @@ object fmMain: TfmMain
         TabOrder = 0
       end
       object btOdeslat: TButton
-        Left = 587
+        Left = 676
         Top = 8
         Width = 71
         Height = 21
@@ -220,9 +223,10 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btOdeslatClick
+        ExplicitLeft = 587
       end
       object btSablona: TButton
-        Left = 478
+        Left = 567
         Top = 8
         Width = 71
         Height = 21
@@ -237,12 +241,13 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btSablonaClick
+        ExplicitLeft = 478
       end
     end
     object apnTisk: TAdvPanel
       Left = 168
       Top = 95
-      Width = 673
+      Width = 762
       Height = 37
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -266,12 +271,13 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 673
       FullHeight = 95
     end
     object apnMain: TAdvPanel
       Left = 168
       Top = 0
-      Width = 673
+      Width = 762
       Height = 96
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -294,8 +300,9 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 673
       DesignSize = (
-        673
+        762
         96)
       FullHeight = 200
       object aseRok: TAdvSpinEdit
@@ -333,7 +340,7 @@ object fmMain: TfmMain
         OnChange = aseRokChange
       end
       object btVytvorit: TButton
-        Left = 587
+        Left = 676
         Top = 20
         Width = 71
         Height = 21
@@ -347,9 +354,10 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 3
         OnClick = btVytvoritClick
+        ExplicitLeft = 587
       end
       object btKonec: TButton
-        Left = 587
+        Left = 676
         Top = 54
         Width = 71
         Height = 21
@@ -363,6 +371,7 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 4
         OnClick = btKonecClick
+        ExplicitLeft = 587
       end
       object aedOd: TAdvEdit
         Left = 466
@@ -703,21 +712,23 @@ object fmMain: TfmMain
   object lbxLog: TListBox
     Left = 0
     Top = 132
-    Width = 834
-    Height = 229
+    Width = 923
+    Height = 234
     Align = alClient
     ItemHeight = 13
     ScrollWidth = 1600
     TabOrder = 0
     OnDblClick = lbxLogDblClick
+    ExplicitWidth = 834
+    ExplicitHeight = 229
   end
   object asgMain: TAdvStringGrid
     Left = 0
     Top = 132
-    Width = 834
-    Height = 229
+    Width = 923
+    Height = 234
     Align = alClient
-    ColCount = 8
+    ColCount = 9
     DefaultRowHeight = 18
     DrawingStyle = gdsClassic
     FixedCols = 0
@@ -750,7 +761,8 @@ object fmMain: TfmMain
       'jm'#233'no'
       'mail'
       'ne reklama'
-      'datum')
+      'datum'
+      'ID ZL')
     ColumnSize.Location = clIniFile
     ControlLook.FixedGradientFrom = clWhite
     ControlLook.FixedGradientTo = clBtnFace
@@ -846,8 +858,8 @@ object fmMain: TfmMain
     SortSettings.Column = 2
     SortSettings.Show = True
     Version = '8.7.0.0'
-    ExplicitLeft = 80
-    ExplicitTop = 124
+    ExplicitWidth = 834
+    ExplicitHeight = 229
     ColWidths = (
       28
       64
@@ -855,148 +867,8 @@ object fmMain: TfmMain
       64
       187
       298
-      62
-      64)
-  end
-  object dbMain: TZConnection
-    ControlsCodePage = cCP_UTF16
-    ClientCodepage = 'cp1250'
-    Catalog = ''
-    Properties.Strings = (
-      'controls_cp=GET_ACP'
-      'codepage=cp1250')
-    ReadOnly = True
-    AfterConnect = dbMainAfterConnect
-    HostName = ''
-    Port = 0
-    Database = ''
-    User = ''
-    Password = ''
-    Protocol = 'mysql-5'
-    Left = 33
-    Top = 186
-  end
-  object qrMain: TZQuery
-    Connection = dbMain
-    CachedUpdates = True
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 84
-    Top = 185
-  end
-  object qrSmlouva: TZQuery
-    Connection = dbMain
-    CachedUpdates = True
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 168
-    Top = 185
-  end
-  object dbAbra: TZConnection
-    ControlsCodePage = cCP_UTF16
-    Catalog = ''
-    Properties.Strings = (
-      'controls_cp=GET_ACP')
-    AfterConnect = dbAbraAfterConnect
-    HostName = ''
-    Port = 0
-    Database = ''
-    User = ''
-    Password = ''
-    Protocol = 'firebird-2.1'
-    Left = 8
-    Top = 262
-  end
-  object qrAbra: TZQuery
-    Connection = dbAbra
-    CachedUpdates = True
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 60
-    Top = 246
-  end
-  object qrAdresa: TZQuery
-    Connection = dbAbra
-    CachedUpdates = True
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 104
-    Top = 246
-  end
-  object qrRadky: TZQuery
-    Connection = dbAbra
-    ReadOnly = True
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 164
-    Top = 238
-  end
-  object frxReport: TfrxReport
-    Version = '2023.1.3'
-    DotMatrixReport = False
-    IniFile = '\Software\Fast Reports'
-    PreviewOptions.Buttons = [pbPrint, pbLoad, pbSave, pbExport, pbZoom, pbFind, pbOutline, pbPageSetup, pbTools, pbEdit, pbNavigator, pbExportQuick]
-    PreviewOptions.Zoom = 1.000000000000000000
-    PrintOptions.Printer = 'Default'
-    PrintOptions.PrintOnSheet = 0
-    PrintOptions.ShowDialog = False
-    ReportOptions.CreateDate = 41751.679037013900000000
-    ReportOptions.LastChange = 42011.851949502300000000
-    ScriptLanguage = 'PascalScript'
-    StoreInDFM = False
-    OnBeginDoc = frxReportBeginDoc
-    OnEndDoc = frxReportEndDoc
-    OnGetValue = frxReportGetValue
-    Left = 288
-    Top = 250
-  end
-  object fdsRadky: TfrxDBDataset
-    UserName = 'fdsRadky'
-    CloseDataSource = False
-    OpenDataSource = False
-    DataSet = qrRadky
-    BCDToCurrency = False
-    DataSetOptions = []
-    Left = 416
-    Top = 258
-  end
-  object frxDesigner: TfrxDesigner
-    DefaultScriptLanguage = 'PascalScript'
-    DefaultFont.Charset = DEFAULT_CHARSET
-    DefaultFont.Color = clWindowText
-    DefaultFont.Height = -13
-    DefaultFont.Name = 'Arial'
-    DefaultFont.Style = []
-    DefaultLeftMargin = 10.000000000000000000
-    DefaultRightMargin = 10.000000000000000000
-    DefaultTopMargin = 10.000000000000000000
-    DefaultBottomMargin = 10.000000000000000000
-    DefaultPaperSize = 9
-    DefaultOrientation = poPortrait
-    GradientEnd = 11982554
-    GradientStart = clWindow
-    TemplatesExt = 'fr3'
-    Restrictions = []
-    RTLLanguage = False
-    MemoParentFont = False
-    Left = 340
-    Top = 250
-  end
-  object qrTmp: TZQuery
-    Connection = dbAbra
-    SQL.Strings = (
-      '')
-    Params = <>
-    Left = 152
-    Top = 286
+      47
+      64
+      80)
   end
 end

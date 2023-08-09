@@ -42,11 +42,10 @@ type
     procedure init(pReportType, pFr3FileName : string);
     procedure setExportDirName(newExportDirName : string);
     procedure loadFr3File(iFr3FileName : string = '');
-    procedure prepareInvoiceDataSets(invoiceId : string);
+    procedure prepareInvoiceDataSets(invoiceId : string; DocumentType : string = '03');
     function createPdf(FullPdfFileName : string; OverwriteExistingPdf : boolean) : TDesResult;
     function print: TDesResult;
     procedure resetPrintCount;
-
 
   end;
 
@@ -161,14 +160,13 @@ begin
       frxReport.PrintOptions.ShowDialog := true
     else
       frxReport.PrintOptions.ShowDialog := false;
-    //frxReport.PrintOptions.Printer := frxPrinters.Printers[Printer.PrinterIndex];
-    //frxReport.PrintOptions.ShowDialog := false;
+
     frxReport.Print;
     Result := TDesResult.create('ok', 'Tisk OK');
     printCount := printCount + 1;
   except on E: exception do
     begin
-      Result := TDesResult.create('err', Format('%s (%s): Fakturu %s se nepodaøilo vytisknout. Chyba: %s',
+      Result := TDesResult.create('err', Format('%s (%s): Doklad %s se nepodaøilo vytisknout. Chyba: %s',
        [reportData['OJmeno'], reportData['VS'], reportData['Cislo'], E.Message]));
       Exit;
     end;
@@ -213,24 +211,33 @@ begin
 end;
 
 
-procedure TDesFastReport.prepareInvoiceDataSets(invoiceId : string);
+procedure TDesFastReport.prepareInvoiceDataSets(invoiceId : string; DocumentType : string = '03');
 begin
 
   // øádky faktury
   with qrAbraRadky do begin
     Close;
-    SQL.Text := 'SELECT Text, TAmountWithoutVAT AS BezDane, VATRate AS Sazba, TAmount - TAmountWithoutVAT AS DPH, TAmount AS SDani FROM IssuedInvoices2'
+
+    if DocumentType = '10' then  //'10' mají zálohové listy (ZL)
+    SQL.Text := 'SELECT Text, TAmount FROM IssuedDInvoices2'
     + ' WHERE Parent_ID = ' + Ap + invoiceId + Ap
-    // + ' AND NOT (Text = ''Zaokrouhlení'' AND TAmount = 0)'
-    + ' AND NOT (RowType = 4 AND TAmount = 0)' // nebereme nulové zaokrouhlení
-    + ' ORDER BY PosIndex';
+    + ' ORDER BY PosIndex'
+
+    else // default '03', cteni z IssuedInvoices
+      SQL.Text := 'SELECT Text, TAmountWithoutVAT AS BezDane, VATRate AS Sazba, '
+      + ' TAmount - TAmountWithoutVAT AS DPH, TAmount AS SDani FROM IssuedInvoices2'
+      + ' WHERE Parent_ID = ' + Ap + invoiceId + Ap
+      + ' AND NOT (RowType = 4 AND TAmount = 0)' // nebereme nulové zaokrouhlení
+      + ' ORDER BY PosIndex';
+
     Open;
   end;
 
   // rekapitulace DPH
   with qrAbraDPH do begin
     Close;
-    SQL.Text := 'SELECT VATRate AS Sazba, SUM(TAmountWithoutVAT) AS BezDane, SUM(TAmount - TAmountWithoutVAT) AS DPH, SUM(TAmount) AS SDani FROM IssuedInvoices2'
+    SQL.Text := 'SELECT VATRate AS Sazba, SUM(TAmountWithoutVAT) AS BezDane, '
+    + ' SUM(TAmount - TAmountWithoutVAT) AS DPH, SUM(TAmount) AS SDani FROM IssuedInvoices2'
     + ' WHERE Parent_ID = ' + Ap + invoiceId + Ap
     + ' AND VATIndex_ID IS NOT NULL'
     + ' GROUP BY Sazba';

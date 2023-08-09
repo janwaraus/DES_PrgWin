@@ -3,7 +3,7 @@ unit ZLtisk;
 interface
 
 uses
-  Windows, Messages, Forms, Controls, Classes, Dialogs, SysUtils, DateUtils, Printers, ZLmain;
+  Windows, Messages, Forms, Controls, Classes, Dialogs, SysUtils, DateUtils, Printers, DesUtils;
 
 type
   TdmTisk = class(TDataModule)
@@ -21,7 +21,7 @@ implementation
 
 {$R *.dfm}
 
-uses ZLcommon;
+uses DesInvoices, DesFastReports, AArray, ZLmain;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -29,14 +29,13 @@ procedure TdmTisk.TiskniZL;
 // použije data z asgMain
 var
   Radek: integer;
+  Faktura : TDesInvoice;
+  VysledekPrevedeni : TDesResult;
 begin
   with fmMain do try
     fmMain.Zprava(Format('Tisk ZL od èísla %s do %s', [aedOd.Text, aedDo.Text]));
     with asgMain do begin
       fmMain.Zprava(Format('Poèet ZL k tisku: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
-      if ColumnSum(0, 1, RowCount-1) >= 1 then
-        if dlgTisk.Execute then
-          frxReport.PrintOptions.Printer := Printer.Printers[Printer.PrinterIndex];
       Screen.Cursor := crHourGlass;
       apnTisk.Visible := False;
       apbProgress.Position := 0;
@@ -55,7 +54,26 @@ begin
           lbxLog.Visible := False;
           Break;
         end;
-        if Cells[0, Radek] = '1' then ZLTisk(Radek);
+
+        if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
+
+          Faktura := TDesInvoice.create(asgMain.Cells[8, Radek], '10');
+          VysledekPrevedeni := Faktura.printByFr3('ZLdoPDF-104.fr3');
+
+          fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
+
+          if VysledekPrevedeni.isOk then begin
+            asgMain.Ints[0, Radek] := 0;
+          end
+          else
+          begin
+            if Dialogs.MessageDlg( 'Chyba pøi tisku: '
+              + VysledekPrevedeni.Messg + sLineBreak + 'Pokraèovat?',
+              mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
+          end;
+        end;
+
+
       end;  // for
     end;
 // konec hlavní smyèky
@@ -80,6 +98,7 @@ var
   Zaplaceno: double;
   i: integer;
 begin
+{
   with fmMain, fmMain.asgMain do begin
     with qrAbra do begin
 // údaje z faktury do privátních promìnných
@@ -202,6 +221,7 @@ begin
       end;
     end;  // try
   end;  // with fmMain
+}
 end;
 
 end.

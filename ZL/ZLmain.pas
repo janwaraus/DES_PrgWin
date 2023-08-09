@@ -19,16 +19,6 @@ uses
 
 type
   TfmMain = class(TForm)
-    dbMain: TZConnection;
-    qrMain: TZQuery;
-    qrSmlouva: TZQuery;
-    dbAbra: TZConnection;
-    qrAbra: TZQuery;
-    qrAdresa: TZQuery;
-    qrRadky: TZQuery;
-    frxReport: TfrxReport;
-    frxDesigner: TfrxDesigner;
-    fdsRadky: TfrxDBDataset;
     apnTop: TAdvPanel;
     apnVyberCinnosti: TAdvPanel;
     glbVytvoreni: TGradientLabel;
@@ -58,12 +48,9 @@ type
     fePriloha: TAdvFileNameEdit;
     lbxLog: TListBox;
     asgMain: TAdvStringGrid;
-    qrTmp: TZQuery;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormActivate(Sender: TObject);
-    procedure dbMainAfterConnect(Sender: TObject);
-    procedure dbAbraAfterConnect(Sender: TObject);
     procedure glbVytvoreniClick(Sender: TObject);
     procedure glbPrevodClick(Sender: TObject);
     procedure glbTiskClick(Sender: TObject);
@@ -88,14 +75,10 @@ type
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
     procedure asgMainDblClick(Sender: TObject);
     procedure lbxLogDblClick(Sender: TObject);
-    procedure frxReportBeginDoc(Sender: TObject);
-    procedure frxReportEndDoc(Sender: TObject);
-    procedure frxReportGetValue(const ParName: string; var ParValue: Variant);
     procedure btVytvoritClick(Sender: TObject);
     procedure btOdeslatClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
     procedure btKonecClick(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
 
   private
     LogDir : string;
@@ -123,7 +106,7 @@ var
 
 implementation
 
-uses ZLCommon, ZLvytvoreni, ZLprevod, ZLtisk, ZLmail, DesUtils, AbraEntities, DesFastReports;
+uses ZLvytvoreni, ZLprevod, ZLtisk, ZLmail, DesUtils, AbraEntities, DesFastReports;
 
 {$R *.dfm}
 
@@ -321,7 +304,6 @@ procedure TfmMain.aseRokChange(Sender: TObject);
 var
 SQLStr: AnsiString;
 begin
-  if not dbMain.Connected or not dbAbra.Connected then Exit;
   aedOd.Clear;
   aedDo.Clear;
   asgMain.ClearNormalCells;
@@ -557,7 +539,6 @@ end;
 // ------------------------------------------------------------------------------------------------
 
 procedure TfmMain.btVytvoritClick(Sender: TObject);
-// pro zadaný mìsíc se vytvoøí faktury v Abøe, nebo pøevedou do PDF, vytisknou èi rozešlou mailem
 begin
   btVytvorit.Enabled := False;
   btKonec.Caption := '&Pøerušit';
@@ -630,11 +611,10 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmCommon.PlneniAsgMain;
+procedure TfmMain.PlneniAsgMain;
 var
   Radek: integer;
   VarSymbol,
-  Zakaznik,
   SQLStr: string;
 begin
   with fmMain do try
@@ -647,7 +627,7 @@ begin
     with asgMain do try
       ClearNormalCells;
       RowCount := 2;
-      Close;
+
       // ************************//
       // ***  Generování ZL  *** //
       // ************************//
@@ -673,8 +653,7 @@ begin
         Radek := 0;
         apbProgress.Position := 0;
         apbProgress.Visible := True;
-        while not EOF do begin
-          //VarSymbol := FieldByName('VS').AsString;
+        while not DesU.qrZakos.EOF do begin
           apbProgress.Position := Round(100 * DesU.qrZakos.RecNo / DesU.qrZakos.RecordCount);
           Application.ProcessMessages;
           if Prerusit then begin
@@ -696,8 +675,9 @@ begin
           Cells[5, Radek] := DesU.qrZakos.FieldByName('cu_postal_mail').AsString;                // mail
           Ints[6, Radek] := DesU.qrZakos.FieldByName('cu_disable_mailings').AsInteger;             // reklama
           Application.ProcessMessages;
-          Next;
-        end;  // while not EOF
+          DesU.qrZakos.Next;
+        end;
+        DesU.qrZakos.Close;
       end
       else
 
@@ -707,11 +687,11 @@ begin
       with DesU.qrAbra do begin              // if arbVytvoreni.Checked
         fmMain.Zprava(Format('Naètení ZL od %s do %s.', [aedOd.Text, aedDo.Text]));
         Close;
-        dbAbra.Reconnect;
-        SQLStr := 'SELECT F.Name, OrdNumber, P.Code, VarSymbol, Amount, DocDate$DATE FROM Firms F, IssuedDInvoices II, Periods P'
+        DesU.dbAbra.Reconnect;
+        SQLStr := 'SELECT II.ID, F.Name as FirmName, II.OrdNumber, P.Code, II.VarSymbol, II.Amount, II.DocDate$DATE '
+        +'FROM Firms F, IssuedDInvoices II, Periods P'
         + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=ZL1').ID + Ap
         + ' AND F.ID = II.Firm_ID'
-        + ' AND F.Firm_ID IS NULL'
         + ' AND P.ID = II.Period_ID'
         + ' AND (P.Code = ' + Ap + FloatToStr(YearOf(VystavenoOd)) + Ap
          + ' OR P.Code = ' + Ap + FloatToStr(YearOf(VystavenoDo)) + ApZ;
@@ -740,9 +720,9 @@ begin
         apbProgress.Visible := True;
         while not EOF do begin
           VarSymbol := FieldByName('VarSymbol').AsString;
-          Zakaznik := FieldByName('Name').AsString;
           apbProgress.Position := Round(100 * RecNo / RecordCount);
           Application.ProcessMessages;
+
           if Prerusit then begin
             Prerusit := False;
             apbProgress.Position := 0;
@@ -751,9 +731,10 @@ begin
             btKonec.Caption := '&Konec';
             Break;
           end;
+
           with DesU.qrZakos do begin
             Close;
-            SQL.Text := 'SELECT DISTINCT postal_mail, disable_mailings --Postal_mail AS Mail, Disable_mailings AS Reklama-- FROM customers'
+            SQL.Text := 'SELECT DISTINCT postal_mail, disable_mailings FROM customers'
             + ' WHERE variable_symbol = ' + VarSymbol;
             Open;
             if RecordCount > 0 then begin
@@ -765,14 +746,15 @@ begin
               Cells[2, Radek] := Format('%4.4d/%d',                                  // ZL
                [DesU.qrAbra.FieldByName('OrdNumber').AsInteger, DesU.qrAbra.FieldByName('Code').AsInteger]);
               Floats[3, Radek] := DesU.qrAbra.FieldByName('Amount').AsFloat;              // èástka
-              Cells[4, Radek] := Zakaznik;                                           // jméno
+              Cells[4, Radek] := DesU.qrAbra.FieldByName('FirmName').AsString;;                        // jméno firmy/zákazníka
               Cells[5, Radek] := FieldByName('postal_mail').AsString;                       // mail
               Ints[6, Radek] := FieldByName('disable_mailings').AsInteger;                    // reklama
               Cells[7, Radek] := DesU.qrAbra.FieldByName('DocDate$DATE').AsString;        // datum ZL
+              Cells[8, Radek] := DesU.qrAbra.FieldByName('ID').AsString;             // ID faktury
               Application.ProcessMessages;
             end;
             Close;
-          end;  //  with qrMain
+          end;  //  with DesU.qrZakos
           Next;
         end;  // while not EOF
       end;  //  .. else with qrAbra
@@ -785,7 +767,6 @@ begin
       Zprava('Neošetøená chyba: ' + E.Message);
     end;  // with qrMain
   finally
-    qrMain.Close;
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     if arbPrevod.Checked then apnPrevod.Visible := True;

@@ -4,6 +4,7 @@
 // 3.1.2019 rozdìlení Period_Id na Period_Id_ZL a Period_Id_FO - øešení problému rùzných rokù
 // 21.8.2022 Abra 22.1 pøešla na UTF8, nutné úpravy
 // 5.3.2023  Maily s TLS
+// 10.7.2023 pøepsáno pro Delphi 10.x
 
 unit NZLmain;
 

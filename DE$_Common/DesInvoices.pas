@@ -53,9 +53,10 @@ type
   TNewDesInvoiceAA = class
   public
     AA : TAArray;
-    constructor create(DocDate : double; VarSymbol : string);
+    constructor create(DocDate : double; VarSymbol : string; DocumentType : string = '03');
     function createNew0Row(RowText : string) : TAArray;
     function createNew1Row(RowText : string) : TAArray;
+    function createNewRow_NoVat(RowType : integer; RowText : string) : TAArray;
   end;
 
 
@@ -64,21 +65,36 @@ implementation
 constructor TDesInvoice.create(DocumentID : string; DocumentType : string = '03');
 begin
   with DesU.qrAbraOC do begin
-    // cteni z IssuedInvoices
-    SQL.Text :=
-        'SELECT ii.Firm_ID, ii.DocQueue_ID, ii.OrdNumber, ii.VarSymbol,'
-      + ' ii.IsReverseChargeDeclared, ii.DocDate$DATE, ii.DueDate$DATE, ii.VATDate$DATE,'
-      + ' ii.LocalAmount, ii.LocalPaidAmount, ii.LocalCreditAmount, ii.LocalPaidCreditAmount,'
-      + ' d.Code as DocQueueCode, d.DocumentType, p.Code as YearCode,'
-      + ' f.Name as FirmName, f.Code as AbraCode, f.OrgIdentNumber, f.VATIdentNumber,'
-      + ' f.ResidenceAddress_ID, a.Street, a.City, a.PostCode '
-      + 'FROM ISSUEDINVOICES ii'
-      + ' JOIN DocQueues d ON ii.DocQueue_ID = d.ID'
-      + ' JOIN Periods p ON ii.Period_ID = p.ID'
-      + ' JOIN Firms f ON ii.Firm_ID = f.ID'
-      + ' JOIN Addresses a ON f.ResidenceAddress_ID = a.ID'
-      + ' WHERE ii.ID = ''' + DocumentID + '''';
-    //DesUtils.appendToFile(globalAA['LogFileName'], SQL.Text);
+
+    if DocumentType = '10' then  //'10' majÌ z·lohovÈ listy (ZL)
+      SQL.Text :=
+          'SELECT ii.Firm_ID, ii.DocQueue_ID, ii.OrdNumber, ii.VarSymbol,'
+        + ' ''N'' as IsReverseChargeDeclared, ii.DocDate$DATE, ii.DueDate$DATE, 0 as VATDate$DATE,'
+        + ' ii.LocalAmount, ii.LocalPaidAmount, 0 as LocalCreditAmount, 0 as LocalPaidCreditAmount,'
+        + ' d.Code as DocQueueCode, d.DocumentType, p.Code as YearCode,'
+        + ' f.Name as FirmName, f.Code as AbraCode, f.OrgIdentNumber, f.VATIdentNumber,'
+        + ' f.ResidenceAddress_ID, a.Street, a.City, a.PostCode '
+        + 'FROM IssuedDInvoices ii'
+        + ' JOIN DocQueues d ON ii.DocQueue_ID = d.ID'
+        + ' JOIN Periods p ON ii.Period_ID = p.ID'
+        + ' JOIN Firms f ON ii.Firm_ID = f.ID'
+        + ' JOIN Addresses a ON f.ResidenceAddress_ID = a.ID'
+        + ' WHERE ii.ID = ''' + DocumentID + ''''
+
+    else // default '03', cteni z IssuedInvoices
+      SQL.Text :=
+          'SELECT ii.Firm_ID, ii.DocQueue_ID, ii.OrdNumber, ii.VarSymbol,'
+        + ' ii.IsReverseChargeDeclared, ii.DocDate$DATE, ii.DueDate$DATE, ii.VATDate$DATE,'
+        + ' ii.LocalAmount, ii.LocalPaidAmount, ii.LocalCreditAmount, ii.LocalPaidCreditAmount,'
+        + ' d.Code as DocQueueCode, d.DocumentType, p.Code as YearCode,'
+        + ' f.Name as FirmName, f.Code as AbraCode, f.OrgIdentNumber, f.VATIdentNumber,'
+        + ' f.ResidenceAddress_ID, a.Street, a.City, a.PostCode '
+        + 'FROM IssuedInvoices ii'
+        + ' JOIN DocQueues d ON ii.DocQueue_ID = d.ID'
+        + ' JOIN Periods p ON ii.Period_ID = p.ID'
+        + ' JOIN Firms f ON ii.Firm_ID = f.ID'
+        + ' JOIN Addresses a ON f.ResidenceAddress_ID = a.ID'
+        + ' WHERE ii.ID = ''' + DocumentID + '''';
 
     Open;
 
@@ -143,7 +159,11 @@ var
 
 begin
 
-  reportAry['Title'] := 'Faktura za p¯ipojenÌ k internetu';
+  if self.DocumentType = '10' then
+    reportAry['Title'] := 'Z·lohov˝ list na p¯ipojenÌ k internetu'
+  else
+    reportAry['Title'] := 'Faktura za p¯ipojenÌ k internetu';
+
   reportAry['Author'] := 'Druûstvo Eurosignal';
 
   reportAry['AbraKod'] := self.Firm.AbraCode;
@@ -334,12 +354,12 @@ begin
   else
     PdfFileName := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
 
-  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.DocDate)]); // teoreticky by mohlo b˝t VATDate
+  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.DocDate)]);
   DesFastReport.setExportDirName(ExportDirName);
   FullPdfFileName := ExportDirName + PdfFileName;
 
   self.prepareFastReportData;
-  DesFastReport.prepareInvoiceDataSets(self.ID);
+  DesFastReport.prepareInvoiceDataSets(self.ID, self.DocumentType);
   Result := DesFastReport.createPdf(FullPdfFileName, OverwriteExistingPdf);
 end;
 
@@ -353,30 +373,33 @@ begin
   DesFastReport.init('invoice', Fr3FileName); // nastavenÌ typu reportu a fr3 souboru
 
   self.prepareFastReportData;
-  DesFastReport.prepareInvoiceDataSets(self.ID);
+  DesFastReport.prepareInvoiceDataSets(self.ID, self.DocumentType);
 
   Result := DesFastReport.print();
   if Result.Code = 'ok' then
-    Result.Messg := Format('Faktura %s byla odesl·na na tisk·rnu.', [self.CisloDokladu]);
+    Result.Messg := Format('Doklad %s byl odesl·n na tisk·rnu.', [self.CisloDokladu]);
 
 end;
 
 
-constructor TNewDesInvoiceAA.create(DocDate : double; VarSymbol : string);
+constructor TNewDesInvoiceAA.create(DocDate : double; VarSymbol : string; DocumentType : string = '03');
 begin
   AA := TAArray.Create;
   AA['VarSymbol'] := VarSymbol;
   AA['DocDate$DATE'] := DocDate;
-  AA['AccDate$DATE'] := DocDate;
   AA['Period_ID'] := AbraEnt.getPeriod('Code=' + FormatDateTime('yyyy', DocDate)).ID;
   AA['Address_ID'] := '7000000101'; // FA CONST
   AA['BankAccount_ID'] := '1400000101'; // Fio
   AA['ConstSymbol_ID'] := '0000308000';
   AA['TransportationType_ID'] := '1000000101'; // FA CONST
   AA['PaymentType_ID'] := '1000000101'; // typ platby: na bankovnÌ ˙Ëet
-  AA['PricesWithVAT'] := True;
-  AA['VATFromAbovePrecision'] := 0; // 6 je nejvyööÌ p¯esnost, ABRA nabÌzÌ 0 - 6; v praxi jsou poloûky faktury i v DB stejnÏ na 2 desetinn· mÌsta, ale t¯eba je to takhle p¯esnÏjöÌ v˝poËet
-  AA['TotalRounding'] := 259; // zaokrouhlenÌ na koruny dol˘, aù z·kaznÌky nedr·ûdÌme halÈ¯ov˝mi "p¯Ìplatky"
+
+  if DocumentType = '03' then begin
+    AA['AccDate$DATE'] := DocDate;
+    AA['PricesWithVAT'] := True;
+    AA['VATFromAbovePrecision'] := 0; // 6 je nejvyööÌ p¯esnost, ABRA nabÌzÌ 0 - 6; v praxi jsou poloûky faktury i v DB stejnÏ na 2 desetinn· mÌsta, ale t¯eba je to takhle p¯esnÏjöÌ v˝poËet
+    AA['TotalRounding'] := 259; // zaokrouhlenÌ na koruny dol˘, aù z·kaznÌky nedr·ûdÌme halÈ¯ov˝mi "p¯Ìplatky"
+  end;
 end;
 
 
@@ -400,9 +423,20 @@ begin
   RowAA['RowType'] := 1;
   RowAA['Text'] := RowText;
   RowAA['Division_ID'] := AbraEnt.getDivisionId;
-  RowAA['VATRate_ID'] := AbraEnt.getVatIndex('Code=V˝st21').VATRate_ID;
-  RowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=V˝st21').ID;
+  RowAA['VATRate_ID'] := AbraEnt.getVatIndex('Code=V˝st' + DesU.VAT_RATE).VATRate_ID;
+  RowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=V˝st' + DesU.VAT_RATE).ID;
   RowAA['IncomeType_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // sluûby
+  Result := RowAA;
+end;
+
+function TNewDesInvoiceAA.createNewRow_NoVat(RowType : integer; RowText : string) : TAArray;
+var
+  RowAA: TAArray;
+begin
+  RowAA := AA.addRow();
+  RowAA['RowType'] := RowType;
+  RowAA['Text'] := RowText;
+  RowAA['Division_ID'] := AbraEnt.getDivisionId;
   Result := RowAA;
 end;
 

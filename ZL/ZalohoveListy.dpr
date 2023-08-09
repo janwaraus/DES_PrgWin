@@ -3,7 +3,6 @@ program ZalohoveListy;
 uses
   Forms,
   ZLmain in 'ZLmain.pas' {fmMain},
-  ZLcommon in 'ZLcommon.pas' {dmCommon: TDataModule},
   ZLvytvoreni in 'ZLvytvoreni.pas' {dmVytvoreni: TDataModule},
   ZLprevod in 'ZLprevod.pas' {dmPrevod: TDataModule},
   ZLtisk in 'ZLtisk.pas' {dmTisk: TDataModule},
@@ -18,7 +17,6 @@ uses
 begin
   Application.Initialize;
   Application.CreateForm(TfmMain, fmMain);
-  Application.CreateForm(TdmCommon, dmCommon);
   Application.CreateForm(TdmVytvoreni, dmVytvoreni);
   Application.CreateForm(TdmPrevod, dmPrevod);
   Application.CreateForm(TdmTisk, dmTisk);

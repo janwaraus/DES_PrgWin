@@ -93,10 +93,6 @@
         <DCCReference Include="ZLmain.pas">
             <Form>fmMain</Form>
         </DCCReference>
-        <DCCReference Include="ZLcommon.pas">
-            <Form>dmCommon</Form>
-            <DesignClass>TDataModule</DesignClass>
-        </DCCReference>
         <DCCReference Include="ZLvytvoreni.pas">
             <Form>dmVytvoreni</Form>
             <DesignClass>TDataModule</DesignClass>

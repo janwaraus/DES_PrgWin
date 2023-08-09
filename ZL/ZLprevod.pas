@@ -3,13 +3,12 @@ unit ZLprevod;
 interface
 
 uses
-  Windows, Classes, Forms, Controls, SysUtils, Variants, DateUtils, Registry, Printers, Dialogs, ZLmain;
+  Windows, Classes, Forms, Controls, SysUtils, Variants, DateUtils, Registry, Printers, Dialogs, DesUtils;
 
 type
   TdmPrevod = class(TDataModule)
-  private
-    procedure ZLPrevod(Radek: integer);
   public
+    function ZLPrevod(DInvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
     procedure PrevedZL;
   end;
 
@@ -20,16 +19,17 @@ implementation
 
 {$R *.dfm}
 
-uses ZLcommon, frxExportSynPDF;
+uses DesInvoices, DesFastReports, AArray, ZLmain;
 
 // ------------------------------------------------------------------------------------------------
 
 procedure TdmPrevod.PrevedZL;
 var
   Radek: integer;
+  VysledekPrevedeni : TDesResult;
 begin
   Screen.Cursor := crHourGlass;
-// k pøevodu se pouije FastReport se SynPDF
+
   with fmMain, asgMain do try
     fmMain.Zprava(Format('Pøevod ZL do PDF od èísla %s do %s', [aedOd.Text, aedDo.Text]));
     fmMain.Zprava(Format('Poèet ZL k pøevodu: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
@@ -37,7 +37,7 @@ begin
     apnPrevod.Visible := False;
     apbProgress.Position := 0;
     apbProgress.Visible := True;
-// hlavní smyèka
+
     for Radek := 1 to RowCount-1 do begin
       Row := Radek;
       apbProgress.Position := Round(100 * Radek / RowCount-1);
@@ -51,11 +51,18 @@ begin
         lbxLog.Visible := False;
         Break;
       end;
-      if Ints[0, Radek] = 1 then ZLPrevod(Radek);
-    end;  // for
-// konec hlavní smyèky
+
+      if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
+        VysledekPrevedeni := ZLPrevod(asgMain.Cells[8, Radek], not cbNeprepisovat.Checked);
+        fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[4, Radek], asgMain.Cells[1, Radek], VysledekPrevedeni.Messg]));
+        if VysledekPrevedeni.isOk then begin
+          asgMain.Ints[0, Radek] := 0;
+        end;
+      end;
+
+    end;
+
   finally
-    Printer.PrinterIndex := -1;                  // default
     apbProgress.Position := 0;
     apbProgress.Visible := False;
     apnPrevod.Visible := True;
@@ -68,20 +75,28 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmPrevod.ZLPrevod(Radek: integer);
+function TdmPrevod.ZLPrevod(DInvoiceId: string; OverwriteExistingPdf : boolean) : TDesResult;
 // podle zálohového listu v Abøe vytvoøí formuláø v PDF
 var
+  Faktura : TDesInvoice;
+
+  {
   OutFileName,
   OutDir,
   AbraKod,
   SQLStr: AnsiString;
   i: integer;
   Zaplaceno: double;
-  frxSynPDFExport: TfrxSynPDFExport;
+  }
 begin
+
+  Faktura := TDesInvoice.create(DInvoiceId, '10');
+  Result := Faktura.createPdfByFr3('ZLdoPDF-104.fr3', OverwriteExistingPdf);
+
+  {
   with fmMain, asgMain do begin
     with qrAbra do begin
-// údaje z ZL do globálních promìnnıch
+      // údaje z ZL do globálních promìnnıch
       Close;
       SQLStr := 'SELECT F.Code, F.Name, Street, City, PostCode, OrgIdentNumber, VATIdentNumber, II.ID, LocalAmount, LocalPaidAmount,'
        + ' DocDate$DATE, DueDate$DATE'
@@ -97,7 +112,8 @@ begin
       SQL.Text := SQLStr;
       Open;
       if RecordCount = 0 then begin
-        fmMain.Zprava(Format('Neexistuje ZL1-%s nebo zákazník %s.', [Copy(Cells[2, Radek], 0, Pos('/', Cells[2, Radek])-1), Cells[4, Radek]]));
+        fmMain.Zprava(Format('Neexistuje ZL1-%s nebo zákazník %s.',
+          [Copy(Cells[2, Radek], 0, Pos('/', Cells[2, Radek])-1), Cells[4, Radek]]));
         Close;
         Exit;
       end;
@@ -151,22 +167,24 @@ begin
     end else begin
       Zaplatit := -Saldo;
       Saldo := Saldo + Celkem;             // èástka faktury se odeète ze salda, aby tam nebyla dvakrát
+ }
 
 {
 	  Saldo_PoSpl = Saldo_PredSpl + Zaplaceno - Celkem (po u zapoèítá tuto fa)
 	  Saldo_PredSpl = Saldo_PoSpl - Zaplaceno + Celkem (to je úprava pøedchozího vzorce)
 
 	  kdy je "Saldo = Saldo_PoSpl + Celkem" tak se to rovná "Saldo_PredSpl + Zaplaceno - Celkem + Celkem = Saldo_PredSpl + Zaplaceno" a sedí to
-	  
+
 	  A vıpoètovì, jak sloit Saldo kdy mám z DB Saldo_PoSpl:
 	  1) Saldo = Saldo_PredSpl + Zaplaceno = Saldo_PoSpl - Zaplaceno + Celkem + Zaplaceno = Saldo_PoSpl + Celkem (!!!)
-	  
+
 	  A vıpoètovì, jak sloit Zaplatit kdy mám z DB Saldo_PoSpl:
 	  Zaplatit := Celkem - Saldo; a tedy
 	  1) Zaplatit := Celkem - Saldo_PredSpl - Zaplaceno = Celkem - (Saldo_PoSpl - Zaplaceno + Celkem) - Zaplaceno = - Saldo_PoSpl (!!!)
 	  2) Zaplatit := Celkem - (Saldo_PoSpl + Celkem ) = - Saldo_PoSpl (!!!)
 }
 
+{
     end;
 // text na ZL
     if Saldo > 0 then Platek := 'pøeplatek'
@@ -240,6 +258,8 @@ begin
       Row := Radek;
     end;
   end;  // with fmMain
+  }
+
 end;
 
 end.
