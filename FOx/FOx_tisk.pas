@@ -126,7 +126,7 @@ begin
       Celkem := FieldByName('LocalAmount').AsFloat;
       Zaplaceno := FieldByName('LocalPaidAmount').AsFloat;
       Close;
-//      Cislo := Format('FO4-%4.4d/%d', [Ints[2, Radek], YearOf(DatumDokladu)]);
+//    Cislo := Format('FO4-%4.4d/%d', [Ints[2, Radek], YearOf(DatumDokladu)]);
 // všechny Firm_Id pro Abrakód firmy
       SQLStr := 'SELECT * FROM DE$_CODE_TO_FIRM_ID (' + Ap + AbraKod + ApZ;
       SQL.Text := SQLStr;

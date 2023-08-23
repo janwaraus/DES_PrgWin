@@ -116,10 +116,18 @@ begin
     // vyhledání údajù o smlouvách
     Close;
 
-    SQL.Text := 'CALL get_deposit_invoicing_by_vs('
+    SQLStr := 'CALL get_deposit_invoicing_by_vs('
         + Ap + FormatDateTime('yyyy-mm-dd', deDatumDokladu.Date + 30) + ApC
         + Ap + FormatDateTime('yyyy-mm-dd', deDatumSplatnosti.Date) + ApC
-        + Ap + CustomerVarSymbol + ApZ;
+        + Ap + CustomerVarSymbol + ApC;
+
+    case argMesic.ItemIndex of
+      0, 2: SQLStr := SQLStr + 'false,false)'; //první parametr øíká, zda naèítáme 6m periody, druhý, zda 12m periody
+      1: SQLStr := SQLStr +  'true,false)'; // dtto
+      3: SQLStr := SQLStr +  'true,true)'; // dtto
+    end;
+
+    SQL.Text := SQLStr;
 
     // pøejmenováno takto: AbraCode (cu_abra_code), Typ (co_type), Number (co_number), InvoiceSending (cu_invoice_sending_method_name), Period(bb_period),
     // BItDescription (bi_description), BItPrice (bi_price), BItTariff (bi_is_tariff), TarifId (co_tariff_id), CTU (co_ctu_category)'
@@ -267,7 +275,7 @@ begin
     // další øádky faktury se vytvoøí z DesU.qrZakos
     while not EOF do begin
       CenaPripojeni := 0;
-      // cena za pøipojení k Internetu (je tarif, tj. mùže to být i televize)
+      // cena za pøipojení k Internetu (je tarif, tj. mùže to být i televize - v praxi se televize ale na ZL nedává, aby si zíkazníci mohli mìnit TV tarif dle potøeby)
       if (FieldByName('bi_is_tariff').AsInteger = 1) then
         CenaPripojeni := DesU.qrZakos.FieldByName('bi_price').AsFloat;
       // smlouva na pøipojení
