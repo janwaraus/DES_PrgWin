@@ -212,7 +212,7 @@ begin
     fmMain.Zprava(Format('%s, variabilní symbol %s.', [FirmName, CustomerVarSymbol]));
 
     // období  23.9.17
-    case DesU.qrZakos.FieldByName('bb_period').AsInteger of
+    case FieldByName('bb_period').AsInteger of
       3: begin if argMesic.ItemIndex < 3 then
         Obdobi := Format('%d/%d - %d/%d',
          [3 * argMesic.ItemIndex + 4, aseRok.Value-2000, 3 * argMesic.ItemIndex + 6, aseRok.Value-2000])
@@ -244,7 +244,7 @@ begin
     // 28.6.2018 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
     with qrAbra do begin
       Close;
-      BusOrderCode := DesU.qrZakos.FieldByName('co_ctu_category').AsString;
+      BusOrderCode := FieldByName('co_ctu_category').AsString;
     // kódy z tabulky contracts se musí pøedìlat
       // 15.8.22
       BusOrder_Id := '';
@@ -277,19 +277,19 @@ begin
       CenaPripojeni := 0;
       // cena za pøipojení k Internetu (je tarif, tj. mùže to být i televize - v praxi se televize ale na ZL nedává, aby si zíkazníci mohli mìnit TV tarif dle potøeby)
       if (FieldByName('bi_is_tariff').AsInteger = 1) then
-        CenaPripojeni := DesU.qrZakos.FieldByName('bi_price').AsFloat;
+        CenaPripojeni := FieldByName('bi_price').AsFloat;
       // smlouva na pøipojení
       if CenaPripojeni <> 0 then begin
         boRowAA := NewInvoice.createNewRow_NoVat(4,
           Format('podle smlouvy  %s  službu  %s', [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
         //boRowAA['BusOrder_ID'] := BusOrder_Id;
         boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-        boRowAA['TAmount'] := Format('%f', [DesU.qrZakos.FieldByName('bb_period').AsInteger * DesU.qrZakos.FieldByName('bi_price').AsFloat]);
+        boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
 
         // platba na 6 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
-        if (DesU.qrZakos.FieldByName('bb_period').AsInteger = 6) and (DesU.qrZakos.FieldByName('co_type').AsString = 'InternetContract')
-         and not (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+        if (FieldByName('bb_period').AsInteger = 6) and (FieldByName('co_type').AsString = 'InternetContract')
+         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
           //RadkyZL:= AbraOLE.CreateValues('@IssuedDepositInvoiceRow');
           boRowAA := NewInvoice.createNewRow_NoVat(4, 'slevu');
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
@@ -299,8 +299,8 @@ begin
 
         // platba na 12 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
-        if (DesU.qrZakos.FieldByName('bb_period').AsInteger = 12) and (DesU.qrZakos.FieldByName('co_type').AsString = 'InternetContract')
-         and not (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+        if (FieldByName('bb_period').AsInteger = 12) and (FieldByName('co_type').AsString = 'InternetContract')
+         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
           boRowAA := NewInvoice.createNewRow_NoVat(4, 'slevu');
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
           boRowAA['BusTransaction_ID'] := BusTransaction_Id;
@@ -313,19 +313,19 @@ begin
         boRowAA := NewInvoice.createNewRow_NoVat(4, FieldByName('bi_description').AsString);
         //boRowAA['BusOrder_ID'] := BusOrder_Id;                          // 30.4.21
         boRowAA['BusTransaction_ID'] := BusTransaction_Id;              // 30.4.21
-        boRowAA['TAmount'] := Format('%f', [DesU.qrZakos.FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
+        boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
         // platba na 6 mìsícù
-        if (DesU.qrZakos.FieldByName('bb_period').AsInteger = 6) then
-          if (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger in [202..234]) then
+        if (FieldByName('bb_period').AsInteger = 6) then
+          if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
             boRowAA['TAmount'] := Format('%f', [6 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
           else boRowAA['TAmount'] := Format('%f', [5 * FieldByName('bi_price').AsFloat])  // ostatní
         // platba na 12 mìsícù
-        else if DesU.qrZakos.FieldByName('bb_period').AsInteger = 12 then
-          if (DesU.qrZakos.FieldByName('co_tariff_id').AsInteger in [202..234]) then
+        else if FieldByName('bb_period').AsInteger = 12 then
+          if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
             boRowAA['TAmount'] := Format('%f', [12 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
           else boRowAA['TAmount'] := Format('%f', [10 * FieldByName('bi_price').AsFloat])  // ostatní
         // ostatní
-        else boRowAA['TAmount'] := Format('%f', [DesU.qrZakos.FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
+        else boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
       end;
       Next;   //  DesU.qrZakos
     end;  //  while not DesU.qrZakos.EOF

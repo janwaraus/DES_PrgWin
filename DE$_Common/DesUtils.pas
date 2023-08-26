@@ -38,6 +38,7 @@ type
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
+    IdHTTP1: TIdHTTP;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string = '');
@@ -121,8 +122,9 @@ type
 
       function getIniValue(iniGroup, iniItem : string) : string;
 
-    private
+    //private
       function newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
+      procedure setAbraIdHttp(timeout : single; isJsonPost : boolean);
 
   end;
 
@@ -315,19 +317,38 @@ var
 begin
   idHTTP := TidHTTP.Create;
 
+  idHTTP.HTTPOptions := IdHTTP.HTTPOptions + [hoNoProtocolErrorException];
+
   idHTTP.Request.BasicAuthentication := True;
   idHTTP.Request.Username := abraUserUN;
   idHTTP.Request.Password := abraUserPW;
   idHTTP.ReadTimeout := Round (timeout * 1000); // ReadTimeout je v milisekundách
 
   if (isJsonPost) then begin
-    idHTTP.Request.ContentType := 'application/json; charset=UTF-8';
-    idHTTP.Request.AcceptCharset := 'UTF-8';
-    idHTTP.Request.CharSet := 'UTF-8';
-    idHTTP.Response.CharSet := 'UTF-8';
+    idHTTP.Request.ContentType := 'application/json';
+    //idHTTP.Request.AcceptCharset := 'utf-8';
+    idHTTP.Request.CharSet := 'utf-8';
+    //idHTTP.Response.CharSet := 'utf-8';
   end;
 
   Result := idHTTP;
+end;
+
+procedure TDesU.setAbraIdHttp(timeout : single; isJsonPost : boolean);
+begin
+
+  IdHTTP1.Request.BasicAuthentication := True;
+  IdHTTP1.Request.Username := abraUserUN;
+  IdHTTP1.Request.Password := abraUserPW;
+  IdHTTP1.ReadTimeout := Round (timeout * 1000); // ReadTimeout je v milisekundách
+
+  if (isJsonPost) then begin
+    IdHTTP1.Request.ContentType := 'application/json';
+    //idHTTP.Request.AcceptCharset := 'utf-8';
+    IdHTTP1.Request.CharSet := 'utf-8';
+    //idHTTP.Response.CharSet := 'utf-8';
+  end;
+
 end;
 
 function TDesU.abraBoGet(abraBoName : string) : string;
@@ -361,26 +382,78 @@ end;
 
 function TDesU.abraBoCreate_SoWebApi(jsonSO: ISuperObject; abraBoName : string) : TDesResult;
 var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  newAbraBo : string;
+  //idHTTP: TIdHTTP;
+  sourceJsonStream,
+  responseContentStream: TStringStream;
+  //responseMemoryStream: TMemoryStream;
+  newAbraBo,
+  responseContentType : string;
+  responseCode : integer;
   exceptionSO : ISuperObject;
+  Encoding: TEncoding;
+  myResp : TIdHTTPResponse;
 begin
 
   self.logJson(jsonSO.AsJSon(true), 'abraBoCreate_SoWebApi request - ' + abraWebApiUrl + abraBoName + 's');
-  //IdGlobal.GIdDefaultTextEncoding := encUTF8;
-  sstreamJson := TStringStream.Create(jsonSO.AsJSon(), TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
+  sourceJsonStream := TStringStream.Create(jsonSO.AsJSon(), TEncoding.UTF8);
+  //responseMemoryStream := TMemoryStream.Create;
+  responseContentStream := TStringStream.Create('', TEncoding.UTF8);
+  Encoding := TEncoding.UTF8;
+
+  //IdHTTP1 := newAbraIdHttp(20, true);
+  setAbraIdHttp(20, true);
+
   try
     try begin
-      newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sstreamJson);
-      Result := TDesResult.create('ok', newAbraBo);
-      self.logJson(newAbraBo, 'abraBoCreateWebApi_SO response - ' + abraWebApiUrl + abraBoName + 's');
+      //newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sourceJsonStream);
+
+      IdHTTP1.Post(abraWebApiUrl + abraBoName + 's', sourceJsonStream, responseContentStream);
+
+      responseCode := IdHTTP1.ResponseCode;
+
+      if responseCode < 400 then begin // HTTP responsy pod 400 nejsou errorové
+        newAbraBo := responseContentStream.DataString;
+        Result := TDesResult.create('ok', newAbraBo);
+      end
+      else
+      begin
+        exceptionSO := SO(responseContentStream.DataString);
+        Result := TDesResult.create('err_http' + IntToStr(IdHTTP1.ResponseCode),
+          exceptionSO.S['title']
+          + ': ' + exceptionSO.S['description']
+        );
+      end;
+
+      myResp := IdHTTP1.Response;
+      self.logJson(responseContentStream.DataString, 'abraBoCreateWebApi_SO response - ' + abraWebApiUrl + abraBoName + 's');
     end;
     except
       on E: EIdHTTPProtocolException do begin
+
+        { nefungovalo
+        responseContentType := IdHTTP1.Response.ContentType;
+
+        myResp := IdHTTP1.Response;
+
+        newAbraBo :=  myResp.CharSet;
+
+        //responseContentStream.Clear;
+
+        responseMemoryStream.Position := 0;
+        responseContentStream.CopyFrom(responseMemoryStream, 0);
+
+        newAbraBo := responseContentStream.DataString;
+
+
+        //responseContentStream.WriteString(Encoding.GetString(Encoding.GetBytes(E.ErrorMessage)));
+
+        newAbraBo := responseContentStream.DataString;
+        exceptionSO := SO(newAbraBo);
+        }
+
         exceptionSO := SO(E.errorMessage);
-        Result := TDesResult.create('err_http' + IntToStr(idHTTP.ResponseCode),
+
+        Result := TDesResult.create('err_http' + IntToStr(IdHTTP1.ResponseCode),
           exceptionSO.S['title']
           + ': ' + exceptionSO.S['description']
         );
@@ -391,8 +464,9 @@ begin
       end;
     end;
   finally
-    sstreamJson.Free;
-    idHTTP.Free;
+    sourceJsonStream.Free;
+    responseContentStream.Free;
+    //idHTTP.Free;
   end;
 end;
 
@@ -438,7 +512,8 @@ begin
   if appMode >= 3 then begin
     if not DirectoryExists(PROGRAM_PATH + '\log\json\') then
       Forcedirectories(PROGRAM_PATH + '\log\json\');
-    writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', header + sLineBreak + UTF8ToString(boAAjson));
+    //writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', header + sLineBreak + UTF8ToString(boAAjson));
+    writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', header + sLineBreak + boAAjson);
   end;
 end;
 

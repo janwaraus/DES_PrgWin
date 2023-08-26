@@ -8,6 +8,7 @@ uses
   IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient,
   IdSMTP, IdMessage, IdMessageParts, IdAttachment, IdEMailAddress, IdAttachmentFile, IdText,
   IdExplicitTLSClientServerBase, IdMessageClient, IdSMTPBase,
+  IdHTTP,
   System.NetEncoding, System.RegularExpressions, System.Character, System.JSON
   ;
 
@@ -41,6 +42,7 @@ type
     { Private declarations }
   public
     { Public declarations }
+    function String2Hex(const Buffer: AnsiString): string;
   end;
 
 
@@ -93,24 +95,69 @@ end;
 procedure TForm1.btnGetClick(Sender: TObject);
 var
   sResponse: string;
-  MyObject: ISuperObject;
+  abraResponseSO: ISuperObject;
   mySuperArray: TSuperAvlEntry;
   item: ISuperObject;
+  idHTTP: TIdHTTP;
+  endpoint : string;
+  UrlContent: TStringStream; // You can also use TMemoryStream here
 begin
   //editUrl.Text := 'periods?where=code+gt+2015';
-  editUrl.Text := 'bankstatements/36E2000101';
+  editUrl.Text := 'bankstatements/36E2000101/rows/ZHRD000101';
+  //sResponse := DesU.abraBoGet(editUrl.Text); // misto toho dame cely kod sem
 
-  sResponse := DesU.abraBoGet(editUrl.Text);
+  idHTTP := DesU.newAbraIdHttp(900, false);
 
+  //idHTTP.Request.ContentType := 'application/json';
+  //idHTTP.Request.AcceptCharset := 'utf-8';
+  //idHTTP.Request.CharSet := 'utf-8';
+
+  endpoint :=  DesU.abraWebApiUrl + editUrl.Text;
+
+  UrlContent := TStringStream.Create('');
+
+  try
+    try
+      //sResponse := idHTTP.Get(endpoint); // funguje, ale zkusime jako proceduru
+      idHTTP.Get(endpoint, UrlContent);
+      sResponse := UTF8Decode(UrlContent.DataString);
+
+
+    except
+      on E: Exception do
+        ShowMessage('Error on request: '#13#10 + e.Message);
+    end;
+  finally
+    idHTTP.Free;
+  end;
+
+
+
+  memo2.Lines.Clear;
   memo2.Lines.Add(sResponse);
+  memo2.Lines.Add('- UTF8Decode resp- -');
 
-  MyObject := SO(sResponse);
-  memo2.Lines.Add (MyObject.AsJSon(True));
+  abraResponseSO := SO(sResponse);
+
+    memo2.Lines.Add(abraResponseSO.S['text']);
+    memo2.Lines.Add(UTF8Decode(abraResponseSO.S['text']));
+    memo2.Lines.Add('-HEX-');
+    memo2.Lines.Add(String2Hex(abraResponseSO.S['text']));
+
+  {
+  memo2.Lines.Add('- abraResponseSO.AsJSon(true) -');
+  memo2.Lines.Add (abraResponseSO.AsJSon(True));
+  memo2.Lines.Add('- UTF8Decode(abraResponseSO.AsJSon(true)) -');
+  memo2.Lines.Add(UTF8Decode(abraResponseSO.AsJSon(true)));
+  }
+
+  {
   memo2.Lines.Add (MyObject.AsArray[0].AsString);
   memo2.Lines.Add (MyObject.AsArray[0].AsObject.S['name']);
 
   for item in MyObject do
     memo2.Lines.Add (item.AsObject.S['name']);
+  }
 
   //hodnota := MyObject.S['last'];
   //hodnota := SO(Mydata).S['last'];  //zkracena verze
@@ -132,17 +179,17 @@ Json := '{'+
   '"period_id": "2390000101",'+
   '"docdate$date": "2023-06-03",'+
   '"firm_id": "2SZ1000101",'+
-  '"description": "pppp¯ipojenÌ, 2018020612",'+
+  '"description": "p¯Ìliö ûluùouËk˝ k˘Ú, 123456",'+
   '"varsymbol": "2014020777",'+
   '"priceswithvat": true,'+
 
   '"rows": ['+
   '  {'+
-  '    "totalprice": 3881,'+
+  '    "totalprice": 10001,'+
   '    "division_id": "1000000101",'+
   '    "busorder_id": "9D00000101",'+
   '    "bustransaction_id": "3L00000101",'+
-  '    "text": "pppodle smlouvy 2019020777 sluûbu  5AA-Optimal",'+
+  '    "text": "PÿÕLIä éLUçOU»K› KŸ“, 7890",'+
   '    "vatrate_id": "02100X0000",'+
   '    "rowtype": 1,'+
   '    "incometype_id": "2000000000",'+
@@ -155,19 +202,34 @@ Json := '{'+
   abraResponse := DesU.abraBoCreate_SoWebApi(SO(Json), 'issuedinvoice');
   if abraResponse.isOk then begin
     memo2.Lines.Add(abraResponse.Messg);
+    memo2.Lines.Add('- UTF8Decode resp- -');
+    memo2.Lines.Add(UTF8Decode(abraResponse.Messg));
+
     abraResponseSO := SO(abraResponse.Messg);
     newId := abraResponseSO.S['id'];
-    memo2.Lines.Add('------x------');
+
+    memo2.Lines.Add('- abraResponseSO.AsJSon(true) -');
     memo2.Lines.Add(abraResponseSO.AsJSon(true));
+    memo2.Lines.Add('- UTF8Decode(abraResponseSO.AsJSon(true)) -');
+    memo2.Lines.Add(UTF8Decode(abraResponseSO.AsJSon(true)));
+    memo2.Lines.Add('- DecodeUnicodeEscapeSequences -');
     memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.AsJSon(true)));
+    memo2.Lines.Add('------------');
     memo2.Lines.Add(abraResponseSO.S['tradetypedescription']);
     memo2.Lines.Add(abraResponseSO.S['description']);
     memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.S['tradetypedescription']));
-    memo2.Lines.Add(DecodeUnicodeEscapeSequences(abraResponseSO.S['description']));
+    memo2.Lines.Add(UTF8Encode(abraResponseSO.S['tradetypedescription']));
+    memo2.Lines.Add(UTF8Decode(abraResponseSO.S['tradetypedescription']));
   end else begin
     memo2.Lines.Add(abraResponse.Code);
+    memo2.Lines.Add('-----Messg-------');
     memo2.Lines.Add(abraResponse.Messg);
+    memo2.Lines.Add('-UTF8Decode-----------');
+    memo2.Lines.Add(UTF8Decode(abraResponse.Messg));
+    memo2.Lines.Add('-UTF8Encode-----------');
     memo2.Lines.Add(UTF8Encode(abraResponse.Messg));
+    memo2.Lines.Add('-HEX-');
+    memo2.Lines.Add(String2Hex(abraResponse.Messg));
 
   end;
 
@@ -180,6 +242,13 @@ Json := '{'+
   memo2.Lines.Add(sResponse);
   }
 end;
+
+function TForm1.String2Hex(const Buffer: AnsiString): string;
+begin
+  SetLength(Result, Length(Buffer) * 2);
+  BinToHex(@Buffer[1], PWideChar(@Result[1]), Length(Buffer));
+end;
+
 
 
 procedure TForm1.btnPutClick(Sender: TObject);
