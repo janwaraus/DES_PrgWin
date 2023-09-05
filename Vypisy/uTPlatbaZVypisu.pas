@@ -122,8 +122,6 @@ begin
   //self.kodMeny := copy(gpcLine, 119, 4);
   self.Datum := Str6digitsToDate(copy(gpcLine, 123, 6));
 
-  //self.isInternetKredit := false; // nebude vlastost, protoze platba muze byt rozdelena a cast bude kredit a cast ne
-  //self.isVoipKredit := false; //dtto
   self.znamyPripad := false;
   self.potrebaPotvrzeniUzivatelem := false;
   self.jePotvrzenoUzivatelem := true;
@@ -320,8 +318,10 @@ begin
     if self.DokladyList.Count = 0 then begin
 
       SQL.Text := 'SELECT FIRST 1 ii.ID FROM ISSUEDINVOICES ii'
+                   + ' JOIN Firms f on f.ID = ii.Firm_ID'
                    + ' WHERE ii.VarSymbol = ''' + self.VS  + ''''
-                   + ' order by ii.DocDate$Date DESC';
+                   + ' AND f.HIDDEN <> ''A'' '
+                   + ' ORDER BY ii.DocDate$Date DESC';
 
       Open;
       if not Eof then begin

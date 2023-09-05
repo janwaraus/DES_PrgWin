@@ -3,11 +3,29 @@ unit AbraEntities;
 interface
 
 uses
-  SysUtils, Variants, Classes, Controls, System.Generics.Collections,
-  ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection;
+  SysUtils, Variants, Classes, Controls, StrUtils, System.Generics.Collections,
+  ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
+  DesUtils, AArray, Superobject;
 
 type
 
+  {* tøída zajišující zápis BO (= ABRA entit) do ABRY *}
+  TNewAbraBo = class
+  public
+    BoName : string;
+    Item : TAArray;
+    RowItem : TAArray;
+    WriteResult : TDesResult;
+    constructor create(BoName : string);
+    procedure createNewRow;
+    procedure addInvoiceParams(DocDate : double);
+    procedure createNewInvoiceRow(RowType : integer; RowText : string; isVatRow : boolean = true);
+    procedure writeToAbra;
+    function getCreatedBoItem(itemName: string) : string;
+  end;
+
+
+  {* tøídy pro práci s již existujícími ABRA entitami *}
   TDoklad = class
   public
     ID : string[10];
@@ -147,8 +165,76 @@ var
 
 implementation
 
-uses
-  DesUtils;
+
+
+{************************************************************************}
+{********************     tøída TNewAbraBo      *************************}
+{************************************************************************}
+
+constructor TNewAbraBo.create(BoName : string);
+begin
+  self.BoName := LowerCase(BoName);
+  Item := TAArray.Create;
+end;
+
+procedure TNewAbraBo.addInvoiceParams(DocDate : double);
+begin
+  Item['DocDate$DATE'] := DocDate;
+  Item['Period_ID'] := AbraEnt.getPeriod('Code=' + FormatDateTime('yyyy', DocDate)).ID;
+  Item['Address_ID'] := '7000000101'; // FA CONST
+  Item['BankAccount_ID'] := '1400000101'; // Fio
+  Item['ConstSymbol_ID'] := '0000308000';
+  Item['TransportationType_ID'] := '1000000101'; // FA CONST
+  Item['PaymentType_ID'] := '1000000101'; // typ platby: na bankovní úèet
+
+  //if DocumentType = '03' then begin
+  if BoName = 'issuedinvoice' then begin
+    Item['AccDate$DATE'] := DocDate;
+    Item['PricesWithVAT'] := True;
+    Item['VATFromAbovePrecision'] := 0; // 6 je nejvyšší pøesnost, ABRA nabízí 0 - 6; v praxi jsou položky faktury i v DB stejnì na 2 desetinná místa, ale tøeba je to takhle pøesnìjší výpoèet
+    Item['TotalRounding'] := 259; // zaokrouhlení na koruny dolù, a zákazníky nedráždíme haléøovými "pøíplatky"
+  end;
+end;
+
+procedure TNewAbraBo.createNewRow;
+begin
+  self.rowItem := Item.addRow();
+end;
+
+procedure TNewAbraBo.createNewInvoiceRow(RowType : integer; RowText : string; isVatRow : boolean = true);
+begin
+  createNewRow;
+
+  rowItem['RowType'] := RowType;
+  rowItem['Text'] := RowText;
+  rowItem['Division_ID'] := AbraEnt.getDivisionId;
+
+  if (RowType > 0) AND isVatRow then begin
+    rowItem['VATRate_ID'] := AbraEnt.getVatIndex('Code=Výst' + DesU.VAT_RATE).VATRate_ID;
+    rowItem['VATIndex_ID'] := AbraEnt.getVatIndex('Code=Výst' + DesU.VAT_RATE).ID;
+    rowItem['IncomeType_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // služby
+  end;
+
+end;
+
+procedure TNewAbraBo.writeToAbra;
+begin
+  WriteResult := DesU.abraBoCreate(self.Item.AsJSon, self.BoName);
+end;
+
+function TNewAbraBo.getCreatedBoItem(itemName: string) : string;
+begin
+  Result := '';
+  if WriteResult.isOk then
+    Result := SO(WriteResult.Messg).S[LowerCase(itemName)];
+end;
+
+
+
+{************************************************************************}
+{********************     tøídy ABRA entit     **************************}
+{************************************************************************}
+
 
 {** class TDoklad **}
 

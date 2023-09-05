@@ -6,7 +6,7 @@ uses
   SysUtils, Variants, Classes, Controls, StrUtils,
   Windows, Messages, Dialogs, Forms,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,  
-  uTVypis, uTPlatbaZVypisu, AbraEntities;
+  uTVypis, uTPlatbaZVypisu, DesUtils, AbraEntities;
 
 
 type
@@ -34,7 +34,7 @@ type
     procedure odparujPlatbu(currPlatba : TPlatbaZVypisu);
     procedure vytvorPDPar(Platba : TPlatbaZVypisu; Doklad : TDoklad;
                 Castka: currency; popis : string; vazbaNaDoklad : boolean; pdparTyp : string = '');
-    function zapisDoAbry() : string;
+    function zapisDoAbry() : TDesResult;
     function getUzSparovano(Doklad_ID : string) : currency;
     function getPDParyAsText() : string;
     function getPDParyPlatbyAsText(currPlatba : TPlatbaZVypisu) : string;
@@ -47,8 +47,8 @@ type
 
 implementation
 
-uses
-  DesUtils, AArray, Superobject;
+//uses
+  //AArray, Superobject;
 
 
 constructor TParovatko.create(Vypis: TVypis);
@@ -259,69 +259,69 @@ begin
 end;
 
 
-function TParovatko.zapisDoAbry() : string;
+function TParovatko.zapisDoAbry() : TDesResult;
 var
   i, j : integer;
   iPDPar : TPlatbaDokladPar;
-  boAA, boRowAA: TAArray;
-  newID, faId : string;
+  newID,
+  faId,
+  resultMesg : string;
+  newBo: TNewAbraBo;
 begin
+
+  resultMesg := '';
 
   if (listPlatbaDokladPar.Count = 0) then Exit;
 
-  Result := 'Zápis pomocí AArray metoda ' +  DesU.abraDefaultCommMethod + ' výpisu pro úèet ' + self.Vypis.abraBankaccount.name + '.';
-
-
-  boAA := TAArray.Create;
-  boAA['DocQueue_ID'] := self.Vypis.abraBankaccount.bankStatementDocqueueId;
-  boAA['Period_ID'] := DesU.getAbraPeriodId(self.Vypis.Datum);
-  boAA['BankAccount_ID'] := self.Vypis.abraBankaccount.id;
-  boAA['ExternalNumber'] := self.Vypis.PoradoveCislo;
-  boAA['DocDate$DATE'] := self.Vypis.Datum;
-  //boAA['CreatedAt$DATE'] := IntToStr(Trunc(Date));
-
+  newBo := TNewAbraBo.Create('bankstatement');
+  newBo.Item['DocQueue_ID'] := self.Vypis.abraBankaccount.bankStatementDocqueueId;
+  newBo.Item['Period_ID'] := DesU.getAbraPeriodId(self.Vypis.Datum);
+  newBo.Item['BankAccount_ID'] := self.Vypis.abraBankaccount.id;
+  newBo.Item['ExternalNumber'] := self.Vypis.PoradoveCislo;
+  newBo.Item['DocDate$DATE'] := self.Vypis.Datum;
 
   for i := 0 to listPlatbaDokladPar.Count - 1 do
   begin
     iPDPar := TPlatbaDokladPar(listPlatbaDokladPar[i]);
 
-    boRowAA := boAA.addRow();
-    boRowAA['Amount'] := iPDPar.CastkaPouzita;
-    //boRowAA['Credit'] := IfThen(iPDPar.Platba.Kredit,'1','0'); //pro WebApi nefungovalo dobøe
-    boRowAA['Credit'] := iPDPar.Platba.Kredit;
-    boRowAA['BankAccount'] := iPDPar.Platba.cisloUctuSNulami;
-    boRowAA['Text'] := Trim(iPDPar.popis + ' ' + iPDPar.Platba.nazevProtistrany);
-    boRowAA['SpecSymbol'] := iPDPar.Platba.SS;
-    boRowAA['DocDate$DATE'] := iPDPar.Platba.Datum;
-    boRowAA['AccDate$DATE'] := iPDPar.Platba.Datum;
-    boRowAA['Division_ID'] := AbraEnt.getDivisionId;
-    boRowAA['Currency_ID'] := AbraEnt.getCurrencyId;
+    newBo.createNewRow;
+    newBo.rowItem['Amount'] := iPDPar.CastkaPouzita;
+    //newBo.rowItem['Credit'] := IfThen(iPDPar.Platba.Kredit,'1','0'); //pro WebApi nefungovalo dobøe
+    newBo.rowItem['Credit'] := iPDPar.Platba.Kredit;
+    newBo.rowItem['BankAccount'] := iPDPar.Platba.cisloUctuSNulami;
+    newBo.rowItem['Text'] := Trim(iPDPar.popis + ' ' + iPDPar.Platba.nazevProtistrany);
+    newBo.rowItem['SpecSymbol'] := iPDPar.Platba.SS;
+    newBo.rowItem['DocDate$DATE'] := iPDPar.Platba.Datum;
+    newBo.rowItem['AccDate$DATE'] := iPDPar.Platba.Datum;
+    newBo.rowItem['Division_ID'] := AbraEnt.getDivisionId;
+    newBo.rowItem['Currency_ID'] := AbraEnt.getCurrencyId;
 
 
     if Assigned(iPDPar.Doklad) then
       if iPDPar.vazbaNaDoklad then //Doklad vyplnime jen pokud chceme vazbu (vazbaNaDoklad je true). Doklad máme naètený i v situaci kdy vazbu nechceme - kvùli Firm_ID
       begin
-        boRowAA['PDocumentType'] := iPDPar.Doklad.DocumentType; // napø. 03, 10, 61
-        boRowAA['PDocument_ID'] := iPDPar.Doklad.ID;
+        newBo.rowItem['PDocumentType'] := iPDPar.Doklad.DocumentType; // napø. 03, 10, 61
+        newBo.rowItem['PDocument_ID'] := iPDPar.Doklad.ID;
       end
       else
       begin
-        boRowAA['Firm_ID'] := iPDPar.Doklad.Firm_ID;
+        newBo.rowItem['Firm_ID'] := iPDPar.Doklad.Firm_ID;
       end
     else //není Assigned(iPDPar.Doklad)
       if not(iPDPar.pdparTyp = 'VoipKredit') AND not(iPDPar.pdparTyp = 'InternetKredit') then  //tyto podmínky nejsou nutné, Abra by Firm_ID pøebila hodnotou z fa, nicménì s VoipKredit a InternetKredit pracujeme v algoritmu níže a párujeme na faktury, tedy Firm_ID nebudeme zasílat
-        boRowAA['Firm_ID'] := getFirmIdKdyzNeniDoklad(iPDPar.Platba); //když má text platby na zaèátku Abra kód, najde se firma. Jinak se dá '3Y90000101' (DES), aby tam nebyl default "drobný nákup"
+        newBo.rowItem['Firm_ID'] := getFirmIdKdyzNeniDoklad(iPDPar.Platba); //když má text platby na zaèátku Abra kód, najde se firma. Jinak se dá '3Y90000101' (DES), aby tam nebyl default "drobný nákup"
 
     if iPDPar.pdparTyp = 'VoipKredit' then
     begin
       faId := DesU.vytvorFaZaVoipKredit(iPDPar.Platba.VS, iPDPar.CastkaPouzita, iPDPar.Platba.Datum);
       if faId = '' then
         //pokud nenajdeme podle VS firmu, zapíšeme VS - nemìlo by se stát, ale pro jistotu
-        boRowAA['VarSymbol'] := iPDPar.Platba.VS
+        newBo.rowItem['VarSymbol'] := iPDPar.Platba.VS
       else begin
         //byla vytvoøena fa a tu teï pøipojíme. VS pak abra automaticky doplní
-        boRowAA['PDocumentType'] := '03'; // je to vždy faktura
-        boRowAA['PDocument_ID'] := faId;
+        newBo.rowItem['PDocumentType'] := '03'; // je to vždy faktura
+        newBo.rowItem['PDocument_ID'] := faId;
+        resultMesg := resultMesg + 'Vytvoøena fa za Voip Kredit - '  + faId + sLineBreak;
       end;
     end;
 
@@ -330,17 +330,18 @@ begin
       faId := DesU.vytvorFaZaInternetKredit(iPDPar.Platba.VS, iPDPar.CastkaPouzita, iPDPar.Platba.Datum);
       if faId = '' then
         //pokud nenajdeme podle VS firmu, zapíšeme VS - nemìlo by se stát, ale pro jistotu
-        boRowAA['VarSymbol'] := iPDPar.Platba.VS
+        newBo.rowItem['VarSymbol'] := iPDPar.Platba.VS
       else begin
         //byla vytvoøena fa a tu teï pøipojíme. VS pak abra automaticky doplní
-        boRowAA['PDocumentType'] := '03'; // je to vždy faktura
-        boRowAA['PDocument_ID'] := faId;
+        newBo.rowItem['PDocumentType'] := '03'; // je to vždy faktura
+        newBo.rowItem['PDocument_ID'] := faId;
+        resultMesg := resultMesg + 'Vytvoøena fa za Internet Kredit - '  + faId + sLineBreak;
       end;
     end;
 
 
     if iPDPar.Platba.Debet then
-      boRowAA['VarSymbol'] := iPDPar.Platba.VS; //pro debety aby vždy zùstal VS
+      newBo.rowItem['VarSymbol'] := iPDPar.Platba.VS; //pro debety aby vždy zùstal VS
 
     if (iPDPar.Platba.cisloUctuVlastni = '2389210008000000') AND iPDPar.Platba.kredit then begin //PayU platba, rušíme peníze na cestì
       DesU.zrusPenizeNaCeste(iPDPar.Platba.VS);
@@ -349,14 +350,20 @@ begin
   end;
 
   try begin
-    newId := DesU.abraBoCreate(boAA, 'bankstatement');
-    Result := Result + ' Èíslo nového výpisu je ' + newID;
-    // DesU.abraOLELogout; // 29.3. pøesunuto do DesU.abraBoCreateOLE
+    newBo.writeToAbra;
+
+    if newBo.WriteResult.isOk then begin
+      newId := newBo.getCreatedBoItem('id');
+      newBo.WriteResult.Messg := resultMesg + 'Zápis výpisu do ABRA pro úèet ' + self.Vypis.abraBankaccount.name + '.'
+        + ' Èíslo nového výpisu je ' + newBo.getCreatedBoItem('displayname') + ' (' + newBo.getCreatedBoItem('id') + ')';
+    end;
+
+    Result := newBo.WriteResult;
+
   end;
   except on E: exception do
     begin
       Application.MessageBox(PChar('Problem ' + ^M + E.Message), 'Vytváøení výpisu');
-      Result := 'Chyba pøi vytváøení výpisu';
     end;
   end;
 

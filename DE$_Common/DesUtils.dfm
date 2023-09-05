@@ -97,7 +97,7 @@ object DesU: TDesU
     Port = 465
     SASLMechanisms = <>
     UseTLS = utUseImplicitTLS
-    Left = 66
+    Left = 58
     Top = 215
   end
   object IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL
@@ -108,7 +108,7 @@ object DesU: TDesU
     SSLOptions.Mode = sslmUnassigned
     SSLOptions.VerifyMode = []
     SSLOptions.VerifyDepth = 0
-    Left = 136
+    Left = 120
     Top = 216
   end
   object qrZakosOC: TZQuery
@@ -123,21 +123,24 @@ object DesU: TDesU
     Left = 272
     Top = 8
   end
-  object IdHTTP1: TIdHTTP
+  object IdHTTPAbra: TIdHTTP
     AllowCookies = True
     ProxyParams.BasicAuthentication = False
     ProxyParams.ProxyPort = 0
+    Request.CharSet = 'utf-8'
     Request.ContentLength = -1
     Request.ContentRangeEnd = -1
     Request.ContentRangeStart = -1
     Request.ContentRangeInstanceLength = -1
+    Request.ContentType = 'application/json'
     Request.Accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    Request.AcceptCharSet = 'utf-8'
     Request.BasicAuthentication = True
     Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
     Request.Ranges.Units = 'bytes'
     Request.Ranges = <>
     HTTPOptions = [hoForceEncodeParams, hoNoProtocolErrorException, hoWantProtocolErrorContent]
-    Left = 248
-    Top = 176
+    Left = 200
+    Top = 216
   end
 end

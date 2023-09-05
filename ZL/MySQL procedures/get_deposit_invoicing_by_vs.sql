@@ -6,7 +6,9 @@ DELIMITER //
 CREATE PROCEDURE get_deposit_invoicing_by_vs(
     IN in_active_date date,
     IN in_bb_date date,
-    IN in_variable_symbol VARCHAR(255)
+    IN in_variable_symbol VARCHAR(255),
+    IN in_return_6m_period BOOLEAN,
+    IN in_return_12m_period BOOLEAN
 )
 BEGIN
 SELECT
@@ -58,7 +60,12 @@ WHERE
     AND NOT EXISTS (SELECT ct.contract_id FROM contracts_tags ct
 		WHERE ct.contract_id = co.id AND ct.tag_id = 4)
 	AND cu.variable_symbol = in_variable_symbol
-ORDER BY co.`number`, bi.tariff DESC;
+	AND (
+		(bb.period = 3) 
+		OR (in_return_6m_period AND bb.period = 6) 
+		OR (in_return_12m_period AND bb.period = 12)
+	) 	
+ORDER BY bb.period, co.`number`, bi.tariff DESC;
 END //
 DELIMITER ;
 

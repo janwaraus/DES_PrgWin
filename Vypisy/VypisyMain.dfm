@@ -106,10 +106,10 @@ object fmMain: TfmMain
     Caption = 'lblVypisFiokontoInfo'
   end
   object lblHlavickaVpravo: TLabel
-    Left = 814
+    Left = 819
     Top = 8
-    Width = 112
-    Height = 13
+    Width = 107
+    Height = 15
     Alignment = taRightJustify
     Caption = 'lbl Hlavicka Vpravo'
     Color = clSkyBlue
@@ -132,7 +132,7 @@ object fmMain: TfmMain
     object lblPrechoziPlatbyZUctu: TLabel
       Left = 10
       Top = 16
-      Width = 136
+      Width = 137
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby z '#250#269'tu'
       Enabled = False
@@ -153,7 +153,7 @@ object fmMain: TfmMain
     object lblPrechoziPlatbySVs: TLabel
       Left = 8
       Top = 176
-      Width = 127
+      Width = 128
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby s VS'
       Enabled = False
@@ -190,7 +190,6 @@ object fmMain: TfmMain
       Top = 35
       Width = 433
       Height = 127
-      Cursor = crDefault
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
       Enabled = False
@@ -205,7 +204,6 @@ object fmMain: TfmMain
       ParentFont = False
       ScrollBars = ssVertical
       TabOrder = 1
-      HoverRowCells = [hcNormal, hcSelected]
       OnGetAlignment = asgPredchoziPlatbyGetAlignment
       OnButtonClick = asgPredchoziPlatbyButtonClick
       ActiveCellFont.Charset = DEFAULT_CHARSET
@@ -263,7 +261,8 @@ object fmMain: TfmMain
       FixedFont.Style = [fsBold]
       FloatFormat = '%.2f'
       HoverButtons.Buttons = <>
-      HoverButtons.Position = hbLeftFromColumnLeft
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
       PrintSettings.DateFormat = 'dd/mm/yyyy'
       PrintSettings.Font.Charset = DEFAULT_CHARSET
       PrintSettings.Font.Color = clWindowText
@@ -300,9 +299,9 @@ object fmMain: TfmMain
       SearchFooter.HintFindPrev = 'Find previous occurrence'
       SearchFooter.HintHighlight = 'Highlight occurrences'
       SearchFooter.MatchCaseCaption = 'Match case'
+      SearchFooter.ResultFormat = '(%d of %d)'
       ShowDesignHelper = False
-      SortSettings.DefaultFormat = ssAutomatic
-      Version = '7.4.2.0'
+      Version = '8.7.0.0'
       ColWidths = (
         28
         78
@@ -315,7 +314,6 @@ object fmMain: TfmMain
       Top = 195
       Width = 433
       Height = 131
-      Cursor = crDefault
       ColCount = 4
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
@@ -331,7 +329,6 @@ object fmMain: TfmMain
       ParentFont = False
       ScrollBars = ssVertical
       TabOrder = 2
-      HoverRowCells = [hcNormal, hcSelected]
       OnGetAlignment = asgPredchoziPlatbyVsGetAlignment
       ActiveCellFont.Charset = DEFAULT_CHARSET
       ActiveCellFont.Color = clWindowText
@@ -387,7 +384,8 @@ object fmMain: TfmMain
       FixedFont.Style = [fsBold]
       FloatFormat = '%.2f'
       HoverButtons.Buttons = <>
-      HoverButtons.Position = hbLeftFromColumnLeft
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
       PrintSettings.DateFormat = 'dd/mm/yyyy'
       PrintSettings.Font.Charset = DEFAULT_CHARSET
       PrintSettings.Font.Color = clWindowText
@@ -424,9 +422,9 @@ object fmMain: TfmMain
       SearchFooter.HintFindPrev = 'Find previous occurrence'
       SearchFooter.HintHighlight = 'Highlight occurrences'
       SearchFooter.MatchCaseCaption = 'Match case'
+      SearchFooter.ResultFormat = '(%d of %d)'
       ShowDesignHelper = False
-      SortSettings.DefaultFormat = ssAutomatic
-      Version = '7.4.2.0'
+      Version = '8.7.0.0'
       ColWidths = (
         134
         82
@@ -724,7 +722,6 @@ object fmMain: TfmMain
     Top = 26
     Width = 822
     Height = 501
-    Cursor = crDefault
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
     DefaultRowHeight = 20
@@ -739,12 +736,10 @@ object fmMain: TfmMain
     Font.Style = []
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing]
     ParentFont = False
-    ScrollBars = ssBoth
     TabOrder = 0
     Visible = False
     OnClick = asgMainClick
     OnKeyUp = asgMainKeyUp
-    HoverRowCells = [hcNormal, hcSelected]
     OnGetCellColor = asgMainGetCellColor
     OnGetAlignment = asgMainGetAlignment
     OnCanEditCell = asgMainCanEditCell
@@ -811,7 +806,8 @@ object fmMain: TfmMain
     FixedFont.Style = [fsBold]
     FloatFormat = '%.2f'
     HoverButtons.Buttons = <>
-    HoverButtons.Position = hbLeftFromColumnLeft
+    HTMLSettings.ImageFolder = 'images'
+    HTMLSettings.ImageBaseName = 'img'
     PrintSettings.DateFormat = 'dd/mm/yyyy'
     PrintSettings.Font.Charset = DEFAULT_CHARSET
     PrintSettings.Font.Color = clWindowText
@@ -848,8 +844,8 @@ object fmMain: TfmMain
     SearchFooter.HintFindPrev = 'Find previous occurrence'
     SearchFooter.HintHighlight = 'Highlight occurrences'
     SearchFooter.MatchCaseCaption = 'Match case'
-    SortSettings.DefaultFormat = ssAutomatic
-    Version = '7.4.2.0'
+    SearchFooter.ResultFormat = '(%d of %d)'
+    Version = '8.7.0.0'
     ColWidths = (
       80
       82
@@ -886,7 +882,6 @@ object fmMain: TfmMain
       Top = 27
       Width = 812
       Height = 105
-      Cursor = crDefault
       ColCount = 8
       DefaultRowHeight = 20
       DrawingStyle = gdsClassic
@@ -900,9 +895,7 @@ object fmMain: TfmMain
       Font.Style = []
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
       ParentFont = False
-      ScrollBars = ssBoth
       TabOrder = 0
-      HoverRowCells = [hcNormal, hcSelected]
       OnGetAlignment = asgNalezeneDokladyGetAlignment
       ActiveCellFont.Charset = DEFAULT_CHARSET
       ActiveCellFont.Color = clWindowText
@@ -961,7 +954,8 @@ object fmMain: TfmMain
       FixedFont.Style = [fsBold]
       FloatFormat = '%.2f'
       HoverButtons.Buttons = <>
-      HoverButtons.Position = hbLeftFromColumnLeft
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
       PrintSettings.DateFormat = 'dd/mm/yyyy'
       PrintSettings.Font.Charset = DEFAULT_CHARSET
       PrintSettings.Font.Color = clWindowText
@@ -998,8 +992,8 @@ object fmMain: TfmMain
       SearchFooter.HintFindPrev = 'Find previous occurrence'
       SearchFooter.HintHighlight = 'Highlight occurrences'
       SearchFooter.MatchCaseCaption = 'Match case'
-      SortSettings.DefaultFormat = ssAutomatic
-      Version = '7.4.2.0'
+      SearchFooter.ResultFormat = '(%d of %d)'
+      Version = '8.7.0.0'
       ColWidths = (
         89
         69

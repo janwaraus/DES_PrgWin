@@ -47,6 +47,9 @@ type
 
 
 function DecodeUnicodeEscapeSequences(const input: string): string;
+procedure createBoByAA_v1;
+procedure createBoByAA_v2;
+procedure createBoByAA_v3;
 
 
 var
@@ -104,45 +107,19 @@ var
 begin
   //editUrl.Text := 'periods?where=code+gt+2015';
   editUrl.Text := 'bankstatements/36E2000101/rows/ZHRD000101';
-  //sResponse := DesU.abraBoGet(editUrl.Text); // misto toho dame cely kod sem
-
-  idHTTP := DesU.newAbraIdHttp(900, false);
-
-  //idHTTP.Request.ContentType := 'application/json';
-  //idHTTP.Request.AcceptCharset := 'utf-8';
-  //idHTTP.Request.CharSet := 'utf-8';
-
-  endpoint :=  DesU.abraWebApiUrl + editUrl.Text;
-
-  UrlContent := TStringStream.Create('');
-
-  try
-    try
-      //sResponse := idHTTP.Get(endpoint); // funguje, ale zkusime jako proceduru
-      idHTTP.Get(endpoint, UrlContent);
-      sResponse := UTF8Decode(UrlContent.DataString);
-
-
-    except
-      on E: Exception do
-        ShowMessage('Error on request: '#13#10 + e.Message);
-    end;
-  finally
-    idHTTP.Free;
-  end;
-
+  sResponse := DesU.abraBoGet(editUrl.Text); // misto toho dame cely kod sem
 
 
   memo2.Lines.Clear;
   memo2.Lines.Add(sResponse);
-  memo2.Lines.Add('- UTF8Decode resp- -');
 
   abraResponseSO := SO(sResponse);
 
-    memo2.Lines.Add(abraResponseSO.S['text']);
-    memo2.Lines.Add(UTF8Decode(abraResponseSO.S['text']));
-    memo2.Lines.Add('-HEX-');
-    memo2.Lines.Add(String2Hex(abraResponseSO.S['text']));
+  memo2.Lines.Add(abraResponseSO.S['text']);
+  memo2.Lines.Add('- UTF8Decode resp- -');
+  memo2.Lines.Add(UTF8Decode(abraResponseSO.S['text']));
+  memo2.Lines.Add('-HEX-');
+  memo2.Lines.Add(String2Hex(abraResponseSO.S['text']));
 
   {
   memo2.Lines.Add('- abraResponseSO.AsJSon(true) -');
@@ -169,6 +146,7 @@ var
   Json: string;
   abraResponse : TDesResult;
   newID: string;
+  jsonSO: ISuperObject;
   abraResponseSO : ISuperObject;
 begin
 
@@ -199,7 +177,7 @@ Json := '{'+
 
   memo1.Lines.Add(Json);
 
-  abraResponse := DesU.abraBoCreate_SoWebApi(SO(Json), 'issuedinvoice');
+  abraResponse := DesU.abraBoCreate(SO(Json).AsJSon(true), 'issuedinvoice');
   if abraResponse.isOk then begin
     memo2.Lines.Add(abraResponse.Messg);
     memo2.Lines.Add('- UTF8Decode resp- -');
@@ -264,7 +242,7 @@ begin
   JsonSO.S['varsymbol'] := '1116378';
   Json := JsonSO.AsJSon(true);
   memo1.Lines.Add(Json);
-  sResponse := DesU.abraBoUpdate_SoWebApi(SO(Json), 'bankstatement', '36E2000101', 'row', '5BRD000101');
+  sResponse := DesU.abraBoUpdate(JsonSO.AsJSon(true), 'bankstatement', '36E2000101', 'row', '5BRD000101');
   memo2.Lines.Add (SO(sResponse).AsJSon(true));
 end;
 
@@ -280,7 +258,7 @@ begin
 
   boAA := TAArray.Create;
   boAA['varsymbol'] := '77989';
-  sResponse := DesU.abraBoUpdate(boAA, 'bankstatement', '36E2000101', 'row', '5BRD000101'); //použije PUT (pokud je metoda WebApi)
+  sResponse := DesU.abraBoUpdate(boAA.AsJSon, 'bankstatement', '36E2000101', 'row', '5BRD000101'); //použije PUT
 
   memo2.Lines.Add (boAA.AsJSon());
   memo2.Lines.Add ('-------');
@@ -316,42 +294,48 @@ end;
 
 
 procedure TForm1.btnCreateByAAClick(Sender: TObject);
+begin
+  createBoByAA_v3;
+end;
+
+
+procedure createBoByAA_v1;
 var
   FruitColors: TAArray;
   boAA, boRowAA: TAArray;
-  TestString, newid: String;
+  TestString, newid: string;
   i: integer;
+  abraWebApiResponse : TDesResult;
 begin
 
   boAA := TAArray.Create;
 
   boAA['docqueue_id'] := DesU.getAbraDocqueueId('FO1', '03');
-  boAA['period_id'] := DesU.getAbraPeriodId('2017');
-  boAA['docdate$date'] := '2017-06-28';
-  boAA['accdate$date'] := '2017-06-30';
-  boAA['firm_id'] := '2SZ1000101';
-  boAA['varsymbol'] := '911123335';
+  boAA['period_id'] := DesU.getAbraPeriodId('2023');
+  boAA['docDate$date'] := '2023-06-03';
+  boAA['Firm_ID'] := '2SZ1000101';
+  boAA['VarSymbol'] := '911123335';
   boAA['description'] := 'ppppøipojení rychlouèké bìží';
-  boAA['priceswithvat'] := true;
+  boAA['priceSWithvat'] := true;
+  boAA['varsymbol'] := '911123336';
 
   boRowAA := boAA.addRow();
   boRowAA['rowtype'] := 0;
-  boRowAA['text'] := 'prvni radek fakturujeme';
+  boRowAA['TEXT'] := 'prvni radek fakturujeme';
   boRowAA['division_id'] := '1000000101';
 
   boRowAA := boAA.addRow();
   boRowAA['rowtype'] := 1;
   boRowAA['text'] := 'Za naše svìlé Služby';
-  boRowAA['totalprice'] := 246;
+  boRowAA['TOTALPrice'] := 246;
   boRowAA['vatrate_id'] := DesU.getAbraVatrateId('Výst21');
   boRowAA['incometype_id'] := AbraEnt.getIncomeType('Code=SL').ID;
   boRowAA['division_id'] := '1000000101';
 
-  newid := DesU.abraBoCreate(boAA, 'issuedinvoice'); //použije POST (pokud je metoda WebApi)
-  //newid := DesU.abraBoCreateOLE(boAA, 'issuedinvoice');
-  //newid := DesU.abraBoCreateWebApi(boAA, 'issuedinvoice');
+  abraWebApiResponse := DesU.abraBoCreate(boAA.AsJSon, 'issuedinvoice');
+  newid := SO(abraWebApiResponse.Messg).S['id'];
 
-  memo2.Lines.Add(newid);
+  Form1.memo2.Lines.Add(newid);
   {
   FruitColors := TAArray.Create;
   FruitColors['Apple'] := 'Green';
@@ -374,6 +358,84 @@ begin
     memo2.Lines.Add(FruitColors[FruitColors.Position]);
   end;
   }
+
+end;
+
+procedure createBoByAA_v2;
+var
+  newBo: TNewAbraBo;
+  TestString, newid: string;
+begin
+
+  newBo := TNewAbraBo.Create('issuedinvoice');
+
+  newBo.Item['docqueue_id'] := DesU.getAbraDocqueueId('FO1', '03');
+  newBo.Item['period_id'] := DesU.getAbraPeriodId('2023');
+  newBo.Item['docDate$date'] := '2023-06-03';
+  newBo.Item['Firm_ID'] := '2SZ1000101';
+  newBo.Item['VarSymbol'] := '911123332';
+  newBo.Item['description'] := 'ppppøipojení rychlouèké bìží';
+  newBo.Item['priceSWithvat'] := true;
+  newBo.Item['varsymbol'] := '911123335';
+
+  newBo.createNewRow;
+  newBo.rowItem['rowtype'] := 0;
+  newBo.rowItem['TEXT'] := 'PPPrvni øèžádek fakturujeme';
+  newBo.rowItem['division_id'] := '1000000101';
+
+  newBo.createNewRow;
+  newBo.rowItem['rowtype'] := 1;
+  newBo.rowItem['text'] := 'ZZa naše svìlé Služby';
+  newBo.rowItem['TOTALPrice'] := 246;
+  newBo.rowItem['vatrate_id'] := DesU.getAbraVatrateId('Výst21');
+  newBo.rowItem['incometype_id'] := AbraEnt.getIncomeType('Code=SL').ID;
+  newBo.rowItem['division_id'] := '1000000101';
+  newBo.rowItem['division_id'] := '1000000101';
+
+  newBo.writeToAbra;
+
+
+  if newBo.WriteResult.isOk then begin
+    newid := SO(newBo.WriteResult.Messg).S['id'];
+    Form1.memo2.Lines.Add(newid);
+    Form1.memo2.Lines.Add(newBo.getCreatedBoItem('id'));
+    Form1.memo2.Lines.Add(SO(newBo.WriteResult.Messg).S['displayname']);
+    Form1.memo2.Lines.Add(newBo.getCreatedBoItem('displayname'));
+  end;
+
+
+end;
+
+procedure createBoByAA_v3;
+var
+  newBo: TNewAbraBo;
+  TestString, newid: string;
+begin
+
+  newBo := TNewAbraBo.Create('issuedinvoice');
+  newBo.addInvoiceParams(45130);
+
+  newBo.Item['docqueue_id'] := DesU.getAbraDocqueueId('FO1', '03');
+  newBo.Item['Firm_ID'] := '2SZ1000101';
+  newBo.Item['VarSymbol'] := '911123335';
+  newBo.Item['description'] := 'Novée pøipojení rychlouèké bìží';
+
+  newBo.createNewInvoiceRow(0, 'PPPrvni øèžádek fakturujeme');
+
+  newBo.createNewInvoiceRow(1, 'ZZa naše svìlé Služby');
+  newBo.rowItem['TOTALPrice'] := 648;
+
+  newBo.writeToAbra;
+
+
+  if newBo.WriteResult.isOk then begin
+    newid := SO(newBo.WriteResult.Messg).S['id'];
+    Form1.memo2.Lines.Add(newid);
+    Form1.memo2.Lines.Add(newBo.getCreatedBoItem('id'));
+    Form1.memo2.Lines.Add(SO(newBo.WriteResult.Messg).S['displayname']);
+    Form1.memo2.Lines.Add(newBo.getCreatedBoItem('displayname'));
+  end;
+
 
 end;
 

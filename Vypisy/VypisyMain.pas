@@ -647,7 +647,7 @@ end;
 
 procedure TfmMain.btnZapisDoAbryClick(Sender: TObject);
 var
-  vysledek  : string;
+  vysledekZapisu  : TDesResult;
   casStart, dobaZapisu: double;
 begin
   if not Vypis.isNavazujeNaRadu() then
@@ -659,16 +659,27 @@ begin
   casStart := Now;
   try
     sparujVsechnyPrichoziPlatby;
-    vysledek := Parovatko.zapisDoAbry();
+    vysledekZapisu := Parovatko.zapisDoAbry();
   finally
     Screen.Cursor := crDefault;
   end;
-  Memo1.Lines.Add(vysledek);
+
   dobaZapisu := (Now - casStart) * 24 * 3600;
   Memo1.Lines.Add('Doba trvání: ' + floattostr(RoundTo(dobaZapisu, -2))
               + ' s (' + floattostr(RoundTo(dobaZapisu / 60, -2)) + ' min)');
+
+
+  if vysledekZapisu.isOk then begin
+    MessageDlg('Zápis do Abry úspìšnì dokonèen', mtInformation, [mbOk], 0);
+
+  end else begin
+    Memo1.Lines.Add('Chyba zápisu ' + vysledekZapisu.Code + ': ' + vysledekZapisu.Messg);
+    MessageDlg('Chyba zápisu ' + vysledekZapisu.Code + ': ' + vysledekZapisu.Messg, mtInformation, [mbOk], 0);
+
+  end;
+
+  Memo1.Lines.Add(vysledekZapisu.Messg);
   DesU.dbAbra.Reconnect;
-  MessageDlg('Zápis do Abry dokonèen', mtInformation, [mbOk], 0);
   vyplnNacitaciButtony;
 end;
 
@@ -776,12 +787,13 @@ end;
 procedure TfmMain.Zprava(TextZpravy: string);
 // do listboxu a logfile uloží èas a text zprávy
 begin
-  Memo1.Lines.Add(FormatDateTime('dd.mm.yy hh:nn  ', Now) + TextZpravy);
+  Memo1.Lines.Add(FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy);
   {lbxLog.ItemIndex := lbxLog.Count - 1;
   Application.ProcessMessages;
   Append(F);
   Writeln (F, FormatDateTime('dd.mm.yy hh:nn  ', Now) + TextZpravy);
   CloseFile(F);  }
+  Application.ProcessMessages;
 end;
 procedure TfmMain.zpravaRozdilCasu(cas01, cas02 : double; textZpravy : string);
 // do listboxu vypíše èasový rozdíl a zprávu

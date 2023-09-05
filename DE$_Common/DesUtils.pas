@@ -38,18 +38,18 @@ type
     idMessage: TIdMessage;
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
-    IdHTTP1: TIdHTTP;
+    IdHTTPAbra: TIdHTTP;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string = '');
     procedure programInit(programName : string);
+    function getIniValue(iniGroup, iniItem : string) : string;
     function zalogujZpravu(TextZpravy: string): string;
 
     function odstranNulyZCislaUctu(cisloU : string) : string;
     function prevedCisloUctuNaText(cisloU : string) : string;
     function opravRadekVypisuPomociPDocument_ID(Vypis_ID, RadekVypisu_ID, PDocument_ID, PDocumentType : string) : string;
     procedure opravRadekVypisuPomociVS(Vypis_ID, RadekVypisu_ID, VS : string);
-    function getOleObjDataDisplay(abraOleObj_Data : variant) : ansistring;
     function vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
     function vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
     function zrusPenizeNaCeste(VS : string) : string;
@@ -78,35 +78,36 @@ type
 
       //abraValues : TAArray;
 
-      function getAbraOLE() : variant;
-      procedure abraOLELogout();
-      function abraBoGet(abraBoName : string) : string;
-      function abraBoGetById(abraBoName, sId : string) : string;
 
-      { ABRA zapisující funkce pomocí SuperObjectu, v praxi pro testování }
-      function abraBoCreate_SoWebApi(jsonSO: ISuperObject; abraBoName : string) : TDesResult;
-      function abraBoUpdate_SoWebApi(jsonSO: ISuperObject; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
+
+
+      { ABRA WebAPI funkce }
+      function abraBoGet(abraBoName : string; sId: string = '') : string;
+
+      function abraBoCreate(jsonString, abraBoName : string) : TDesResult;
+      function abraBoCreateRow(jsonString, abraBoName, parent_id : string) : TDesResult;
+      function abraBoUpdate(jsonString, abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
+
+      procedure logJson(jsonToLog, headerToLog : string);
 
       { ABRA zapisující funkce pomocí SuperObjectu, používáno }
-      function abraBoCreate(boAA: TAArray; abraBoName : string) : string;
+      function abraBoCreateWebApi_v0(boAA: TAArray; abraBoName : string) : string; // to be deleted
+
+      { ABRA OLE funkce, mìly by se pøestat používat, mohou být však užiteèné pro nìjaké testování napø. v budoucnu }
+      function getAbraOLE() : variant;
+      procedure abraOLELogout();
+      function getOleObjDataDisplay(abraOleObj_Data : variant) : ansistring;
       function abraBoCreateOLE(boAA: TAArray; abraBoName : string) : string;
-      function abraBoCreateWebApi_v0(boAA: TAArray; abraBoName : string) : string;
-      function abraBoCreateWebApi(boAA: TAArray; abraBoName : string) : TDesResult;
-      function abraBoCreateRowWebApi(boAA: TAArray; abraBoName, parent_id : string) : string;
-      function abraBoUpdate(boAA: TAArray; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
       function abraBoUpdateOLE(boAA: TAArray; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
-      function abraBoUpdateWebApi(boAA: TAArray; abraBoName, abraBoId : string; abraBoChildName: string = ''; abraBoChildId: string = '') : string;
-      procedure logJson(boAAjson, header : string);
 
 
+      { ABRA rùzné funkce }
       function getAbraPeriodId(pYear : string) : string; overload;
       function getAbraPeriodId(pDate : double) : string; overload;
       function getAbraDocqueueId(code, documentType : string) : string;
       function getAbraDocqueueCodeById(id : string) : string;
       function getAbraVatrateId(code : string) : string;
       function getAbraVatindexId(code : string) : string;
-      //function getAbraIncometypeId(code : string) : string;
-      //function getAbraBusorderId(busOrderName : string) : string;
 
       function getAbracodeByVs(vs : string) : string;
       function getAbracodeByContractNumber(cnumber : string) : string;
@@ -120,11 +121,6 @@ type
       function sendGodsSms(telCislo, smsText : string) : string;
       function sendSms(telCislo, smsText : string) : string;
 
-      function getIniValue(iniGroup, iniItem : string) : string;
-
-    //private
-      function newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
-      procedure setAbraIdHttp(timeout : single; isJsonPost : boolean);
 
   end;
 
@@ -208,6 +204,9 @@ begin
     abraUserUN := ReadString('Preferences', 'AbraUserUN', '');
     abraUserPW := ReadString('Preferences', 'AbraUserPW', '');
     abraWebApiUrl := ReadString('Preferences', 'AbraWebApiUrl', '');
+    IdHTTPAbra.Request.Username := abraUserUN;
+    IdHTTPAbra.Request.Password := abraUserPW;
+    IdHTTPAbra.ReadTimeout := Round (600 * 1000); // ReadTimeout je v milisekundách
 
     GPC_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'GpcPath', ''));
     PDF_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'PDFDir', ''));
@@ -264,6 +263,19 @@ begin
   LOG_FILENAME := LOG_PATH + FormatDateTime('yyyy.mm".log"', Date);
 end;
 
+function TDesU.getIniValue(iniGroup, iniItem : string) : string;
+begin
+  if FileExists(PROGRAM_PATH + 'abraDesProgramy.ini') then
+    adpIniFile := TIniFile.Create(PROGRAM_PATH + 'abraDesProgramy.ini')
+  else
+    adpIniFile := TIniFile.Create(PROGRAM_PATH + '..\DE$_Common\abraDesProgramy.ini');
+  try
+    Result :=  adpIniFile.ReadString(iniGroup, iniItem, '');
+  finally
+    adpIniFile.Free;
+  end;
+end;
+
 function TDesU.zalogujZpravu(TextZpravy: string): string;
 begin
   Result := FormatDateTime('dd.mm.yy hh:nn:ss  ', Now) + TextZpravy;
@@ -271,6 +283,230 @@ begin
     Format('(%s - %s) ', [Trim(getWindowsCompName), Trim(getWindowsUserName)]) + Result);
 end;
 
+
+
+{*** ABRA WebApi functions ***}
+
+function TDesU.abraBoGet(abraBoName : string; sId: string = '') : string;
+var
+  endpoint : string;
+  responseContent: TStringStream;
+begin
+  endpoint := abraWebApiUrl + abraBoName;
+  if sId <> '' then
+    endpoint := endpoint + '/' + sId;
+
+  responseContent := TStringStream.Create('', TEncoding.UTF8);
+
+  try
+    IdHTTPAbra.Get(endpoint, responseContent);
+    Result := responseContent.DataString;
+  except
+    on E: Exception do
+      ShowMessage('Error on request: '#13#10 + e.Message);
+  end;
+
+end;
+
+
+function TDesU.abraBoCreate(jsonString, abraBoName : string) : TDesResult;
+var
+  sourceJsonStream,
+  responseContent: TStringStream;
+  newAbraBo : string;
+  responseCode : integer;
+  exceptionSO : ISuperObject;
+begin
+  sourceJsonStream := TStringStream.Create(jsonString, TEncoding.UTF8);
+  responseContent := TStringStream.Create('', TEncoding.UTF8);
+
+  try
+    try begin
+      IdHTTPAbra.Post(abraWebApiUrl + abraBoName + 's', sourceJsonStream, responseContent);
+      responseCode := IdHTTPAbra.ResponseCode;
+
+      if responseCode < 400 then begin // HTTP responsy pod 400 nejsou errorové
+        newAbraBo := responseContent.DataString;
+        self.logJson(jsonString + sLineBreak + sLineBreak + 'response:' + sLineBreak + newAbraBo,
+          'abraBoCreate - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+        Result := TDesResult.create('ok', newAbraBo);
+      end
+      else
+      begin
+        self.logJson(jsonString + sLineBreak + sLineBreak + 'error response HTTP '
+          + IntToStr(responseCode) + sLineBreak + responseContent.DataString,
+          'abraBoCreate - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+        exceptionSO := SO(responseContent.DataString);
+        Result := TDesResult.create('err_http' + IntToStr(IdHTTPAbra.ResponseCode),
+          exceptionSO.S['title']
+          + ': ' + exceptionSO.S['description']
+        );
+      end;
+    end;
+    except
+      on E: EIdHTTPProtocolException do begin
+        { * takto bylo døíve, ale kvùli nefunènosti èeských znakù v E.Message pøesunuto mimo except blok *
+
+          exceptionSO := SO(E.errorMessage);
+          Result := TDesResult.create('err_http' + IntToStr(IdHTTPAbra.ResponseCode),
+            exceptionSO.S['title']
+            + ': ' + exceptionSO.S['description']
+          );
+          self.logJson(E.errorMessage, 'abraBoCreateWebApi_SO response - ' + abraWebApiUrl + abraBoName + 's');
+
+        }
+      end;
+      on E: Exception do begin
+        ShowMessage('Error on request: '#13#10 + E.Message);
+      end;
+    end;
+  finally
+    sourceJsonStream.Free;
+    responseContent.Free;
+  end;
+end;
+
+
+//ABRA BO create row
+function TDesU.abraBoCreateRow(jsonString, abraBoName, parent_id : string) : TDesResult;
+var
+  sourceJsonStream,
+  responseContent: TStringStream;
+  responseCode : integer;
+  exceptionSO : ISuperObject;
+  sstreamJson: TStringStream;
+  jsonRequest, newAbraBo : string;
+begin
+
+  jsonRequest := '{"rows":[' + jsonString + ']}';
+
+  self.logJson(jsonRequest, 'abraBoCreateRow - WebApi - ' + abraWebApiUrl + abraBoName + 's/' + parent_id);
+
+  sourceJsonStream := TStringStream.Create(jsonRequest, TEncoding.UTF8);
+  responseContent := TStringStream.Create('', TEncoding.UTF8);
+
+  sstreamJson := TStringStream.Create(jsonRequest, TEncoding.UTF8);
+
+  try
+    try begin
+      IdHTTPAbra.Put(abraWebApiUrl + abraBoName + 's/' + parent_id, sourceJsonStream, responseContent);
+      responseCode := IdHTTPAbra.ResponseCode;
+
+      if responseCode < 400 then begin // HTTP responsy pod 400 nejsou errorové
+        newAbraBo := responseContent.DataString;
+        self.logJson(jsonString + sLineBreak + sLineBreak + 'response:' + sLineBreak + newAbraBo,
+          'abraBoCreateRow - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+        Result := TDesResult.create('ok', newAbraBo);
+      end
+      else
+      begin
+        self.logJson(jsonString + sLineBreak + sLineBreak + 'error response HTTP '
+          + IntToStr(responseCode) + sLineBreak + responseContent.DataString,
+          'abraBoCreateRow - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+        exceptionSO := SO(responseContent.DataString);
+        Result := TDesResult.create('err_http' + IntToStr(IdHTTPAbra.ResponseCode),
+          exceptionSO.S['title']
+          + ': ' + exceptionSO.S['description']
+        );
+      end;
+
+    end;
+    except
+      on E: Exception do begin
+        ShowMessage('Error on request: '#13#10 + e.Message);
+      end;
+    end;
+  finally
+    sourceJsonStream.Free;
+    responseContent.Free;
+  end;
+end;
+
+
+
+
+//ABRA BO update
+function TDesU.abraBoUpdate(jsonString, abraBoName, abraBoId, abraBoChildName, abraBoChildId : string) : string;
+var
+  idHTTP: TIdHTTP;
+  sstreamJson: TStringStream;
+  endpoint : string;
+
+begin
+  // http://localhost/DES/issuedinvoices/8L6U000101/rows/5A3K100101
+  endpoint := abraWebApiUrl + abraBoName + 's/' + abraBoId;
+  if abraBoChildName <> '' then
+    endpoint := endpoint + '/' + abraBoChildName + 's/' + abraBoChildId;
+
+  self.logJson(jsonString, 'abraBoUpdate - WebApi - ' + endpoint);
+
+  sstreamJson := TStringStream.Create(jsonString, TEncoding.UTF8);
+
+  try
+    Result := idHTTPAbra.Put(endpoint, sstreamJson);
+  finally
+    sstreamJson.Free;
+    idHTTP.Free;
+  end;
+end;
+
+
+
+procedure TDesU.logJson(jsonToLog, headerToLog : string);
+begin
+  if appMode >= 3 then begin
+    if not DirectoryExists(PROGRAM_PATH + '\log\json\') then
+      Forcedirectories(PROGRAM_PATH + '\log\json\');
+    writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', headerToLog + sLineBreak + jsonToLog);
+  end;
+end;
+
+
+{
+// ABRA BO create
+function TDesU.abraBoCreate(boAA: TAArray; abraBoName : string) : string;
+begin
+  if AnsiLowerCase(abraDefaultCommMethod) = 'webapi' then
+    Result := self.abraBoCreateWebApi_v0(boAA, abraBoName)
+  else begin
+    Result := self.abraBoCreateOLE(boAA, abraBoName);
+    self.abraOLELogout;
+  end;
+end;
+}
+
+function TDesU.abraBoCreateWebApi_v0(boAA: TAArray; abraBoName : string) : string;
+var
+  idHTTP: TIdHTTP;
+  sstreamJson: TStringStream;
+  newAbraBo : string;
+begin
+
+  self.logJson(boAA.AsJSon(), 'abraBoCreateWebApi_AA_v0 - ' + abraWebApiUrl + abraBoName + 's');
+
+  sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
+  //idHTTP := newAbraIdHttp(900, true);
+
+  try
+    try begin
+      newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sstreamJson);
+      Result := SO(newAbraBo).S['id'];
+    end;
+    except
+      on E: Exception do begin
+        ShowMessage('Error on request: '#13#10 + e.Message);
+      end;
+    end;
+  finally
+    sstreamJson.Free;
+    idHTTP.Free;
+  end;
+end;
+
+
+
+
+{*** ABRA OLE functions ***}
 
 function TDesU.getAbraOLE() : variant;
 begin
@@ -307,292 +543,15 @@ begin
   self.AbraOLE := Unassigned;
 end;
 
-
-
-{*** ABRA WebApi IdHTTP functions ***}
-
-function TDesU.newAbraIdHttp(timeout : single; isJsonPost : boolean) : TIdHTTP;
+function TDesU.getOleObjDataDisplay(abraOleObj_Data : variant) : ansistring;
 var
-  idHTTP: TIdHTTP;
+  j : integer;
 begin
-  idHTTP := TidHTTP.Create;
-
-  idHTTP.HTTPOptions := IdHTTP.HTTPOptions + [hoNoProtocolErrorException];
-
-  idHTTP.Request.BasicAuthentication := True;
-  idHTTP.Request.Username := abraUserUN;
-  idHTTP.Request.Password := abraUserPW;
-  idHTTP.ReadTimeout := Round (timeout * 1000); // ReadTimeout je v milisekundách
-
-  if (isJsonPost) then begin
-    idHTTP.Request.ContentType := 'application/json';
-    //idHTTP.Request.AcceptCharset := 'utf-8';
-    idHTTP.Request.CharSet := 'utf-8';
-    //idHTTP.Response.CharSet := 'utf-8';
-  end;
-
-  Result := idHTTP;
-end;
-
-procedure TDesU.setAbraIdHttp(timeout : single; isJsonPost : boolean);
-begin
-
-  IdHTTP1.Request.BasicAuthentication := True;
-  IdHTTP1.Request.Username := abraUserUN;
-  IdHTTP1.Request.Password := abraUserPW;
-  IdHTTP1.ReadTimeout := Round (timeout * 1000); // ReadTimeout je v milisekundách
-
-  if (isJsonPost) then begin
-    IdHTTP1.Request.ContentType := 'application/json';
-    //idHTTP.Request.AcceptCharset := 'utf-8';
-    IdHTTP1.Request.CharSet := 'utf-8';
-    //idHTTP.Response.CharSet := 'utf-8';
-  end;
-
-end;
-
-function TDesU.abraBoGet(abraBoName : string) : string;
-begin
-  Result := abraBoGetById(abraBoName, '');
-end;
-
-function TDesU.abraBoGetById(abraBoName, sId : string) : string;
-var
-  idHTTP: TIdHTTP;
-  endpoint : string;
-begin
-  idHTTP := newAbraIdHttp(900, false);
-
-  endpoint := abraWebApiUrl + abraBoName;
-  if sId <> '' then
-    endpoint := endpoint + '/' + sId;
-
-  try
-    try
-      Result := idHTTP.Get(endpoint);
-    except
-      on E: Exception do
-        ShowMessage('Error on request: '#13#10 + e.Message);
-    end;
-  finally
-    idHTTP.Free;
+  Result := '';
+  for j := 0 to abraOleObj_Data.Count - 1 do begin
+    Result := Result + inttostr(j) + 'r ' + abraOleObj_Data.Names[j] + ': ' + vartostr(abraOleObj_Data.Value[j]) + sLineBreak;
   end;
 end;
-
-
-function TDesU.abraBoCreate_SoWebApi(jsonSO: ISuperObject; abraBoName : string) : TDesResult;
-var
-  //idHTTP: TIdHTTP;
-  sourceJsonStream,
-  responseContentStream: TStringStream;
-  //responseMemoryStream: TMemoryStream;
-  newAbraBo,
-  responseContentType : string;
-  responseCode : integer;
-  exceptionSO : ISuperObject;
-  Encoding: TEncoding;
-  myResp : TIdHTTPResponse;
-begin
-
-  self.logJson(jsonSO.AsJSon(true), 'abraBoCreate_SoWebApi request - ' + abraWebApiUrl + abraBoName + 's');
-  sourceJsonStream := TStringStream.Create(jsonSO.AsJSon(), TEncoding.UTF8);
-  //responseMemoryStream := TMemoryStream.Create;
-  responseContentStream := TStringStream.Create('', TEncoding.UTF8);
-  Encoding := TEncoding.UTF8;
-
-  //IdHTTP1 := newAbraIdHttp(20, true);
-  setAbraIdHttp(20, true);
-
-  try
-    try begin
-      //newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sourceJsonStream);
-
-      IdHTTP1.Post(abraWebApiUrl + abraBoName + 's', sourceJsonStream, responseContentStream);
-
-      responseCode := IdHTTP1.ResponseCode;
-
-      if responseCode < 400 then begin // HTTP responsy pod 400 nejsou errorové
-        newAbraBo := responseContentStream.DataString;
-        Result := TDesResult.create('ok', newAbraBo);
-      end
-      else
-      begin
-        exceptionSO := SO(responseContentStream.DataString);
-        Result := TDesResult.create('err_http' + IntToStr(IdHTTP1.ResponseCode),
-          exceptionSO.S['title']
-          + ': ' + exceptionSO.S['description']
-        );
-      end;
-
-      myResp := IdHTTP1.Response;
-      self.logJson(responseContentStream.DataString, 'abraBoCreateWebApi_SO response - ' + abraWebApiUrl + abraBoName + 's');
-    end;
-    except
-      on E: EIdHTTPProtocolException do begin
-
-        { nefungovalo
-        responseContentType := IdHTTP1.Response.ContentType;
-
-        myResp := IdHTTP1.Response;
-
-        newAbraBo :=  myResp.CharSet;
-
-        //responseContentStream.Clear;
-
-        responseMemoryStream.Position := 0;
-        responseContentStream.CopyFrom(responseMemoryStream, 0);
-
-        newAbraBo := responseContentStream.DataString;
-
-
-        //responseContentStream.WriteString(Encoding.GetString(Encoding.GetBytes(E.ErrorMessage)));
-
-        newAbraBo := responseContentStream.DataString;
-        exceptionSO := SO(newAbraBo);
-        }
-
-        exceptionSO := SO(E.errorMessage);
-
-        Result := TDesResult.create('err_http' + IntToStr(IdHTTP1.ResponseCode),
-          exceptionSO.S['title']
-          + ': ' + exceptionSO.S['description']
-        );
-        self.logJson(E.errorMessage, 'abraBoCreateWebApi_SO response - ' + abraWebApiUrl + abraBoName + 's');
-      end;
-      on E: Exception do begin
-        //ShowMessage('Error on request: '#13#10 + e.Message);
-      end;
-    end;
-  finally
-    sourceJsonStream.Free;
-    responseContentStream.Free;
-    //idHTTP.Free;
-  end;
-end;
-
-
-function TDesU.abraBoUpdate_SoWebApi(jsonSO: ISuperObject; abraBoName, abraBoId, abraBoChildName, abraBoChildId : string) : string;
-var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  endpoint : string;
-begin
-
-
-  // http://localhost/DES/issuedinvoices/8L6U000101/rows/5A3K100101
-  endpoint := abraWebApiUrl + abraBoName + 's/' + abraBoId;
-  if abraBoChildName <> '' then
-    endpoint := endpoint + '/' + abraBoChildName + 's/' + abraBoChildId;
-
-  self.logJson(jsonSO.AsJSon(true), 'abraBoUpdate_SoWebApi - ' + endpoint);
-
-
-  //sstreamJson := TStringStream.Create(Utf8Encode(pJson)); // D2007 and earlier only
-  sstreamJson := TStringStream.Create(jsonSO.AsJSon(), TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
-  try
-    try
-      Result := idHTTP.Put(endpoint, sstreamJson);
-    except
-      on E: Exception do
-        ShowMessage('Error on request: '#13#10 + e.Message);
-    end;
-  finally
-    sstreamJson.Free;
-    idHTTP.Free;
-  end;
-end;
-
-
-{** **}
-
-
-procedure TDesU.logJson(boAAjson, header : string);
-begin
-  if appMode >= 3 then begin
-    if not DirectoryExists(PROGRAM_PATH + '\log\json\') then
-      Forcedirectories(PROGRAM_PATH + '\log\json\');
-    //writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', header + sLineBreak + UTF8ToString(boAAjson));
-    writeToFile(PROGRAM_PATH + '\log\json\' + formatdatetime('yymmdd-hhnnss', Now) + '_' + RandString(3) + '.txt', header + sLineBreak + boAAjson);
-  end;
-end;
-
-
-// ABRA BO create
-function TDesU.abraBoCreate(boAA: TAArray; abraBoName : string) : string;
-begin
-  if AnsiLowerCase(abraDefaultCommMethod) = 'webapi' then
-    Result := self.abraBoCreateWebApi_v0(boAA, abraBoName)
-  else begin
-    Result := self.abraBoCreateOLE(boAA, abraBoName);
-    self.abraOLELogout;
-  end;
-end;
-
-function TDesU.abraBoCreateWebApi_v0(boAA: TAArray; abraBoName : string) : string;
-var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  newAbraBo : string;
-begin
-
-  self.logJson(boAA.AsJSon(), 'abraBoCreateWebApi_AA_v0 - ' + abraWebApiUrl + abraBoName + 's');
-
-  sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
-  try
-    try begin
-      newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sstreamJson);
-      Result := SO(newAbraBo).S['id'];
-    end;
-    except
-      on E: Exception do begin
-        ShowMessage('Error on request: '#13#10 + e.Message);
-      end;
-    end;
-  finally
-    sstreamJson.Free;
-    idHTTP.Free;
-  end;
-end;
-
-function TDesU.abraBoCreateWebApi(boAA: TAArray; abraBoName : string) : TDesResult;
-var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  newAbraBo : string;
-  exceptionSO : ISuperObject;
-  errMessage : string;
-begin
-  sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
-  try
-    try begin
-      newAbraBo := idHTTP.Post(abraWebApiUrl + abraBoName + 's', sstreamJson);
-      self.logJson(boAA.AsJSon() + sLineBreak + 'response:' + sLineBreak + newAbraBo,
-        'abraBoCreateWebApi - ' + abraWebApiUrl + abraBoName + 's');
-      Result := TDesResult.create('ok', newAbraBo);
-    end;
-    except
-      on E: EIdHTTPProtocolException do begin
-        errMessage := UTF8String(E.errorMessage);
-        self.logJson(boAA.AsJSon() + sLineBreak + 'error response HTTP '
-          + IntToStr(idHTTP.ResponseCode) + sLineBreak + errMessage,
-          'abraBoCreateWebApi - ' + abraWebApiUrl + abraBoName + 's');
-        exceptionSO := SO(errMessage);
-        Result := TDesResult.create('err_http' + IntToStr(idHTTP.ResponseCode),
-          exceptionSO.S['title']
-          + ': ' + exceptionSO.S['description']
-        );
-      end;
-    end;
-  finally
-    sstreamJson.Free;
-    idHTTP.Free;
-  end;
-end;
-
-
 
 function TDesU.abraBoCreateOLE(boAA: TAArray; abraBoName : string) : string;
 var
@@ -637,7 +596,6 @@ begin
 
   try begin
     NewID := BO_Object.CreateNewFromValues(BO_Data); //NewID je ID Abry
-    //Result := Result + 'Èíslo nového BO je ' + NewID;
     Result := NewID;
   end;
   except on E: exception do
@@ -648,78 +606,6 @@ begin
   end;
 
 end;
-
-
-//ABRA BO create row
-
-
-function TDesU.abraBoCreateRowWebApi(boAA: TAArray; abraBoName, parent_id : string) : string;
-var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  jsonRequest, newAbraBo : string;
-begin
-
-  jsonRequest := '{"rows":[' + boAA.AsJSon() + ']}';
-
-  self.logJson(jsonRequest, 'abraBoCreateRowWebApi_AA - ' + abraWebApiUrl + abraBoName + 's/' + parent_id);
-
-  sstreamJson := TStringStream.Create(jsonRequest, TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
-  try
-    try begin
-      newAbraBo := idHTTP.Put(abraWebApiUrl + abraBoName + 's/' + parent_id, sstreamJson);
-      Result := SO(newAbraBo).S['id'];
-    end;
-    except
-      on E: Exception do begin
-        ShowMessage('Error on request: '#13#10 + e.Message);
-      end;
-    end;
-  finally
-    sstreamJson.Free;
-    idHTTP.Free;
-  end;
-end;
-
-
-
-
-//ABRA BO update
-function TDesU.abraBoUpdate(boAA: TAArray; abraBoName, abraBoId, abraBoChildName, abraBoChildId: string) : string;
-begin
-  if AnsiLowerCase(self.abraDefaultCommMethod) = 'webapi' then
-    Result := self.abraBoUpdateWebApi(boAA, abraBoName, abraBoId, abraBoChildName, abraBoChildId)
-  else
-    Result := self.abraBoUpdateOLE(boAA, abraBoName, abraBoId, abraBoChildName, abraBoChildId);
-end;
-
-
-
-function TDesU.abraBoUpdateWebApi(boAA: TAArray; abraBoName, abraBoId, abraBoChildName, abraBoChildId : string) : string;
-var
-  idHTTP: TIdHTTP;
-  sstreamJson: TStringStream;
-  endpoint : string;
-
-begin
-  // http://localhost/DES/issuedinvoices/8L6U000101/rows/5A3K100101
-  endpoint := abraWebApiUrl + abraBoName + 's/' + abraBoId;
-  if abraBoChildName <> '' then
-    endpoint := endpoint + '/' + abraBoChildName + 's/' + abraBoChildId;
-
-  self.logJson(boAA.AsJSon(), 'abraBoUpdateWebApi_AA - ' + endpoint);
-
-  sstreamJson := TStringStream.Create(boAA.AsJSon(), TEncoding.UTF8);
-  idHTTP := newAbraIdHttp(900, true);
-  try
-    Result := idHTTP.Put(endpoint, sstreamJson);
-  finally
-    sstreamJson.Free;
-    idHTTP.Free;
-  end;
-end;
-
 
 function TDesU.abraBoUpdateOLE(boAA: TAArray; abraBoName, abraBoId, abraBoChildName, abraBoChildId : string) : string;
 var
@@ -781,11 +667,11 @@ var
 begin
   boAA := TAArray.Create;
   boAA['VarSymbol'] := ''; //odstranit VS aby se Abra chytla pøi pøiøazení
-  sResponse := self.abraBoUpdate(boAA, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
+  sResponse := self.abraBoUpdate(boAA.AsJSon, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
 
   boAA := TAArray.Create;
   boAA['VarSymbol'] := VS;
-  sResponse := self.abraBoUpdate(boAA, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
+  sResponse := self.abraBoUpdate(boAA.AsJSon, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
 end;
 
 
@@ -795,6 +681,7 @@ var
   faktura : TDoklad;
   sResponse, text: string;
   preplatek : currency;
+  abraWebApiResponse : TDesResult;
 begin
   //pozor, funguje jen pro faktury, tedy PDocumentType "03"
 
@@ -821,7 +708,7 @@ begin
   boAA := TAArray.Create;
   boAA['PDocumentType'] := PDocumentType;
   boAA['PDocument_ID'] := PDocument_ID;
-  sResponse := self.abraBoUpdateWebApi(boAA, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
+  sResponse := self.abraBoUpdate(boAA.AsJSon, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
   Result := 'ok';
 
 
@@ -854,7 +741,7 @@ begin
       boAA['Amount'] := FieldByName('amount').AsCurrency - preplatek;
       text := FieldByName('text').AsString;
       boAA['Text'] := trim (copy(text, LastDelimiter('|', text) + 1, length(text)) ); //zkopíruju obsah za posledním svislítkem
-      sResponse := self.abraBoUpdateWebApi(boAA, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
+      sResponse := self.abraBoUpdate(boAA.AsJSon, 'bankstatement', Vypis_ID, 'row', RadekVypisu_ID);
 
       //vyrobím nový øádek výpisu s èástkou pøeplatku
       boAA := TAArray.Create;
@@ -868,7 +755,7 @@ begin
       boAA['credit'] := true;
       boAA['division_id'] := AbraEnt.getDivisionId;
       boAA['currency_id'] := AbraEnt.getCurrencyId;
-      sResponse := self.abraBoCreateRowWebApi(boAA, 'bankstatement', Vypis_ID);
+      abraWebApiResponse := self.abraBoCreateRow(boAA.AsJSon, 'bankstatement', Vypis_ID);
 
       Close;
     end;
@@ -877,62 +764,39 @@ begin
 
 end;
 
-function TDesU.getOleObjDataDisplay(abraOleObj_Data : variant) : ansistring;
-var
-  j : integer;
-begin
-  Result := '';
-  for j := 0 to abraOleObj_Data.Count - 1 do begin
-    Result := Result + inttostr(j) + 'r ' + abraOleObj_Data.Names[j] + ': ' + vartostr(abraOleObj_Data.Value[j]) + sLineBreak;
-  end;
-end;
-
 function TDesU.vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
 var
   i: integer;
-  boAA, boRowAA: TAArray;
-  newId, firmAbraCode: String;
+  firmAbraCode: String;
+  newBo: TNewAbraBo;
 begin
+  Result := '';
 
   firmAbraCode := self.getAbracodeByContractNumber(VS);
-  if firmAbraCode = '' then begin
-    Result := '';
-    Exit;
-  end;
+  if firmAbraCode = '' then Exit;
 
-  boAA := TAArray.Create;
-  boAA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO4').ID;
-  boAA['Period_ID'] := self.getAbraPeriodId(datum);
-  boAA['VatDate$DATE'] := datum;
-  boAA['DocDate$DATE'] := datum;
-  boAA['Firm_ID'] := self.getFirmIdByCode(firmAbraCode);
-  boAA['Description'] := 'Kredit Internet';
-  boAA['Varsymbol'] := VS;
-  boAA['PricesWithVat'] := true;
-
+  newBo := TNewAbraBo.Create('issuedinvoice');
+  newBo.addInvoiceParams(datum);
+  newBo.Item['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO4').ID;
+  newBo.Item['VatDate$DATE'] := datum;
+  newBo.Item['Firm_ID'] := self.getFirmIdByCode(firmAbraCode);
+  newBo.Item['Varsymbol'] := VS;
+  newBo.Item['Description'] := 'Kredit Internet';
 
   // 1. øádek
-  boRowAA := boAA.addRow();
-  boRowAA['Rowtype'] := 0;
-  boRowAA['Text'] := ' ';
-  boRowAA['Division_ID'] := AbraEnt.getDivisionId;
+  newBo.createNewInvoiceRow(0, ' ');
 
  //2. øádek
-  boRowAA := boAA.addRow();
-  boRowAA['Rowtype'] := 1;
-  boRowAA['Totalprice'] := castka;
-  boRowAA['Text'] := 'Kredit Internet';
-  boRowAA['Vatrate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
-  boRowAA['VatIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
-  boRowAA['Incometype_ID'] := AbraEnt.getIncomeType('Code=SL').ID; // služby
-  //boRowAA['BusOrder_Id'] := self.getAbraBusorderId('kredit Internet'); //taková zakázka (BusOrder) není
-  boRowAA['Division_ID'] := AbraEnt.getDivisionId;
+  newBo.createNewInvoiceRow(1, 'Kredit Internet');
+  newBo.rowItem['Totalprice'] := castka;
+  //newBo.rowItem['BusOrder_Id'] := AbraEnt.getBusOrder('Name=kredit VoIP').ID; // self.getAbraBusorderId('kredit VoIP'); // '6400000101' je 'kredit VoIP' v DB
 
-  //writeToFile(ExtractFilePath(ParamStr(0)) + '!json' + formatdatetime('hhnnss', Now) + '.txt', jsonBo.AsJSon(true));
 
   try begin
-    newId := DesU.abraBoCreate(boAA, 'issuedinvoice');
-    Result := newId;
+    newBo.writeToAbra;
+    if newBo.WriteResult.isOk then begin
+      Result := newBo.getCreatedBoItem('id');
+    end;
   end;
   except on E: exception do
     begin
@@ -940,6 +804,7 @@ begin
       Result := 'Chyba pøi vytváøení faktury';
     end;
   end;
+
 
 { 24.3.2023 bylo zakomentováno, tabulka DE$_EuroFree se nepoužívá od cca 02-2023 
 // 26.10.2019 datum vytvoøení faktury se uloží do tabulky DE$_EuroFree v databázi Abry
@@ -958,50 +823,38 @@ end;
 
 function TDesU.vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
 var
-  boAA, boRowAA: TAArray;
-  newId, firmAbraCode: string;
+  firmAbraCode: string;
+  newBo: TNewAbraBo;
 begin
+  Result := '';
 
   firmAbraCode := self.getAbracodeByContractNumber(VS);
-  if firmAbraCode = '' then begin
-    Result := '';
-    Exit;
-  end;
+  if firmAbraCode = '' then Exit;
 
 
-  boAA := TAArray.Create;
-  boAA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO2').ID;
-  boAA['Period_ID'] := self.getAbraPeriodId(datum);
-  boAA['VatDate$DATE'] := datum;
-  boAA['DocDate$DATE'] := datum;
-  boAA['Firm_ID'] := self.getFirmIdByCode(firmAbraCode);
-  boAA['Description'] := 'Kredit VoIP';
-  boAA['Varsymbol'] := VS;
-  boAA['PricesWithVat'] := true;
+  newBo := TNewAbraBo.Create('issuedinvoice');
+  newBo.addInvoiceParams(datum);
+  newBo.Item['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO2').ID;
+  newBo.Item['VatDate$DATE'] := datum;
+  newBo.Item['Firm_ID'] := self.getFirmIdByCode(firmAbraCode);
+  newBo.Item['Varsymbol'] := VS;
+  newBo.Item['Description'] := 'Kredit VoIP';
 
 
   // 1. øádek
-  boRowAA := boAA.addRow();
-  boRowAA['Rowtype'] := 0;
-  boRowAA['Text'] := ' ';
-  boRowAA['Division_Id'] := AbraEnt.getDivisionId;;
+  newBo.createNewInvoiceRow(0, ' ');
 
  //2. øádek
-  boRowAA := boAA.addRow();
-  boRowAA['Rowtype'] := 1;
-  boRowAA['Totalprice'] := castka;
-  boRowAA['Text'] := 'Kredit VoIP';
-  boRowAA['Vatrate_ID'] := AbraEnt.getVatIndex('Code=Výst21').VATRate_ID;
-  boRowAA['VatIndex_ID'] := AbraEnt.getVatIndex('Code=Výst21').ID;
-  boRowAA['Incometype_Id'] := AbraEnt.getIncomeType('Code=SL').ID; // služby
-  boRowAA['BusOrder_Id'] := AbraEnt.getBusOrder('Name=kredit VoIP').ID; // self.getAbraBusorderId('kredit VoIP'); // '6400000101' je 'kredit VoIP' v DB
-  boRowAA['Division_Id'] := AbraEnt.getDivisionId;
+  newBo.createNewInvoiceRow(1, 'Kredit VoIP');
+  newBo.rowItem['Totalprice'] := castka;
+  newBo.rowItem['BusOrder_Id'] := AbraEnt.getBusOrder('Name=kredit VoIP').ID; // self.getAbraBusorderId('kredit VoIP'); // '6400000101' je 'kredit VoIP' v DB
 
-  //writeToFile(ExtractFilePath(ParamStr(0)) + '!json' + formatdatetime('hhnnss', Now) + '.txt', jsonBo.AsJSon(true));
 
   try begin
-    newId := DesU.abraBoCreate(boAA, 'issuedinvoice');
-    Result := newId;
+    newBo.writeToAbra;
+    if newBo.WriteResult.isOk then begin
+      Result := newBo.getCreatedBoItem('id');
+    end;
   end;
   except on E: exception do
     begin
@@ -1053,21 +906,6 @@ begin
   end;
 end;
 
-{ takhle bylo napøímo
-function TDesU.getAbraVatrateId(code : string) : string;
-begin
-  with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT VatRate_Id FROM VatIndexes'
-              + ' WHERE Hidden = ''N'' AND Code = ''' + code + '''';
-    Open;
-    if not Eof then begin
-      Result := FieldByName('VatRate_Id').AsString;
-    end;
-    Close;
-  end;
-end;
-}
-
 function TDesU.getAbraVatrateId(code : string) : string;
 var
     abraVatIndex : TAbraVatIndex;
@@ -1076,20 +914,6 @@ begin
   Result := abraVatIndex.VATRate_Id;
 end;
 
-{ takhle bylo napøímo
-function TDesU.getAbraVatindexId(code : string) : string;
-begin
-  with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id FROM VatIndexes'
-              + ' WHERE Hidden = ''N'' AND Code = ''' + code  + '''';
-    Open;
-    if not Eof then begin
-      Result := FieldByName('Id').AsString;
-    end;
-    Close;
-  end;
-end;
-}
 
 function TDesU.getAbraVatindexId(code : string) : string;
 var
@@ -1099,33 +923,6 @@ begin
   Result := abraVatIndex.id;
 end;
 
-{
-function TDesU.getAbraIncometypeId(code : string) : string;
-begin
-  with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id FROM IncomeTypes'
-              + ' WHERE Code = ''' + code + '''';
-    Open;
-    if not Eof then begin
-      Result := FieldByName('Id').AsString;
-    end;
-    Close;
-  end;
-end;
-
-function TDesU.getAbraBusorderId(busOrderName : string) : string;
-begin
-  with DesU.qrAbraOC do begin
-    SQL.Text := 'SELECT Id FROM BusOrders'
-              + ' WHERE Name = ''' + busOrderName + '''';
-    Open;
-    if not Eof then begin
-      Result := FieldByName('Id').AsString;
-    end;
-    Close;
-  end;
-end;
-}
 
 
 function TDesU.getAbracodeByVs(vs : string) : string;
@@ -1154,6 +951,7 @@ begin
     Close;
   end;
 end;
+
 
 function TDesU.getFirmIdByCode(code : string) : string;
 begin
@@ -1283,18 +1081,6 @@ begin
   end;
 end;
 
-function TDesU.getIniValue(iniGroup, iniItem : string) : string;
-begin
-  if FileExists(PROGRAM_PATH + 'abraDesProgramy.ini') then
-    adpIniFile := TIniFile.Create(PROGRAM_PATH + 'abraDesProgramy.ini')
-  else
-    adpIniFile := TIniFile.Create(PROGRAM_PATH + '..\DE$_Common\abraDesProgramy.ini');
-  try
-    Result :=  adpIniFile.ReadString(iniGroup, iniItem, '');
-  finally
-    adpIniFile.Free;
-  end;
-end;
 
 
 { *** DB Zakos (Aplikace) manipulating functions *** }
@@ -1304,7 +1090,7 @@ begin
   with DesU.qrZakosOC do begin
     SQL.Text := 'SELECT co.id FROM contracts co  '
               + ' WHERE co.number = ''' + cnumber + ''''
-             // + ' AND co.credit = 1' kredit
+             // + ' AND co.credit = 1' kredit // není nutné hlídat
               + ' AND co.tariff_id = 2'; //je to kreditni Voip
     Open;
     if not Eof then
@@ -1493,7 +1279,6 @@ begin
     //    "status": "success",
     //    "data": {"message-id": "c3d8ebd4-879e-412e-8e16-3d4a2335d967"  }
     //  }
-    //  }
 
       end;
     except
@@ -1541,7 +1326,7 @@ begin
   idHTTP.Request.ContentType := 'text/plain';
   idHTTP.Request.CharSet := 'ASCII';
 
-  sHTTPtext := SmsUrl + '?login=' + SmsUN + #38 + 'password=' + SmsPW + '&action=send_sms&delivery_report=0&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
+  sHTTPtext := SmsUrl + '?login=' + SmsUN + '&password=' + SmsPW + '&action=send_sms&delivery_report=0&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
 
   try
     try
@@ -1575,6 +1360,7 @@ begin
   end;
 
 end;
+
 
 
 {***************************************************************************}
