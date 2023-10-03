@@ -62,19 +62,4 @@ object Form1: TForm1
     TabOrder = 4
     OnClick = Button2Click
   end
-  object FDConnection1: TFDConnection
-    Params.Strings = (
-      'Database=dvdrental'
-      'User_Name=postgres'
-      'Password=masterkey'
-      'Server=127.0.0.1'
-      'DriverID=PG')
-    Left = 32
-    Top = 192
-  end
-  object FDQuery1: TFDQuery
-    Connection = FDConnection1
-    Left = 24
-    Top = 296
-  end
 end

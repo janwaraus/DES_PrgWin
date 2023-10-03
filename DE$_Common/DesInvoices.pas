@@ -46,6 +46,11 @@ type
     reportAry: TAArray;
 
     constructor create(DocumentID : string; DocumentType : string = '03');
+    function getPdfFileName : string;
+    function getExportSubDir : string;
+    function getFullPdfFileName : string;
+
+
     function createPdfByFr3(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
     function printByFr3(Fr3FileName : string) : TDesResult;
   end;
@@ -145,6 +150,24 @@ begin
   reportAry := TAArray.create;
 end;
 
+
+function TDesInvoice.getPdfFileName : string;
+begin
+  if self.DocQueueCode = 'FO1' then //FO1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
+    Result := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]) // pro test 'new-%s-%5.5d.pdf'
+  else
+    Result := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
+end;
+
+function TDesInvoice.getExportSubDir : string;
+begin
+  Result := Format('%s\%s\', [self.Year, FormatDateTime('mm', self.DocDate)]);
+end;
+
+function TDesInvoice.getFullPdfFileName : string;
+begin
+  Result := DesU.PDF_PATH + self.getExportSubDir + self.getPdfFileName;
+end;
 
 function TDesInvoice.prepareFastReportData : string;
 var
@@ -341,34 +364,17 @@ end;
 
 
 function TDesInvoice.createPdfByFr3(Fr3FileName : string; OverwriteExistingPdf : boolean) : TDesResult;
-var
-    PdfFileName,
-    ExportDirName,
-    FullPdfFileName : string;
-    FVysledek : TDesResult;
 begin
   DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
-
-  if self.DocQueueCode = 'FO1' then //FO1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
-    PdfFileName := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]) // pro test 'new-%s-%5.5d.pdf'
-  else
-    PdfFileName := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
-
-  ExportDirName := Format('%s%s\%s\', [DesU.PDF_PATH, self.Year, FormatDateTime('mm', self.DocDate)]);
-  DesFastReport.setExportDirName(ExportDirName);
-  FullPdfFileName := ExportDirName + PdfFileName;
+  DesFastReport.setExportDirName(DesU.PDF_PATH + self.getExportSubDir);
 
   self.prepareFastReportData;
   DesFastReport.prepareInvoiceDataSets(self.ID, self.DocumentType);
-  Result := DesFastReport.createPdf(FullPdfFileName, OverwriteExistingPdf);
+
+  Result := DesFastReport.createPdf(self.getFullPdfFileName, OverwriteExistingPdf);
 end;
 
 function TDesInvoice.printByFr3(Fr3FileName : string) : TDesResult;
-var
-    PdfFileName,
-    ExportDirName,
-    FullPdfFileName : string;
-    FVysledek : TDesResult;
 begin
   DesFastReport.init('invoice', Fr3FileName); // nastavení typu reportu a fr3 souboru
 
@@ -378,7 +384,6 @@ begin
   Result := DesFastReport.print();
   if Result.Code = 'ok' then
     Result.Messg := Format('Doklad %s byl odeslán na tiskárnu.', [self.CisloDokladu]);
-
 end;
 
 

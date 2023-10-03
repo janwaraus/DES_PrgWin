@@ -138,7 +138,7 @@ begin
       Next;
     end;  //  while not qrAbra.EOF
 
-
+    {
     abraWebApiResponse := DesU.abraBoCreateWebApi(NewInvoice.AA, 'issuedinvoice');
     if abraWebApiResponse.isOk then begin
       abraResponseSO := SO(abraWebApiResponse.Messg);
@@ -174,7 +174,7 @@ begin
          + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
          mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
     end;
-
+    }
     DesU.qrAbra.Close;
     AutoSize := True;
     // Colwidths[8] := 0;

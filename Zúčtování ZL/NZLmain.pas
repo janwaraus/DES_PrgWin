@@ -155,27 +155,36 @@ begin
   acbRada.ItemIndex := 0;
   fmMain.Zprava('OK');
   aseRokChange(nil);
-  arbVytvoreniClick(nil);
+  //arbVytvoreniClick(nil); // produkcne
+  arbPrevodClick(nil); // pro test
 
 // fajfky v asgMain
   with asgMain do begin
     CheckFalse := '0';
     CheckTrue := '1';
     ColWidths[0] := 28;
-    ColWidths[1] := 64;
-    ColWidths[2] := 74;
+    ColWidths[1] := 90;
+    ColWidths[2] := 28;
     ColWidths[3] := 64;
-    ColWidths[4] := 64;
+    ColWidths[4] := 74;
     ColWidths[5] := 64;
-    ColWidths[6] := 170;
+    ColWidths[6] := 64;
     ColWidths[7] := 64;
-    //ColWidths[8] := 0;
-    //ColWidths[9] := 0;
-    //ColWidths[10] := 0;
+    ColWidths[8] := 170;
+    ColWidths[9] := 64;
+    ColWidths[10] := 64;
+    //ColWidths[11] := 0;
+    //ColWidths[12] := 0;
+    //ColWidths[13] := 0;
   end;
 // pøedvyplnìní formuláøe
   aseRok.Value := YearOf(Date);                            // aktuální rok
-  deDatumDokladu.Date := Trunc(Date);
+  //deDatumDokladu.Date := Date;
+  //deDatumDokladu.Date := ISO8601ToDate('2023-04-15'); //9.7.2023
+  deDatumDokladu.Date := StrToDateTime('9.7.2023'); //9.7.2023  // 45116
+  deDatumDokladu.Date := 45015;
+  //fmMain.Zprava(FloatToStr(deDatumDokladu.Date));
+  //fmMain.Zprava(TimeToStr(deDatumDokladu.Date));
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -334,7 +343,7 @@ end;
 
 procedure TfmMain.asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer; var CanEdit: Boolean);
 begin
-  CanEdit := (ARow > 0);   // fajfky
+  // CanEdit := (ARow > 0);   // fajfky
 end;
 
 // ------------------------------------------------------------------------------------------------

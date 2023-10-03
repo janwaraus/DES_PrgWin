@@ -19,7 +19,7 @@ implementation
 
 {$R *.dfm}
 
-uses AdvGrid, DesUtils, AbraEntities;
+uses AdvGrid, DesUtils, AbraEntities, DesInvoices;
 
 
 
@@ -28,7 +28,12 @@ uses AdvGrid, DesUtils, AbraEntities;
 procedure TdmCommon.Plneni_asgMain;
 var
   Radek: integer;
+  II_ID,
+  IDI_ID,
   SQLStr: string;
+  Faktura : TDesInvoice;
+  Zalohac : TDesInvoice;
+
 begin
   with fmMain do try
     asgMain.Visible := True;
@@ -85,6 +90,7 @@ begin
           RowCount := Radek + 1;
           AddCheckBox(0, Radek, True, True);
           Ints[0, Radek] := 1;                                                   // fajfka
+		      // ReadOnly[0, Radek] := True; // test disabluje checkbox
           Cells[1, Radek] := FieldByName('Doklad').AsString;
           Floats[2, Radek] := FieldByName('LocalAmount').AsFloat;
           Floats[3, Radek] := FieldByName('LocalPaidAmount').AsFloat;
@@ -115,21 +121,30 @@ begin
         fmMain.Zprava('Naètení vytvoøených faktur.');
         Close;
         Desu.dbAbra.Reconnect;
+        {
         SQLStr := 'SELECT DISTINCT DQ.Code ||''-''|| IDI.Ordnumber ||''/''|| P1.Code AS ZL,'
         + ' IDI.LocalAmount, IDI.LocalPaidAmount, IDI.LocalUsedAmount, F.Name, F.Code AS Abrakod, IDI.Id AS IDId, II.Id AS IId, F.Id AS FId,'
         + ' ''FO3-''|| II.Ordnumber ||''/''|| P2.Code AS FO'
         + ' FROM IssuedDInvoices IDI, IssuedInvoices II, DocQueues DQ, Periods P1, Periods P2, Firms F, IssuedDepositUsages IDU'
         + ' WHERE II.DocDate$Date = ' + FloatToStr(Floor(deDatumDokladu.Date))
         + ' AND II.DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO3').ID + Ap
-//        + ' AND EXISTS (SELECT DepositDocument_ID FROM IssuedDepositUsages WHERE PDocument_ID = II.Id)'
         + ' AND II.Period_Id = P2.Id'
-        + ' AND II.Id = IDU.PDocument_ID'                  // 31.8.2021
-//        + ' AND IDI.Id = (SELECT DepositDocument_ID FROM IssuedDepositUsages WHERE PDocument_ID = II.Id)'
-        + ' AND IDI.Id = IDU.DepositDocument_ID'           // 31.8.2021
+        + ' AND II.Id = IDU.PDocument_ID'
+        + ' AND IDI.Id = IDU.DepositDocument_ID'
         + ' AND IDI.Firm_Id = F.Id'
         + ' AND IDI.DocQueue_Id = DQ.Id'
         + ' AND IDI.Period_Id = P1.Id'
         + ' ORDER BY II.OrdNumber';
+        }
+
+        SQLStr := 'SELECT II.ID as II_ID, IDI.ID AS IDI_ID '
+        + ' FROM IssuedInvoices II '
+        + ' LEFT JOIN IssuedDepositUsages IDU ON IDU.PDocument_ID = II.ID'
+        + ' LEFT JOIN IssuedDInvoices IDI ON IDI.ID = IDU.DepositDocument_ID'
+        + ' WHERE II.DocDate$Date = ' + FloatToStr(Floor(deDatumDokladu.Date))
+        //+ ' AND II.DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO3').ID + Ap
+        + ' ORDER BY II.OrdNumber';
+
         SQL.Text := SQLStr;
         Open;
         Radek := 0;
@@ -149,24 +164,42 @@ begin
           Inc(Radek);
           RowCount := Radek + 1;
           AddCheckBox(0, Radek, True, True);
-          Cells[1, Radek] := FieldByName('ZL').AsString;
-          Floats[2, Radek] := FieldByName('LocalAmount').AsFloat;
-          Floats[3, Radek] := FieldByName('LocalPaidAmount').AsFloat;
-          Floats[5, Radek] := FieldByName('LocalUsedAmount').AsFloat;
-          Cells[6, Radek] := FieldByName('Name').AsString;
-          Cells[7, Radek] := FieldByName('FO').AsString;
-          Cells[8, Radek] := FieldByName('IDId').AsString;
-          Cells[9, Radek] := FieldByName('FId').AsString;
-          Cells[10, Radek] := FieldByName('IId').AsString;
-          if arbMail.Checked then with DesU.qrZakos do begin
-            Cells[6, 0] := 'mail';
-            SQLStr := 'SELECT DISTINCT Postal_mail AS Mail FROM customers'
-            + ' WHERE Abra_code = ' + Ap + DesU.qrAbra.FieldByName('Abrakod').AsString + Ap;
-            SQL.Text := SQLStr;
-            Open;
-            Cells[6, Radek] := FieldByName('Mail').AsString;
-            Close;
-          end;  //  with qrMain
+
+          II_ID := FieldByName('II_ID').AsString;
+          IDI_ID := FieldByName('IDI_ID').AsString;
+
+          Faktura := TDesInvoice.create(II_ID);
+          if FileExists(Faktura.getFullPdfFileName) then Ints[0, Radek] := 0;
+
+          Cells[1, Radek] := Faktura.CisloDokladu;
+          Cells[2, Radek] := Faktura.getExportSubDir + Faktura.getPdfFileName;
+
+          //*****
+
+          if IDI_ID <> '' then begin
+            Zalohac := TDesInvoice.create(IDI_ID, '10');
+
+            //Cells[1, Radek] := Zalohac.CisloDokladu;
+            //Floats[2, Radek] := Zalohac.Castka;
+            //Floats[3, Radek] := Zalohac.CastkaZaplaceno;
+          end;
+
+          Floats[5, Radek] := Faktura.Castka;
+          Cells[6, Radek] := Faktura.Firm.Name;
+          Cells[7, Radek] := Faktura.CisloDokladu;;
+          Cells[8, Radek] := IDI_ID;
+          //Cells[9, Radek] := FieldByName('FId').AsString;
+          Cells[10, Radek] := II_ID;
+          //if arbMail.Checked then begin
+            Cells[11, 0] := 'mail';
+            SQLStr := 'SELECT postal_mail FROM customers cu, contracts co'
+              + ' WHERE cu.Id = co.Customer_Id'
+              + ' AND co.number = ' + Ap + Faktura.VS + Ap;
+            DesU.qrZakos.SQL.Text := SQLStr;
+            DesU.qrZakos.Open;
+            Cells[11, Radek] := DesU.qrZakos.FieldByName('postal_mail').AsString;
+            DesU.qrZakos.Close;
+          //end;
           Application.ProcessMessages;
           Next;
         end;  // while not EOF

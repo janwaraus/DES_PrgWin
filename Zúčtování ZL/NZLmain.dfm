@@ -2,8 +2,8 @@ object fmMain: TfmMain
   Left = 477
   Top = 140
   Caption = 'Zaplacen'#233' a nez'#250#269'tovan'#233' z'#225'lohov'#233' listy za p'#345'ipojen'#237' k internetu'
-  ClientHeight = 281
-  ClientWidth = 825
+  ClientHeight = 477
+  ClientWidth = 1356
   Color = clBtnFace
   Constraints.MinHeight = 320
   Constraints.MinWidth = 680
@@ -21,7 +21,7 @@ object fmMain: TfmMain
   object apnTop: TAdvPanel
     Left = 0
     Top = 0
-    Width = 825
+    Width = 1356
     Height = 132
     Align = alTop
     Color = 16772326
@@ -51,14 +51,15 @@ object fmMain: TfmMain
     StatusBar.Font.Name = 'Tahoma'
     StatusBar.Font.Style = []
     Text = ''
+    ExplicitWidth = 1037
     DesignSize = (
-      825
+      1356
       132)
     FullHeight = 200
     object apbProgress: TAdvProgressBar
       Left = 186
       Top = 103
-      Width = 630
+      Width = 1161
       Height = 22
       Anchors = [akLeft, akTop, akRight]
       BackgroundColor = 16772326
@@ -93,7 +94,7 @@ object fmMain: TfmMain
     object apnMail: TAdvPanel
       Left = 168
       Top = 95
-      Width = 664
+      Width = 1195
       Height = 37
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -117,14 +118,15 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 876
       DesignSize = (
-        664
+        1195
         37)
       FullHeight = 95
       object fePriloha: TAdvFileNameEdit
         Left = 211
         Top = 8
-        Width = 438
+        Width = 969
         Height = 21
         EmptyTextStyle = []
         LabelCaption = 'p'#345#237'loha'
@@ -170,13 +172,14 @@ object fmMain: TfmMain
         FilterIndex = 0
         DialogOptions = []
         DialogKind = fdOpen
+        ExplicitWidth = 650
       end
     end
     object apnPrevod: TAdvPanel
-      Left = 168
+      Left = 175
       Top = 96
-      Width = 664
-      Height = 37
+      Width = 1188
+      Height = 30
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
       TabOrder = 1
@@ -199,9 +202,10 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 941
       DesignSize = (
-        664
-        37)
+        1188
+        30)
       FullHeight = 95
       object cbNeprepisovat: TCheckBox
         Left = 67
@@ -215,7 +219,7 @@ object fmMain: TfmMain
         TabOrder = 0
       end
       object btOdeslat: TButton
-        Left = 578
+        Left = 1102
         Top = 8
         Width = 71
         Height = 21
@@ -230,9 +234,10 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btOdeslatClick
+        ExplicitLeft = 790
       end
       object btSablona: TButton
-        Left = 469
+        Left = 993
         Top = 8
         Width = 71
         Height = 21
@@ -247,12 +252,13 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btSablonaClick
+        ExplicitLeft = 681
       end
     end
     object apnTisk: TAdvPanel
       Left = 168
       Top = 95
-      Width = 664
+      Width = 1195
       Height = 37
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
@@ -276,13 +282,14 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitWidth = 876
       FullHeight = 95
     end
     object apnMain: TAdvPanel
       Left = 168
       Top = 0
-      Width = 664
-      Height = 96
+      Width = 1195
+      Height = 81
       Anchors = [akLeft, akTop, akRight]
       ParentColor = True
       TabOrder = 0
@@ -306,8 +313,8 @@ object fmMain: TfmMain
       StatusBar.Font.Style = []
       Text = ''
       DesignSize = (
-        664
-        96)
+        1195
+        81)
       FullHeight = 200
       object aseRok: TAdvSpinEdit
         Left = 84
@@ -344,7 +351,7 @@ object fmMain: TfmMain
         OnChange = aseRokChange
       end
       object btVytvorit: TButton
-        Left = 578
+        Left = 1109
         Top = 20
         Width = 71
         Height = 21
@@ -358,9 +365,10 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btVytvoritClick
+        ExplicitLeft = 790
       end
       object btKonec: TButton
-        Left = 578
+        Left = 1109
         Top = 54
         Width = 71
         Height = 21
@@ -374,6 +382,7 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btKonecClick
+        ExplicitLeft = 790
       end
       object deDatumDokladu: TAdvDateTimePicker
         Left = 274
@@ -632,21 +641,23 @@ object fmMain: TfmMain
   object lbxLog: TListBox
     Left = 0
     Top = 132
-    Width = 825
-    Height = 149
+    Width = 1356
+    Height = 345
     Align = alClient
     ItemHeight = 13
     ScrollWidth = 1600
     TabOrder = 0
     OnDblClick = lbxLogDblClick
+    ExplicitWidth = 1037
+    ExplicitHeight = 159
   end
   object asgMain: TAdvStringGrid
     Left = 0
     Top = 132
-    Width = 825
-    Height = 149
+    Width = 1356
+    Height = 345
     Align = alClient
-    ColCount = 11
+    ColCount = 14
     DefaultRowHeight = 18
     DrawingStyle = gdsClassic
     FixedCols = 0
@@ -672,14 +683,17 @@ object fmMain: TfmMain
     ActiveCellFont.Style = [fsBold]
     ActiveCellColor = 15387318
     ColumnHeaders.Strings = (
-      'tisk'
-      'doklad'
+      'p'#345'evod'
+      'soubor PDF'
+      'mail'
+      'doklad ZL'
       'vystaveno'
       'zaplaceno'
       'dne'
       'z'#250#269'tov'#225'no'
       'jm'#233'no'
       'faktura'
+      #269#225'stka'
       'IDI.Id'
       'F.Id'
       'II.Id')
@@ -780,13 +794,16 @@ object fmMain: TfmMain
     Version = '8.7.0.0'
     ColWidths = (
       28
+      90
+      20
       64
-      73
-      64
-      64
+      74
       65
-      180
-      78
+      64
+      64
+      170
+      64
+      64
       64
       64
       64)

@@ -53,7 +53,7 @@ type
     function vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
     function vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
     function zrusPenizeNaCeste(VS : string) : string;
-    function ulozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+    function ulozKomunikaci(Typ, Customer_id, Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
     procedure syncAbraPdfToRemoteServer(year, month : integer);
 
@@ -789,7 +789,7 @@ begin
  //2. øádek
   newBo.createNewInvoiceRow(1, 'Kredit Internet');
   newBo.rowItem['Totalprice'] := castka;
-  //newBo.rowItem['BusOrder_Id'] := AbraEnt.getBusOrder('Name=kredit VoIP').ID; // self.getAbraBusorderId('kredit VoIP'); // '6400000101' je 'kredit VoIP' v DB
+  //newBo.rowItem['BusOrder_Id'] := AbraEnt.getBusOrder('Name=kredit Internet').ID; // Busorder "kredit Internet" neexistuje
 
 
   try begin
@@ -1132,39 +1132,35 @@ begin
 end;
 
 
-function TDesU.ulozKomunikaci(Typ, Customer_id, Zprava: string): string;   // typ 2 je mail, typ 23 SMS
+function TDesU.ulozKomunikaci(Typ, Customer_id, Zprava: string) : TDesResult;   // typ 2 je mail, typ 23 SMS
 // ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
 var
   CommId: integer;
   SQLStr: string;
 begin
-  Result := '';
   with DesU.qrZakosOC do try
     Close;
-    SQL.Text := 'SELECT MAX(Id) FROM communications';
-    Open;
-    CommId := Fields[0].AsInteger + 1;
-    Close;
     SQLStr := 'INSERT INTO communications ('
-    + ' Id,'
-    + ' Customer_id,'
-    + ' User_id,'
-    + ' Communication_type_id,'
-    + ' Content,'
-    + ' Created_at,'
-    + ' Updated_at) VALUES ('
-    + IntToStr(CommId) + ', '
+    + ' customer_id,'
+    + ' user_id,'
+    + ' communication_type_id,'
+    + ' content,'
+    + ' created_at,'
+    + ' updated_at) VALUES ('
     + Customer_id + ', '
     + '1, '                                        // admin
     + Typ + ','
-    + Ap + Zprava + ApC
+    + QuotedStr(Zprava) + ','
     + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
     + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;
     SQL.Text := SQLStr;
     ExecSQL;
+    Close;
+    Result := TDesResult.create('ok', '');
   except on E: exception do
-    Result := E.Message;
+    Result := TDesResult.create('err', E.Message);
   end;
+
 end;
 
 
