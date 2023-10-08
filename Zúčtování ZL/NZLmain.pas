@@ -23,53 +23,62 @@ type
     apnVyberCinnosti: TAdvPanel;
     glbVytvoreni: TGradientLabel;
     glbPrevod: TGradientLabel;
-    glbTisk: TGradientLabel;
-    glbMail: TGradientLabel;
     arbVytvoreni: TAdvOfficeRadioButton;
     arbPrevod: TAdvOfficeRadioButton;
-    arbTisk: TAdvOfficeRadioButton;
-    arbMail: TAdvOfficeRadioButton;
     apbProgress: TAdvProgressBar;
-    apnMain: TAdvPanel;
+    apnVytvoreni: TAdvPanel;
     acbRada: TAdvComboBox;
     aseRok: TAdvSpinEdit;
     deDatumDokladu: TAdvDateTimePicker;
     cbCast: TCheckBox;
-    btVytvorit: TButton;
-    btKonec: TButton;
+    btVytvoritFO: TButton;
+    btNacistZL: TButton;
     apnPrevod: TAdvPanel;
     cbNeprepisovat: TCheckBox;
-    btOdeslat: TButton;
+    btOdeslatNaServer: TButton;
     btSablona: TButton;
-    apnTisk: TAdvPanel;
-    apnMail: TAdvPanel;
-    fePriloha: TAdvFileNameEdit;
     lbxLog: TListBox;
     asgMain: TAdvStringGrid;
     lbPozor1: TLabel;
+    deDatumFOxOd: TAdvDateTimePicker;
+    deDatumFOxDo: TAdvDateTimePicker;
+    chbFO3: TCheckBox;
+    chbFO2: TCheckBox;
+    chbFO4: TCheckBox;
+    btKonec: TButton;
+    btNacistFOx: TButton;
+    btVytvoritPDF: TButton;
+    apnVytvoritPDF: TAdvPanel;
+    apnMailTisk: TAdvPanel;
+    btOdeslatMailem: TButton;
+    btTisk: TButton;
+    cbJenNezpracovaneFOx: TCheckBox;
+    apnVytvorFOx: TAdvPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure glbVytvoreniClick(Sender: TObject);
     procedure glbPrevodClick(Sender: TObject);
-    procedure glbTiskClick(Sender: TObject);
-    procedure glbMailClick(Sender: TObject);
     procedure arbVytvoreniClick(Sender: TObject);
     procedure arbPrevodClick(Sender: TObject);
-    procedure arbTiskClick(Sender: TObject);
-    procedure arbMailClick(Sender: TObject);
-    procedure aseRokChange(Sender: TObject);
     procedure asgMainCanEditCell(Sender: TObject; ARow, ACol: Integer; var CanEdit: Boolean);
     procedure asgMainClickCell(Sender: TObject; ARow, ACol: Integer);
     procedure asgMainCanSort(Sender: TObject; ACol: Integer; var DoSort: Boolean);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
     procedure asgMainDblClick(Sender: TObject);
     procedure lbxLogDblClick(Sender: TObject);
-    procedure btVytvoritClick(Sender: TObject);
-    procedure btOdeslatClick(Sender: TObject);
+    procedure btVytvoritFOClick(Sender: TObject);
+    procedure btOdeslatNaServerClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
+    procedure btNacistZLClick(Sender: TObject);
+    procedure resetAsgMain;
     procedure btKonecClick(Sender: TObject);
-    procedure deDatumDokladuChange(Sender: TObject);
+    procedure uiActionsBeforeProcessing;
+    procedure uiActionsAfterProcessing;
+    procedure btNacistFOxClick(Sender: TObject);
+    procedure btVytvoritPDFClick(Sender: TObject);
+    procedure btOdeslatMailemClick(Sender: TObject);
+    procedure btTiskClick(Sender: TObject);
 
 
   private
@@ -154,9 +163,9 @@ begin
   end;
   acbRada.ItemIndex := 0;
   fmMain.Zprava('OK');
-  aseRokChange(nil);
+  resetAsgMain;
   //arbVytvoreniClick(nil); // produkcne
-  arbPrevodClick(nil); // pro test
+  //arbPrevodClick(nil); // pro test
 
 // fajfky v asgMain
   with asgMain do begin
@@ -173,9 +182,10 @@ begin
     ColWidths[8] := 170;
     ColWidths[9] := 64;
     ColWidths[10] := 64;
-    //ColWidths[11] := 0;
+    ColWidths[11] := 64;
     //ColWidths[12] := 0;
     //ColWidths[13] := 0;
+    //ColWidths[14] := 0;
   end;
 // pøedvyplnìní formuláøe
   aseRok.Value := YearOf(Date);                            // aktuální rok
@@ -204,20 +214,14 @@ begin
   glbVytvoreni.ColorTo := clMenu;
   glbPrevod.Color := clSilver;
   glbPrevod.ColorTo := clGray;
+  apnVytvoreni.Visible := True;
   apnPrevod.Visible := False;
-  glbTisk.Color := clSilver;
-  glbTisk.ColorTo := clGray;
-  apnTisk.Visible := False;
-  glbMail.Color := clSilver;
-  glbMail.ColorTo := clGray;
-  apnMail.Visible := False;
+
   apbProgress.Visible := False;
   lbPozor1.Visible := True;
-  acbRada.Visible := True;
-  aseRok.Visible := True;
-  cbCast.Visible := True;
+
   lbxLog.Visible := True;
-  aseRokChange(Self);
+  resetAsgMain;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -230,60 +234,10 @@ begin
   apnPrevod.Visible := True;
   glbVytvoreni.Color := clSilver;
   glbVytvoreni.ColorTo := clGray;
-  glbTisk.Color := clSilver;
-  glbTisk.ColorTo := clGray;
-  apnTisk.Visible := False;
-  glbMail.Color := clSilver;
-  glbMail.ColorTo := clGray;
-  apnMail.Visible := False;
-  acbRada.Visible := False;
-  aseRok.Visible := False;
-  cbCast.Visible := False;
-  aseRokChange(Self);
-end;
+  apnVytvoreni.Visible := False;
+  apnPrevod.Visible := True;
 
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.arbTiskClick(Sender: TObject);
-begin
-  asgMain.Cells[0, 0] := 'tisk';
-  glbTisk.Color := clWhite;
-  glbTisk.ColorTo := clMenu;
-  apnTisk.Visible := True;
-  glbMail.Color := clSilver;
-  glbMail.ColorTo := clGray;
-  apnMail.Visible := False;
-  glbVytvoreni.Color := clSilver;
-  glbVytvoreni.ColorTo := clGray;
-  glbPrevod.Color := clSilver;
-  glbPrevod.ColorTo := clGray;
-  apnPrevod.Visible := False;
-  acbRada.Visible := False;
-  aseRok.Visible := False;
-  cbCast.Visible := False;
-  aseRokChange(Self);
-end;
-
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.arbMailClick(Sender: TObject);
-begin
-  asgMain.Cells[0, 0] := 'mail';
-  glbMail.Color := clWhite;
-  glbMail.ColorTo := clMenu;
-  apnMail.Visible := True;
-  glbVytvoreni.Color := clSilver;
-  glbVytvoreni.ColorTo := clGray;
-  glbPrevod.Color := clSilver;
-  glbPrevod.ColorTo := clGray;
-  apnPrevod.Visible := False;
-  glbTisk.Color := clSilver;
-  glbTisk.ColorTo := clGray;
-  apnTisk.Visible := False;
-  acbRada.Visible := False;
-  aseRok.Visible := False;
-  cbCast.Visible := False;
-  aseRokChange(Self);
+  resetAsgMain;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -302,32 +256,15 @@ begin
   arbPrevodClick(nil);
 end;
 
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.glbTiskClick(Sender: TObject);
-begin
-  arbTisk.Checked := True;
-  arbTiskClick(nil);
-end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.glbMailClick(Sender: TObject);
-begin
-  arbMail.Checked := True;
-  arbMailClick(nil);
-end;
-
-// ------------------------------------------------------------------------------------------------
-
-procedure TfmMain.aseRokChange(Sender: TObject);
-// pøi zmìnì roku nastaví nové deDatumDokladu
+procedure TfmMain.resetAsgMain;
 begin
   asgMain.ClearNormalCells;
   asgMain.RowCount := 2;
-  btVytvorit.Caption := '&Naèíst';
   asgMain.Visible := True;
-  lbxLog.Visible := False;
+  //lbxLog.Visible := False;
 end;
 
 
@@ -353,7 +290,7 @@ procedure TfmMain.asgMainClickCell(Sender: TObject; ARow, ACol: Integer);
 var
   Radek: integer;
 begin
-  with asgMain do if (ARow = 0) and (ACol = 0) then
+  with asgMain do if (ARow = 0) and ((ACol in [0, 2])) then
     if Ints[ACol, 1] = 1 then for Radek := 1 to RowCount-1 do Ints[ACol, Radek] := 0
     else if Ints[ACol, 1] = 0 then for Radek := 1 to RowCount-1 do Ints[ACol, Radek] := 1;
 end;
@@ -363,7 +300,8 @@ end;
 procedure TfmMain.asgMainCanSort(Sender: TObject; ACol: Integer; var DoSort: Boolean);
 // klik v prvním øádku podle sloupce buï oznaèuje/odznaèuje všchny checkboxy, nebo spouští tøídìní,
 begin
-  DoSort := ACol > 0;
+  DoSort := True;
+  if (ACol in [0, 2]) then DoSort := False;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -371,8 +309,8 @@ end;
 procedure TfmMain.asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
 begin
   HAlign := taLeftJustify;
-  if (ACol = 0) or (ARow = 0) then HAlign := Classes.taCenter
-  else if (ACol in [2..5]) and (ARow > 0) then HAlign := taRightJustify;
+  if (ACol = 0) or (ACol = 2) or (ARow = 0) then HAlign := Classes.taCenter
+  else if (ACol in [4..7]) and (ARow > 0) then HAlign := taRightJustify;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -386,36 +324,120 @@ end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.btVytvoritClick(Sender: TObject);
-// pro zadaný mìsíc se vytvoøí faktury v Abøe, nebo pøevedou do PDF, vytisknou èi rozešlou mailem
+procedure TfmMain.btNacistZLClick(Sender: TObject);
 begin
-  btVytvorit.Enabled := False;
-  btKonec.Caption := '&Pøerušit';
-  Prerusit := False;
-  Application.ProcessMessages;
+  fmMain.uiActionsBeforeProcessing;
   try
-// *** Naplnìní asgMain ***
-    if btVytvorit.Caption = '&Naèíst' then dmCommon.Plneni_asgMain
-    else begin
-// *** Fakturace ***
-      if arbVytvoreni.Checked then dmVytvoreni.VytvorFO;
-// *** Pøevod do PDF ***
-      if arbPrevod.Checked then dmPrevod.PrevedFO3;
-// *** Tisk ***
-      if arbTisk.Checked then dmTisk.TiskniFO3;
-// *** Posílání mailem ***
-      if arbMail.Checked then dmMail.PosliFO3;
-    end;
+    // *** Naplnìní asgMain - naèíst ZL***
+    dmCommon.Plneni_asgMain;
   finally
-    btKonec.Caption := '&Konec';
-    btVytvorit.Enabled := True;
+    fmMain.uiActionsAfterProcessing;
   end;
 end;
 
-procedure TfmMain.deDatumDokladuChange(Sender: TObject);
+
+procedure TfmMain.btVytvoritFOClick(Sender: TObject);
+// pro zadaný mìsíc se vytvoøí faktury v Abøe, nebo pøevedou do PDF, vytisknou èi rozešlou mailem
 begin
-  self.aseRokChange(nil);
+  fmMain.uiActionsBeforeProcessing;
+  try
+    // *** Fakturace ***
+    dmVytvoreni.VytvorFO;
+    // *** Pøevod do PDF ***
+      //if arbPrevod.Checked then dmPrevod.PrevedFO3;
+
+
+  finally
+    fmMain.uiActionsAfterProcessing;
+  end;
 end;
+
+
+procedure TfmMain.btVytvoritPDFClick(Sender: TObject);
+begin
+  fmMain.uiActionsBeforeProcessing;
+  try
+    // *** Pøevod do PDF ***
+    dmPrevod.PrevedFOx;
+  finally
+    fmMain.uiActionsAfterProcessing;
+  end;
+end;
+
+procedure TfmMain.btOdeslatMailemClick(Sender: TObject);
+begin
+  fmMain.uiActionsBeforeProcessing;
+  try
+    // *** Posílání mailem ***
+    dmMail.PosliFOx;
+  finally
+    fmMain.uiActionsAfterProcessing;
+  end;
+end;
+
+
+procedure TfmMain.btTiskClick(Sender: TObject);
+begin
+  fmMain.uiActionsBeforeProcessing;
+  try
+    // *** Tisk ***
+    dmTisk.TiskniFOx;
+  finally
+    fmMain.uiActionsAfterProcessing;
+  end;
+end;
+
+
+procedure TfmMain.btNacistFOxClick(Sender: TObject);
+begin
+  fmMain.uiActionsBeforeProcessing;
+  try
+    // *** Naplnìní asgMain - naèíst FOx***
+    dmCommon.Plneni_asgMain;
+  finally
+    fmMain.uiActionsAfterProcessing;
+  end;
+end;
+
+
+
+procedure TfmMain.uiActionsBeforeProcessing;
+begin
+  btNacistZL.Enabled := False;
+  btVytvoritFO.Enabled := False;
+  btNacistFOx.Enabled := False;
+  btVytvoritPDF.Enabled := False;
+  btOdeslatMailem.Enabled := False;
+  btTisk.Enabled := False;
+
+  apbProgress.Position := 0;
+  apbProgress.Visible := True;
+
+  asgMain.Visible := True;
+  //lbxLog.Visible := False;
+
+  Screen.Cursor := crHourGlass;
+  btKonec.Caption := '&Pøerušit';
+  Prerusit := False;
+  Application.ProcessMessages;
+end;
+
+procedure TfmMain.uiActionsAfterProcessing;
+begin
+  btNacistZL.Enabled := True;
+  btVytvoritFO.Enabled := True;
+  btNacistFOx.Enabled := True;
+  btVytvoritPDF.Enabled := True;
+  btOdeslatMailem.Enabled := True;
+  btTisk.Enabled := True;
+
+  apbProgress.Position := 0;
+  apbProgress.Visible := False;
+
+  Screen.Cursor := crDefault;
+  btKonec.Caption := '&Konec';
+end;
+
 
 // ------------------------------------------------------------------------------------------------
 
@@ -424,9 +446,11 @@ begin
   DesFastReport.frxReport.DesignReport(True, False);
 end;
 
+
 // ------------------------------------------------------------------------------------------------
 
-procedure TfmMain.btOdeslatClick(Sender: TObject);
+
+procedure TfmMain.btOdeslatNaServerClick(Sender: TObject);
 // odeslání faktur pøevedených do PDF na vzdálený server
 begin
   //WinExec(PChar(Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
@@ -450,6 +474,7 @@ begin
     Close;
   end;
 end;
+
 
 
 

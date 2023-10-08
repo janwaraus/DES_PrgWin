@@ -53,6 +53,7 @@ type
     function vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
     function vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
     function zrusPenizeNaCeste(VS : string) : string;
+    function pdfToCustomerSendingDateTime(customerId : integer; pdfFileName : string) : double;
     function ulozKomunikaci(Typ, Customer_id, Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
     procedure syncAbraPdfToRemoteServer(year, month : integer);
@@ -1132,6 +1133,22 @@ begin
 end;
 
 
+function TDesU.pdfToCustomerSendingDateTime(customerId : integer; pdfFileName : string) : double;
+begin
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT created_at FROM communications '
+              + ' WHERE customer_id = ' + IntToStr(customerId)
+              + ' AND content LIKE ''%' + pdfFileName + '%''';
+    Open;
+    if not Eof then begin
+      Result := FieldByName('created_at').AsDateTime;
+    end else
+      Result := 0;
+    Close;
+  end;
+end;
+
+
 function TDesU.ulozKomunikaci(Typ, Customer_id, Zprava: string) : TDesResult;   // typ 2 je mail, typ 23 SMS
 // ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
 var
@@ -1163,6 +1180,8 @@ begin
 
 end;
 
+
+{ *** PDF file's functions *** }
 
 function TDesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
 begin

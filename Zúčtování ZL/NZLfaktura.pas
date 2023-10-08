@@ -1,7 +1,3 @@
-// od 2.9.2016 - k nezúètovaným ZL se vystaví faktura (na celou èástku)
-// 7.10. pro pøipojení ZL import manager z Abry
-// 20.5.2017 automatické zaplacení vygenerované faktury (zúètování zálohy)
-
 unit NZLfaktura;
 
 interface
@@ -31,46 +27,26 @@ uses DesUtils, AbraEntities, DesInvoices, Superobject, AArray, NZLmain, NZLcommo
 procedure TdmVytvoreni.VytvorFO;
 var
   Radek: integer;
+
 begin
   with fmMain, fmMain.asgMain do try
-// pøipojení k Abøe
-    Screen.Cursor := crHourGlass;
-    asgMain.Visible := False;
-    lbxLog.Visible := True;
 
     fmMain.Zprava(Format('Poèet FO k vygenerování: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
-    asgMain.Visible := True;
-    lbxLog.Visible := False;
-    lbPozor1.Visible := False;
-    apbProgress.Position := 0;
-    apbProgress.Visible := True;
-// hlavní smyèka
+
     for Radek := 1 to RowCount-1 do begin
       Row := Radek;
       apbProgress.Position := Round(100 * Radek / RowCount-1);
       Application.ProcessMessages;
-      if Prerusit then begin
-        Prerusit := False;
-        btVytvorit.Enabled := True;
-        apbProgress.Position := 0;
-        apbProgress.Visible := False;
-        lbPozor1.Visible := True;
-        asgMain.Visible := True;
-        lbxLog.Visible := False;
-        Break;
-      end;
-      if Ints[0, Radek] = 1 then FOAbra(Radek);
-    end;  // for
-// konec hlavní smyèky
+      if Prerusit then Break;
+
+      if Ints[2, Radek] = 1 then FOAbra(Radek);
+    end;
+
   finally
-    apbProgress.Position := 0;
-    apbProgress.Visible := False;
-    lbPozor1.Visible := True;
-    asgMain.Visible := False;
+    //asgMain.Visible := False;
     lbxLog.Visible := True;
-    Screen.Cursor := crDefault;
     fmMain.Zprava('Generování faktur ukonèeno');
-  end;  //  with fmMain
+  end;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -89,17 +65,14 @@ var
   abraWebApiResponse : TDesResult;
   NewInvoice : TNewDesInvoiceAA;
 
-
 begin
-
-
 
   with fmMain, asgMain, DesU.qrAbra do begin
     Close;
     SQLStr := 'SELECT F.Id AS FId, F.Code AS Abrakod, VarSymbol, IDI.FirmOffice_Id AS FOId, IDI2.Text, IDI2.RowType, IDI2.LocalTAmount,'
     + ' IDI2.BusOrder_Id, IDI2.BusTransaction_Id'
     + ' FROM IssuedDInvoices IDI'
-    + ' INNER JOIN IssuedDInvoices2 IDI2 ON IDI.ID = IDI2.Parent_Id'      // øádky dokladu
+    + ' INNER JOIN IssuedDInvoices2 IDI2 ON IDI.ID = IDI2.Parent_Id'      // øádky ZL dokladu
     + ' INNER JOIN Firms F ON IDI.Firm_ID = F.Id'
     + ' WHERE IDI.Id = ' + Ap + Cells[8, Radek] + Ap
     + ' ORDER BY IDI2.PosIndex';

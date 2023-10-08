@@ -8,9 +8,9 @@ uses
 type
   TdmMail = class(TDataModule)
   private
-    procedure FO3Mail(Radek: integer);                // pošle jednu FA
+    procedure FOxMail(Radek: integer); // pošle jednu FA
   public
-    procedure PosliFO3;
+    procedure PosliFOx;
   end;
 
 var
@@ -24,8 +24,8 @@ uses DesUtils, NZLmain, NZLcommon;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmMail.PosliFO3;
-// použije data z asgMain
+procedure TdmMail.PosliFOx;
+
 var
   Radek: integer;
 begin
@@ -33,45 +33,27 @@ begin
     fmMain.Zprava('Rozesílání FO3.');
     with asgMain do begin
       fmMain.Zprava(Format('Poèet faktur k rozeslání: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
-      Screen.Cursor := crHourGlass;
-      apnMail.Visible := False;
-      lbPozor1.Visible := False;
-      apbProgress.Position := 0;
-      apbProgress.Visible := True;
-// hlavní smyèka
+
       for Radek := 1 to RowCount-1 do begin
         Row := Radek;
         apbProgress.Position := Round(100 * Radek / RowCount-1);
         Application.ProcessMessages;
-        if Prerusit then begin
-          Prerusit := False;
-          apbProgress.Position := 0;
-          apbProgress.Visible := False;
-          lbPozor1.Visible := True;
-          btVytvorit.Enabled := True;
-          asgMain.Visible := True;
-          lbxLog.Visible := False;
-          Break;
-        end;
-        if Ints[0, Radek] = 1 then FO3Mail(Radek);
-      end;  // for
+        if Prerusit then Break;
+
+        if Ints[2, Radek] = 1 then FOxMail(Radek);
+      end;
     end;
-// konec hlavní smyèky
+
   finally
-    apbProgress.Position := 0;
-    apbProgress.Visible := False;
-    lbPozor1.Visible := True;
-    apnMail.Visible := True;
     asgMain.Visible := False;
     lbxLog.Visible := True;
-    Screen.Cursor := crDefault;
-    fmMain.Zprava('Rozesílání faktur ukonèeno');
+    fmMain.Zprava('Odeslání faktur ukonèeno');
   end;
 end;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmMail.FO3Mail(Radek: integer);
+procedure TdmMail.FOxMail(Radek: integer);
 var
   emailAddrStr,
   emailPredmet,
@@ -82,7 +64,7 @@ var
   Od, Po: integer;
 begin
   with fmMain, fmMain.asgMain do begin
-// musí existovat PDF soubor s fakturou
+
     Od := Pos('-', Cells[7, Radek]) + 1;
     Po := Pos('/', Cells[7, Radek]);
     FullPdfFileName := Format('%s%4d\%2.2d\FO3-%4.4d.pdf',

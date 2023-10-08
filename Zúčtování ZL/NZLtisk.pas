@@ -9,7 +9,7 @@ uses
 type
   TdmTisk = class(TDataModule)
   public
-    procedure TiskniFO3;
+    procedure TiskniFOx;
   end;
 
 var
@@ -23,39 +23,25 @@ uses DesInvoices, NZLmain, NZLcommon;
 
 // ------------------------------------------------------------------------------------------------
 
-procedure TdmTisk.TiskniFO3;
-// použije data z asgMain
+procedure TdmTisk.TiskniFOx;
 var
   Radek: integer;
   Faktura : TDesInvoice;
   VysledekPrevedeni : TDesResult;
+
 begin
   with fmMain do try
     fmMain.Zprava('Tisk FO3');
     with asgMain do begin
       fmMain.Zprava(Format('Poèet FO3 k tisku: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
-      Screen.Cursor := crHourGlass;
-      apnTisk.Visible := False;
-      lbPozor1.Visible := False;
-      apbProgress.Position := 0;
-      apbProgress.Visible := True;
-// hlavní smyèka
+
       for Radek := 1 to RowCount-1 do begin
         Row := Radek;
         apbProgress.Position := Round(100 * Radek / RowCount-1);
         Application.ProcessMessages;
-        if Prerusit then begin
-          Prerusit := False;
-          apbProgress.Position := 0;
-          apbProgress.Visible := False;
-          lbPozor1.Visible := True;
-          btVytvorit.Enabled := True;
-          asgMain.Visible := True;
-          lbxLog.Visible := False;
-          Break;
-        end;
+        if Prerusit then Break;
 
-        if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
+        if Ints[2, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
 
           Faktura := TDesInvoice.create(asgMain.Cells[10, Radek]);
           Faktura.reportAry['CisloZL'] := asgMain.Cells[1, Radek];
@@ -75,18 +61,12 @@ begin
               mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
           end;
         end;
-      end;  // for
+      end;
     end;
-// konec hlavní smyèky
+
   finally
-    Printer.PrinterIndex := -1;
-    apbProgress.Position := 0;
-    apbProgress.Visible := False;
-    lbPozor1.Visible := True;
-    apnTisk.Visible := True;
     asgMain.Visible := False;
     lbxLog.Visible := True;
-    Screen.Cursor := crDefault;                                             // default
     fmMain.Zprava('Tisk FO3 ukonèen');
   end;
 end;
