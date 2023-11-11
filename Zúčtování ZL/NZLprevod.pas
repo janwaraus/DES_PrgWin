@@ -28,6 +28,7 @@ var
   Radek: integer;
   Faktura : TDesInvoice;
   VysledekPrevedeni : TDesResult;
+  Fr3Filename : string;
 
 begin
   with fmMain, fmMain.asgMain do try
@@ -49,15 +50,26 @@ begin
 
       if Ints[0, Radek] = 1 then begin  // pokud zaškrtnuto, pøevádíme fa do PDF
 
-        Faktura := TDesInvoice.create(asgMain.Cells[10, Radek]);
-        Faktura.reportAry['CisloZL'] := asgMain.Cells[1, Radek];
-        Faktura.reportAry['CastkaZalohy'] := asgMain.Floats[3, Radek];
+        Faktura := TDesInvoice.create(asgMain.Cells[14, Radek]);
 
-        VysledekPrevedeni := Faktura.createPdfByFr3('FO3doPDF-104.fr3', not cbNeprepisovat.Checked);
+        if Faktura.DocQueueCode = 'FO3' then begin
+          Faktura.reportAry['CisloZL'] := asgMain.Cells[3, Radek];
+          Faktura.reportAry['CastkaZalohy'] := asgMain.Floats[5, Radek];
+          Fr3Filename := 'FO3doPDF-104.fr3';
 
-        fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[6, Radek], asgMain.Cells[7, Radek], VysledekPrevedeni.Messg]));
+        end else begin
+          Fr3Filename := 'FOkreditDoPDF-104.fr3';
+        end;
+
+
+        VysledekPrevedeni := Faktura.createPdfByFr3(Fr3Filename, not cbNeprepisovat.Checked);
+
+        fmMain.Zprava(Format('%s (%s): %s', [asgMain.Cells[8, Radek], asgMain.Cells[9, Radek], VysledekPrevedeni.Messg]));
         if VysledekPrevedeni.isOk then begin
           asgMain.Ints[0, Radek] := 0;
+          FontColors[1, Radek] := $000000;
+          asgMain.Ints[2, Radek] := 1;
+          ReadOnly[2, Radek] := False;
         end;
       end;
 

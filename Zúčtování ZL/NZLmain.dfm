@@ -2,8 +2,8 @@ object fmMain: TfmMain
   Left = 477
   Top = 140
   Caption = 'Zaplacen'#233' a nez'#250#269'tovan'#233' z'#225'lohov'#233' listy za p'#345'ipojen'#237' k internetu'
-  ClientHeight = 845
-  ClientWidth = 1356
+  ClientHeight = 724
+  ClientWidth = 1172
   Color = clBtnFace
   Constraints.MinHeight = 320
   Constraints.MinWidth = 680
@@ -21,8 +21,8 @@ object fmMain: TfmMain
   object apnTop: TAdvPanel
     Left = 0
     Top = 0
-    Width = 1356
-    Height = 241
+    Width = 1172
+    Height = 132
     Align = alTop
     Color = clGradientActiveCaption
     Constraints.MinHeight = 132
@@ -51,41 +51,15 @@ object fmMain: TfmMain
     StatusBar.Font.Name = 'Tahoma'
     StatusBar.Font.Style = []
     Text = ''
-    DesignSize = (
-      1356
-      241)
+    ExplicitWidth = 1364
     FullHeight = 200
-    object apbProgress: TAdvProgressBar
-      Left = 186
-      Top = 96
-      Width = 1161
-      Height = 29
-      Anchors = [akLeft, akTop, akRight]
-      BackgroundColor = 16772326
-      Font.Charset = EASTEUROPE_CHARSET
-      Font.Color = clWindowText
-      Font.Height = -11
-      Font.Name = 'MS Sans Serif'
-      Font.Style = [fsBold]
-      Level0Color = clTeal
-      Level0ColorTo = 14811105
-      Level1ColorTo = 13303807
-      Level2Color = 5483007
-      Level2ColorTo = 11064319
-      Level3ColorTo = 13290239
-      Level1Perc = 101
-      Level2Perc = 101
-      Position = 50
-      ShowBorder = True
-      Version = '1.3.2.3'
-      Visible = False
-    end
     object apnPrevod: TAdvPanel
-      Left = 161
-      Top = 119
-      Width = 1112
-      Height = 122
-      Color = clGradientInactiveCaption
+      Left = 163
+      Top = 0
+      Width = 1009
+      Height = 132
+      Align = alClient
+      Color = 15323589
       TabOrder = 1
       UseDockManager = True
       Visible = False
@@ -106,10 +80,14 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
+      ExplicitLeft = 161
+      ExplicitTop = 119
+      ExplicitWidth = 1203
+      ExplicitHeight = 122
       FullHeight = 95
       object deDatumFOxOd: TAdvDateTimePicker
-        Left = 103
-        Top = 16
+        Left = 107
+        Top = 15
         Width = 92
         Height = 21
         Date = 45108.472326388890000000
@@ -139,8 +117,8 @@ object fmMain: TfmMain
         LabelFont.Style = [fsBold]
       end
       object deDatumFOxDo: TAdvDateTimePicker
-        Left = 103
-        Top = 49
+        Left = 107
+        Top = 48
         Width = 92
         Height = 21
         Date = 45138.472326388890000000
@@ -170,9 +148,9 @@ object fmMain: TfmMain
         LabelFont.Style = [fsBold]
       end
       object chbFO3: TCheckBox
-        Left = 16
-        Top = 10
-        Width = 65
+        Left = 9
+        Top = 18
+        Width = 57
         Height = 17
         Caption = 'FO3'
         Checked = True
@@ -182,9 +160,9 @@ object fmMain: TfmMain
         TabOrder = 2
       end
       object chbFO2: TCheckBox
-        Left = 16
-        Top = 33
-        Width = 65
+        Left = 9
+        Top = 57
+        Width = 57
         Height = 17
         Caption = 'FO2'
         Checked = True
@@ -194,9 +172,9 @@ object fmMain: TfmMain
         TabOrder = 3
       end
       object chbFO4: TCheckBox
-        Left = 16
-        Top = 56
-        Width = 65
+        Left = 9
+        Top = 80
+        Width = 57
         Height = 17
         Caption = 'FO4'
         Checked = True
@@ -206,8 +184,8 @@ object fmMain: TfmMain
         TabOrder = 4
       end
       object btNacistFOx: TButton
-        Left = 224
-        Top = 12
+        Left = 231
+        Top = 10
         Width = 89
         Height = 41
         Caption = '&Na'#269#237'st FOx'
@@ -370,8 +348,8 @@ object fmMain: TfmMain
         end
       end
       object cbJenNezpracovaneFOx: TCheckBox
-        Left = 224
-        Top = 59
+        Left = 231
+        Top = 65
         Width = 119
         Height = 17
         Caption = 'jen nezpracovan'#233
@@ -381,12 +359,46 @@ object fmMain: TfmMain
         State = cbChecked
         TabOrder = 8
       end
+      object editOrdNo: TAdvEdit
+        Left = 126
+        Top = 91
+        Width = 73
+        Height = 21
+        EmptyTextStyle = []
+        FlatLineColor = 11250603
+        FocusColor = clWindow
+        FocusFontColor = 3881787
+        LabelCaption = #269'. fa'
+        LabelFont.Charset = DEFAULT_CHARSET
+        LabelFont.Color = clBlack
+        LabelFont.Height = -11
+        LabelFont.Name = 'MS Sans Serif'
+        LabelFont.Style = [fsBold]
+        Lookup.Font.Charset = DEFAULT_CHARSET
+        Lookup.Font.Color = clWindowText
+        Lookup.Font.Height = -11
+        Lookup.Font.Name = 'Arial'
+        Lookup.Font.Style = []
+        Lookup.Separator = ';'
+        Color = clWindow
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 9
+        Text = ''
+        Visible = True
+        Version = '4.0.3.6'
+      end
     end
     object apnVytvoreni: TAdvPanel
-      Left = 161
+      Left = 163
       Top = 0
-      Width = 1195
-      Height = 113
+      Width = 1009
+      Height = 132
+      Align = alClient
       Color = 15323589
       TabOrder = 0
       UseDockManager = True
@@ -408,9 +420,9 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      DesignSize = (
-        1195
-        113)
+      ExplicitLeft = 161
+      ExplicitWidth = 1195
+      ExplicitHeight = 113
       FullHeight = 200
       object lbPozor1: TLabel
         Left = 5
@@ -464,10 +476,9 @@ object fmMain: TfmMain
       end
       object btNacistZL: TButton
         Left = 291
-        Top = 45
+        Top = 36
         Width = 100
         Height = 42
-        Anchors = [akTop, akRight]
         Caption = '&Na'#269#237'st ZL'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
@@ -479,8 +490,8 @@ object fmMain: TfmMain
         OnClick = btNacistZLClick
       end
       object deDatumDokladu: TAdvDateTimePicker
-        Left = 737
-        Top = 56
+        Left = 677
+        Top = 45
         Width = 92
         Height = 21
         Date = 41908.472326388890000000
@@ -566,7 +577,6 @@ object fmMain: TfmMain
         Top = 16
         Width = 130
         Height = 82
-        Anchors = []
         Color = clGradientActiveCaption
         TabOrder = 5
         UseDockManager = True
@@ -597,16 +607,12 @@ object fmMain: TfmMain
         StatusBar.Color = clWhite
         StatusBar.GradientDirection = gdVertical
         Text = ''
-        DesignSize = (
-          130
-          82)
         FullHeight = 200
         object btVytvoritFO: TButton
           Left = 11
           Top = 22
           Width = 100
           Height = 40
-          Anchors = []
           Caption = '&Vytvo'#345'it FO3'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
@@ -622,8 +628,8 @@ object fmMain: TfmMain
     object apnVyberCinnosti: TAdvPanel
       Left = 0
       Top = 0
-      Width = 161
-      Height = 241
+      Width = 163
+      Height = 132
       Align = alLeft
       Color = 14733255
       Font.Charset = DEFAULT_CHARSET
@@ -651,7 +657,8 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      FullHeight = 200
+      ExplicitHeight = 144
+      FullHeight = 122
       object glbVytvoreni: TGradientLabel
         Left = 36
         Top = 0
@@ -730,12 +737,74 @@ object fmMain: TfmMain
         OnClick = btKonecClick
       end
     end
+    object apnProgress: TAdvPanel
+      Left = 192
+      Top = 93
+      Width = 770
+      Height = 30
+      Color = clWhite
+      TabOrder = 3
+      UseDockManager = True
+      Visible = False
+      Version = '2.6.3.2'
+      BorderColor = clBlack
+      Caption.Color = clWhite
+      Caption.ColorTo = clNone
+      Caption.Font.Charset = DEFAULT_CHARSET
+      Caption.Font.Color = clNone
+      Caption.Font.Height = -11
+      Caption.Font.Name = 'Tahoma'
+      Caption.Font.Style = []
+      Caption.GradientDirection = gdVertical
+      Caption.Indent = 0
+      Caption.ShadeLight = 255
+      CollapsColor = clNone
+      CollapsDelay = 0
+      DoubleBuffered = True
+      ShadowColor = clBlack
+      ShadowOffset = 0
+      StatusBar.BorderColor = clNone
+      StatusBar.BorderStyle = bsSingle
+      StatusBar.Font.Charset = DEFAULT_CHARSET
+      StatusBar.Font.Color = 4473924
+      StatusBar.Font.Height = -11
+      StatusBar.Font.Name = 'Tahoma'
+      StatusBar.Font.Style = []
+      StatusBar.Color = clWhite
+      StatusBar.GradientDirection = gdVertical
+      Text = ''
+      FullHeight = 200
+      object apbProgress: TAdvProgressBar
+        Left = 0
+        Top = 0
+        Width = 769
+        Height = 29
+        BackgroundColor = 16772326
+        Font.Charset = EASTEUROPE_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = [fsBold]
+        Level0Color = clTeal
+        Level0ColorTo = 14811105
+        Level1ColorTo = 13303807
+        Level2Color = 5483007
+        Level2ColorTo = 11064319
+        Level3ColorTo = 13290239
+        Level1Perc = 101
+        Level2Perc = 101
+        Position = 50
+        ShowBorder = True
+        Version = '1.3.2.3'
+      end
+    end
   end
   object lbxLog: TListBox
     Left = 0
-    Top = 536
-    Width = 1113
-    Height = 257
+    Top = 504
+    Width = 1172
+    Height = 220
+    Align = alBottom
     ItemHeight = 13
     ScrollWidth = 1600
     TabOrder = 0
@@ -743,10 +812,11 @@ object fmMain: TfmMain
   end
   object asgMain: TAdvStringGrid
     Left = 0
-    Top = 269
-    Width = 1356
-    Height = 245
-    ColCount = 15
+    Top = 132
+    Width = 1172
+    Height = 372
+    Align = alClient
+    ColCount = 17
     DefaultRowHeight = 18
     DrawingStyle = gdsClassic
     FixedCols = 0
@@ -772,7 +842,7 @@ object fmMain: TfmMain
     ActiveCellFont.Style = [fsBold]
     ActiveCellColor = 15387318
     ColumnHeaders.Strings = (
-      'p'#345'ev.'
+      'PDF'
       'soubor PDF'
       'mail'
       'doklad ZL'
@@ -786,7 +856,9 @@ object fmMain: TfmMain
       #269#225'stka'
       'mail'
       'IDI.Id'
-      'II.Id')
+      'II.Id'
+      'mail zasl'#225'n'
+      'datum fa')
     ColumnSize.Location = clIniFile
     ControlLook.FixedGradientFrom = clWhite
     ControlLook.FixedGradientTo = clBtnFace
@@ -882,16 +954,21 @@ object fmMain: TfmMain
     SortSettings.Column = 2
     SortSettings.Show = True
     Version = '8.7.0.0'
+    ExplicitTop = 399
+    ExplicitWidth = 1185
+    ExplicitHeight = 339
     ColWidths = (
       28
       90
-      20
+      22
       64
       74
       65
       64
       64
       170
+      64
+      64
       64
       64
       64

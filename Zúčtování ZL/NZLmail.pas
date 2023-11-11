@@ -20,7 +20,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, NZLmain, NZLcommon;
+uses DesUtils, DesInvoices, NZLmain, NZLcommon;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ begin
   with fmMain do try
     fmMain.Zprava('Rozesílání FO3.');
     with asgMain do begin
-      fmMain.Zprava(Format('Poèet faktur k rozeslání: %d', [Trunc(ColumnSum(0, 1, RowCount-1))]));
+      fmMain.Zprava(Format('Poèet faktur k rozeslání: %d', [Trunc(ColumnSum(2, 1, RowCount-1))]));
 
       for Radek := 1 to RowCount-1 do begin
         Row := Radek;
@@ -45,7 +45,7 @@ begin
     end;
 
   finally
-    asgMain.Visible := False;
+    //asgMain.Visible := False;
     lbxLog.Visible := True;
     fmMain.Zprava('Odeslání faktur ukonèeno');
   end;
@@ -62,21 +62,42 @@ var
   FullPdfFileName: string;
   VysledekZaslani : TDesResult;
   Od, Po: integer;
+  Faktura : TDesInvoice;
 begin
   with fmMain, fmMain.asgMain do begin
 
-    Od := Pos('-', Cells[7, Radek]) + 1;
-    Po := Pos('/', Cells[7, Radek]);
-    FullPdfFileName := Format('%s%4d\%2.2d\FO3-%4.4d.pdf',
-     [DesU.PDF_PATH, YearOf(deDatumDokladu.Date), MonthOf(deDatumDokladu.Date), StrToInt(Copy(Cells[7, Radek],  Od, Po-Od))]);
+    Faktura := TDesInvoice.create(Cells[14, Radek]);
+    FullPdfFileName := Faktura.getFullPdfFileName;
 
-    emailAddrStr := Cells[6, Radek];
-
+    emailAddrStr := Cells[12, Radek];
     emailOdesilatel := 'uctarna@eurosignal.cz';
-    emailPredmet := Format('Družstvo EUROSIGNAL, doklad k zaplacenému zálohovému listu %s', [Cells[1, Radek]]);
 
-    emailZprava := Format('Zúètování zálohového listu %s je ve faktuøe %s v pøiloženém PDF dokumentu.'
-      , [Cells[1, Radek], Cells[7, Radek]])
+    if Faktura.DocQueueCode = 'FO3' then begin
+
+      emailPredmet := Format('Družstvo EUROSIGNAL, doklad k zaplacenému zálohovému listu %s', [Cells[3, Radek]]);
+      emailZprava := Format('Zúètování zálohového listu %s je ve faktuøe %s v pøiloženém PDF dokumentu.',
+        [Cells[3, Radek], Cells[9, Radek]])
+
+    end else
+    if Faktura.DocQueueCode = 'FO2' then begin
+
+      emailPredmet := Format('Družstvo EUROSIGNAL, doklad k zaplacenému kreditu na VoIP %s', [Cells[9, Radek]]);
+      emailZprava := Format('Daòový doklad %s k zaplacenému kreditu na VoIP je v pøiloženém PDF dokumentu.',
+        [Cells[9, Radek]])
+
+    end else
+    if Faktura.DocQueueCode = 'FO4' then begin
+
+      emailPredmet := Format('Družstvo EUROSIGNAL, doklad k zaplacenému kreditu na internet %s', [Cells[9, Radek]]);
+      emailZprava := Format('Daòový doklad %s k zaplacenému kreditu na internet je v pøiloženém PDF dokumentu.',
+        [Cells[9, Radek]])
+
+    end else begin
+      fmMain.Zprava(Format('%s (%s): Pro øadu %s není definovaná podoba e-mailu', [Cells[8, Radek], Cells[9, Radek], Faktura.DocQueueCode]));
+      Exit;
+    end;
+
+    emailZprava := emailZprava
       + sLineBreak + sLineBreak
       + 'Pøejeme pìkný den'
       + sLineBreak + sLineBreak
@@ -84,9 +105,12 @@ begin
 
 
     VysledekZaslani := DesU.posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel);
-    fmMain.Zprava(Format('%s (%s): %s', [Cells[4, Radek], Cells[1, Radek], VysledekZaslani.Messg]));
+
+    //fmMain.Zprava(Format('%s (%s): %s', [Cells[8, Radek], Cells[9, Radek], 'test poslano']));
+    fmMain.Zprava(Format('%s (%s): %s', [Cells[8, Radek], Cells[9, Radek], VysledekZaslani.Messg]));
     if VysledekZaslani.isOk then begin
-      Ints[0, Radek] := 0;
+      Ints[2, Radek] := 0;
+      DesU.ulozKomunikaci(2, DesU.getCustomerIdByCoNumber(Faktura.VS), emailZprava);
     end;
 
   end;

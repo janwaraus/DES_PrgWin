@@ -53,8 +53,10 @@ type
     function vytvorFaZaInternetKredit(VS : string; castka : currency; datum : double) : string;
     function vytvorFaZaVoipKredit(VS : string; castka : currency; datum : double) : string;
     function zrusPenizeNaCeste(VS : string) : string;
+    function getCustomerIdByVs(VS : string) : integer;
+    function getCustomerIdByCoNumber(VS : string) : integer;
     function pdfToCustomerSendingDateTime(customerId : integer; pdfFileName : string) : double;
-    function ulozKomunikaci(Typ, Customer_id, Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
+    function ulozKomunikaci(CommunicationTypeId, CustomerId : integer; Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
     procedure syncAbraPdfToRemoteServer(year, month : integer);
 
@@ -1119,17 +1121,44 @@ end;
 
 
 function TDesU.zrusPenizeNaCeste(VS : string) : string;
-var
-  i: integer;
-  boAA, boRowAA: TAArray;
-  newId, firmAbraCode: String;
 begin
   with DesU.qrZakosOC do begin
     SQL.Text := 'UPDATE customers SET pay_u_payment = 0 where variable_symbol = ''' + VS + '''';
     ExecSQL;
     Close;
   end;
+end;
 
+
+function TDesU.getCustomerIdByVs(VS : string) : integer;
+begin
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT cu.id FROM customers cu'
+          + ' WHERE cu.variable_symbol = ' + Ap + VS + Ap;
+    Open;
+    if not Eof then begin
+      Result := FieldByName('id').AsInteger;
+    end else
+      Result := 0;
+    Close;
+  end;
+end;
+
+function TDesU.getCustomerIdByCoNumber(VS : string) : integer;
+begin
+  with DesU.qrZakosOC do begin
+    SQL.Text := 'SELECT cu.id FROM customers cu, contracts co'
+          + ' WHERE cu.id = co.customer_id'
+          + ' AND co.number = ' + Ap + VS + Ap;
+    Open;
+    if not Eof then begin
+      Result := FieldByName('id').AsInteger;
+      Close;
+    end else begin
+      Close;
+      Result := getCustomerIdByVs(VS);
+    end;
+  end;
 end;
 
 
@@ -1149,12 +1178,16 @@ begin
 end;
 
 
-function TDesU.ulozKomunikaci(Typ, Customer_id, Zprava: string) : TDesResult;   // typ 2 je mail, typ 23 SMS
+function TDesU.ulozKomunikaci(CommunicationTypeId, CustomerId : integer; Zprava: string) : TDesResult;   // typ 2 je mail, typ 23 SMS
 // ukládá záznam o odeslané zprávì zákazníkovi do tabulky "communications" v databázi aplikace
 var
-  CommId: integer;
   SQLStr: string;
 begin
+  if CustomerId = 0 then begin
+    Result := TDesResult.create('err', 'Nezámý zákazník');
+    Exit;
+  end;
+
   with DesU.qrZakosOC do try
     Close;
     SQLStr := 'INSERT INTO communications ('
@@ -1164,9 +1197,9 @@ begin
     + ' content,'
     + ' created_at,'
     + ' updated_at) VALUES ('
-    + Customer_id + ', '
+    + IntToStr(CustomerId) + ', '
     + '1, '                                        // admin
-    + Typ + ','
+    + IntToStr(CommunicationTypeId) + ','
     + QuotedStr(Zprava) + ','
     + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
     + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;

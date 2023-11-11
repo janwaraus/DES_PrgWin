@@ -234,9 +234,11 @@ begin
     begin
 
       if self.DocQueueCode = 'FO3' then begin
-        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZL + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(Date) + ')'; //pro FO3
+        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZL + Ucet325 FROM DE$_Firm_Totals ('
+            + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(Date) + ')'; //pro FO3
       end else begin
-        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals (' + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')'; //pro FO1
+        DesU.qrAbraOC2.SQL.Text := 'SELECT SaldoPo + SaldoZLPo + Ucet325 FROM DE$_Firm_Totals ('
+            + Ap + DesU.qrAbraOC.Fields[0].AsString + ApC + FloatToStr(self.DocDate) + ')'; //pro FO1
       end;
 
       DesU.qrAbraOC2.Open;
@@ -250,8 +252,8 @@ begin
   if self.DocQueueCode = 'FO3' then begin
     Zaplatit := -Saldo; // FO3
   end else begin
-   Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          //FO1 - Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
-   Zaplatit := self.Castka - Saldo;          // FO1 - Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
+    Saldo := Saldo + self.CastkaZaplacenoZakaznikem;          //FO1 - Saldo je po splatnosti (SaldoPo), je-li faktura už zaplacena, pøiète se platba
+    Zaplatit := -Saldo + self.Castka;          // FO1 - Celkem k úhradì = Celkem za fakt. období - Zùstatek minulých období(saldo)
   end;
 
 

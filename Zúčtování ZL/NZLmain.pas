@@ -54,6 +54,8 @@ type
     btTisk: TButton;
     cbJenNezpracovaneFOx: TCheckBox;
     apnVytvorFOx: TAdvPanel;
+    apnProgress: TAdvPanel;
+    editOrdNo: TAdvEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -164,16 +166,17 @@ begin
   acbRada.ItemIndex := 0;
   fmMain.Zprava('OK');
   resetAsgMain;
-  //arbVytvoreniClick(nil); // produkcne
+  arbVytvoreniClick(nil); // produkcne
   //arbPrevodClick(nil); // pro test
 
 // fajfky v asgMain
   with asgMain do begin
     CheckFalse := '0';
     CheckTrue := '1';
+    {
     ColWidths[0] := 28;
     ColWidths[1] := 90;
-    ColWidths[2] := 28;
+    ColWidths[2] := 32;
     ColWidths[3] := 64;
     ColWidths[4] := 74;
     ColWidths[5] := 64;
@@ -183,16 +186,20 @@ begin
     ColWidths[9] := 64;
     ColWidths[10] := 64;
     ColWidths[11] := 64;
-    //ColWidths[12] := 0;
+    ColWidths[12] := 80;
     //ColWidths[13] := 0;
     //ColWidths[14] := 0;
+    }
   end;
 // pøedvyplnìní formuláøe
   aseRok.Value := YearOf(Date);                            // aktuální rok
-  //deDatumDokladu.Date := Date;
+  deDatumDokladu.Date := Date;
+  deDatumFOxOd.Date := Date - 7;
+  deDatumFOxDo.Date := Date;
+
   //deDatumDokladu.Date := ISO8601ToDate('2023-04-15'); //9.7.2023
-  deDatumDokladu.Date := StrToDateTime('9.7.2023'); //9.7.2023  // 45116
-  deDatumDokladu.Date := 45015;
+  //deDatumDokladu.Date := StrToDateTime('9.7.2023'); //9.7.2023  // 45116
+  //deDatumDokladu.Date := 45015;
   //fmMain.Zprava(FloatToStr(deDatumDokladu.Date));
   //fmMain.Zprava(TimeToStr(deDatumDokladu.Date));
 end;
@@ -209,19 +216,37 @@ end;
 
 procedure TfmMain.arbVytvoreniClick(Sender: TObject);
 begin
-  asgMain.Cells[0, 0] := 'FO';
+  asgMain.Cells[2, 0] := 'FO';
+
   glbVytvoreni.Color := clWhite;
   glbVytvoreni.ColorTo := clMenu;
   glbPrevod.Color := clSilver;
   glbPrevod.ColorTo := clGray;
+
   apnVytvoreni.Visible := True;
   apnPrevod.Visible := False;
 
-  apbProgress.Visible := False;
-  lbPozor1.Visible := True;
-
   lbxLog.Visible := True;
   resetAsgMain;
+
+  asgMain.ColWidths[0] := 0;
+  asgMain.ColWidths[1] := 0;
+  asgMain.ColWidths[2] := 32;
+  asgMain.ColWidths[3] := 64;
+  asgMain.ColWidths[4] := 74;
+  asgMain.ColWidths[5] := 64;
+  asgMain.ColWidths[6] := 64;
+  asgMain.ColWidths[7] := 64;
+  asgMain.ColWidths[8] := 170;
+  asgMain.ColWidths[9] := 64;
+  asgMain.ColWidths[10] := 64;
+  asgMain.ColWidths[11] := 64;
+  asgMain.ColWidths[12] := 0;
+  asgMain.ColWidths[13] := 0;
+  asgMain.ColWidths[14] := 0;
+  asgMain.ColWidths[15] := 0;
+  asgMain.ColWidths[16] := 0;
+
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -229,15 +254,35 @@ end;
 procedure TfmMain.arbPrevodClick(Sender: TObject);
 begin
   asgMain.Cells[0, 0] := 'PDF';
+  asgMain.Cells[2, 0] := 'mail';
   glbPrevod.Color := clWhite;
   glbPrevod.ColorTo := clMenu;
   apnPrevod.Visible := True;
   glbVytvoreni.Color := clSilver;
   glbVytvoreni.ColorTo := clGray;
+
   apnVytvoreni.Visible := False;
   apnPrevod.Visible := True;
 
   resetAsgMain;
+
+  asgMain.ColWidths[0] := 28;
+  asgMain.ColWidths[1] := 90;
+  asgMain.ColWidths[2] := 34;
+  asgMain.ColWidths[3] := 64;
+  asgMain.ColWidths[4] := 74;
+  asgMain.ColWidths[5] := 64;
+  asgMain.ColWidths[6] := 0;
+  asgMain.ColWidths[7] := 0;
+  asgMain.ColWidths[8] := 170;
+  asgMain.ColWidths[9] := 64;
+  asgMain.ColWidths[10] := 64;
+  asgMain.ColWidths[11] := 64;
+  asgMain.ColWidths[12] := 80;
+  asgMain.ColWidths[13] := 0;
+  asgMain.ColWidths[14] := 0;
+  asgMain.ColWidths[15] := 0;
+
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -272,8 +317,8 @@ end;
 
 procedure TfmMain.asgMainDblClick(Sender: TObject);
 begin
-  asgMain.Visible := False;
-  lbxLog.Visible := True;
+  //asgMain.Visible := False;
+  //lbxLog.Visible := True;
 end;
 
 // ------------------------------------------------------------------------------------------------
@@ -317,8 +362,8 @@ end;
 
 procedure TfmMain.lbxLogDblClick(Sender: TObject);
 begin
-  asgMain.Visible := True;
-  lbxLog.Visible := False;
+  //asgMain.Visible := True;
+  //lbxLog.Visible := False;
 end;
 
 
@@ -411,7 +456,7 @@ begin
   btTisk.Enabled := False;
 
   apbProgress.Position := 0;
-  apbProgress.Visible := True;
+  apnProgress.Visible := True;
 
   asgMain.Visible := True;
   //lbxLog.Visible := False;
@@ -432,7 +477,7 @@ begin
   btTisk.Enabled := True;
 
   apbProgress.Position := 0;
-  apbProgress.Visible := False;
+  apnProgress.Visible := False;
 
   Screen.Cursor := crDefault;
   btKonec.Caption := '&Konec';
@@ -457,7 +502,7 @@ begin
   // + PDFDir + '\%4d\%2.2d /home/abrapdf/%4d" "exit"',
   //  [YearOf(deDatumDokladu.Date), MonthOf(deDatumDokladu.Date), YearOf(deDatumDokladu.Date)])), SW_SHOWNORMAL);
 
-  DesU.syncAbraPdfToRemoteServer(YearOf(deDatumDokladu.Date), MonthOf(deDatumDokladu.Date));
+  DesU.syncAbraPdfToRemoteServer(YearOf(deDatumFOxDo.Date), MonthOf(deDatumFOxDo.Date));
 
 end;
 
