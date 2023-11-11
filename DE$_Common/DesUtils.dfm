@@ -124,7 +124,6 @@ object DesU: TDesU
     Top = 8
   end
   object IdHTTPAbra: TIdHTTP
-    AllowCookies = True
     ProxyParams.BasicAuthentication = False
     ProxyParams.ProxyPort = 0
     Request.CharSet = 'utf-8'

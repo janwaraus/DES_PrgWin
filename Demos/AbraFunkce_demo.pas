@@ -52,7 +52,7 @@ var
 begin
 
 
-  // DesU.opravRadekVypisuPomociPDocument_ID('2UF2000101', '9M6E000101', 'KQ0U000101', '03');
+  // DesU.opravRadekVypisuPomociPDocument_ID('2UF2000101', '9M6E000101', 'KQ0U000101', '03'); x
   // Memo1.Lines.Add('Radek opraveeen:');
   //DesU.dbAbra.Reconnect;
   {
