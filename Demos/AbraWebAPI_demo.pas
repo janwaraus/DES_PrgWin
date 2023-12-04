@@ -273,23 +273,28 @@ var
   apiResponse: string;
   translatedString: string;
   CodePoint : integer;
+  FileStream: TFileStream;
 begin
-  apiResponse := 'V\u00E1m za obdob\u00ED slu\u017Ebu  5G'; // Vaše odpovìï z API
-  memo2.Lines.Add(apiResponse); // Zobrazí "Vám"
 
-  // Dekódování øetìzce
-  translatedString := UTF8ToString(apiResponse);
+    apiResponse := DesU.webHttpsGet('https://www.fio.cz/ib_api/rest/by-id/ZIC7jWgEUWZYH3Wh1DECb2qWJ3WIVSRrN06bkskllXeecrXNf7J3I3TtcLzzsuNg/2023/313/transactions.gpc');
+    writeToFile(DesU.GPC_PATH + 'web_download.docx', apiResponse);
+    writeToFileInUTF8(DesU.GPC_PATH + 'web_downloadUTF8.docx', apiResponse);
 
-  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
-
-
-  translatedString := TNetEncoding.URL.Decode(apiResponse);
-  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
+    appendToFile(DesU.GPC_PATH + 'testappend.docx', 'Kfùìšøí ééd as');
+    appendToFileInUTF8(DesU.GPC_PATH + 'testappendUTF8.docx', 'Kfùìšøí ééd as');
 
 
-  translatedString := DecodeUnicodeEscapeSequences(apiResponse);
-  memo2.Lines.Add(translatedString); // Zobrazí "Vám"
+    // FileStream := TFileStream.Create(DesU.GPC_PATH + 'local-file-to-save.txt', fmCreate);
+    //DesU.IdHTTPweb.Get('https://www.fio.cz/ib_api/rest/by-id/ZIC7jWgEUWZYH3Wh1DECb2qWJ3WIVSRrN06bkskllXeecrXNf7J3I3TtcLzzsuNg/2023/299/transactions.gpc', FileStream);
+    //DesU.IdHTTPweb.Get('https://topic.alibabacloud.com/a/the-difference-between-exitabortbreakcontinue-in-delphi_8_8_10262990.html', FileStream);
 
+
+      memo2.Lines.Clear;
+      memo2.Lines.Add(apiResponse);
+
+
+
+    ShowMessage('File downloaded successfully.');
 end;
 
 

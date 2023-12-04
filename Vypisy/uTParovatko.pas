@@ -143,9 +143,24 @@ begin
 
     // vyrobím si list jen nezaplacených dokladù
     nezaplaceneDoklady := TList.Create;
-    for i := 0 to Platba.DokladyList.Count - 1 do
-      if TDoklad(Platba.DokladyList[i]).CastkaNezaplaceno <> 0 then
+
+    // hledám doklad, jehož nezaplacená èástka se rovná èástce platby
+    for i := Platba.DokladyList.Count - 1 downto 0 do begin
+      iDoklad := TDoklad(Platba.DokladyList[i]);
+      if getUzSparovano(iDoklad.ID) > 0 then Break;
+
+      if iDoklad.CastkaNezaplaceno = Platba.Castka then begin
         nezaplaceneDoklady.Add(Platba.DokladyList[i]);
+        Break;
+      end;
+    end;
+
+
+    // pokud se nenašel doklad, který by šlo pøesnì zaplatit, vezmu si všechny nezaplacené
+    if (nezaplaceneDoklady.Count = 0) then
+      for i := 0 to Platba.DokladyList.Count - 1 do
+        if TDoklad(Platba.DokladyList[i]).CastkaNezaplaceno <> 0 then
+          nezaplaceneDoklady.Add(Platba.DokladyList[i]);
 
     // pokud není žádný nezaplacený
     if (nezaplaceneDoklady.Count = 0) then

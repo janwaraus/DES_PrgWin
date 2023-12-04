@@ -2,7 +2,7 @@ object fmMain: TfmMain
   Left = 141
   Top = 0
   Caption = 'Na'#269'ten'#237', oprava a ulo'#382'en'#237' bankovn'#237'ho v'#253'pisu'
-  ClientHeight = 676
+  ClientHeight = 675
   ClientWidth = 1379
   Color = clBtnFace
   Constraints.MinHeight = 714
@@ -16,7 +16,7 @@ object fmMain: TfmMain
   OnShow = FormShow
   DesignSize = (
     1379
-    676)
+    675)
   PixelsPerInch = 96
   TextHeight = 13
   object lblHlavicka: TLabel
@@ -122,11 +122,20 @@ object fmMain: TfmMain
     ParentFont = False
     Layout = tlBottom
   end
+  object btnStahniVypisy: TButton
+    Left = 128
+    Top = 472
+    Width = 75
+    Height = 22
+    Caption = 'St'#225'hni v'#253'pisy'
+    TabOrder = 9
+    OnClick = btnStahniVypisyClick
+  end
   object pnRight: TPanel
     Left = 932
     Top = 0
     Width = 447
-    Height = 676
+    Height = 675
     Align = alRight
     TabOrder = 1
     object lblPrechoziPlatbyZUctu: TLabel
@@ -463,8 +472,7 @@ object fmMain: TfmMain
     Left = 0
     Top = 0
     Width = 109
-    Height = 676
-    Align = alLeft
+    Height = 531
     TabOrder = 2
     object lblPomocPrg: TLabel
       Left = 10
@@ -721,7 +729,7 @@ object fmMain: TfmMain
     Left = 107
     Top = 26
     Width = 822
-    Height = 501
+    Height = 506
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
     DefaultRowHeight = 20
@@ -858,10 +866,10 @@ object fmMain: TfmMain
       184)
   end
   object pnBottom: TPanel
-    Left = -1
-    Top = 529
-    Width = 933
-    Height = 146
+    Left = 0
+    Top = 532
+    Width = 932
+    Height = 143
     TabOrder = 7
     object lblNalezeneDoklady: TLabel
       Left = 108

@@ -343,7 +343,7 @@ begin
   begin
     pouzivanyVSvMinulosti := getVSzMinulostiByBankAccount();
     if (pouzivanyVSvMinulosti <> '') AND (pouzivanyVSvMinulosti <> self.VS) then begin
-      self.VS := pouzivanyVSvMinulosti; // pùvodní VS zùsttává v atributu VSOrig
+      self.VS := pouzivanyVSvMinulosti; // pùvodní VS zùstává v atributu VSOrig
       loadPredchoziPlatbyPodleVS();
       loadDokladyPodleVS;
     end;

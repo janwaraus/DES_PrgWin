@@ -16,7 +16,8 @@ uses
   AArray in '..\DE$_Common\AArray.pas',
   ParovaniGenLedger in '..\Reseni PNP\ParovaniGenLedger.pas' {fmSparovaniVDeniku},
   PrirazeniPNP in '..\Reseni PNP\PrirazeniPNP.pas' {fmPrirazeniPnp},
-  SeskupeniGenLedger in '..\Reseni PNP\SeskupeniGenLedger.pas' {fmSeskupeniVDeniku};
+  SeskupeniGenLedger in '..\Reseni PNP\SeskupeniGenLedger.pas' {fmSeskupeniVDeniku},
+  uTBankUcet in 'uTBankUcet.pas';
 
 {$R *.res}
 

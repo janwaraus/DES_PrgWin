@@ -12,7 +12,7 @@ uses
   IdTCPConnection, IdTCPClient, IdHTTP, IdSMTP, IdExplicitTLSClientServerBase, IdSMTPBase,
   IdText, IdMessage, IdMessageParts, IdMessageClient, IdAttachmentFile,
   Data.DB, ZAbstractRODataset, ZAbstractDataset, ZDataset, ZAbstractConnection, ZConnection,
-  Superobject, AArray;
+  Superobject, AArray, IdAuthentication;
 
 
 type
@@ -39,6 +39,8 @@ type
     idSMTP: TIdSMTP;
     IdSSLIOHandler: TIdSSLIOHandlerSocketOpenSSL;
     IdHTTPAbra: TIdHTTP;
+    IdHTTPweb: TIdHTTP;
+    IdSSLIOHandlerWeb: TIdSSLIOHandlerSocketOpenSSL;
 
     procedure FormCreate(Sender: TObject);
     procedure desUtilsInit(createOptions : string = '');
@@ -59,6 +61,7 @@ type
     function ulozKomunikaci(CommunicationTypeId, CustomerId : integer; Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
     procedure syncAbraPdfToRemoteServer(year, month : integer);
+    function webHttpsGet(endpoint : string) : string;
 
 
     public
@@ -141,9 +144,10 @@ function SplitStringInTwo(const InputString, Delimiter: string; out LeftPart, Ri
 function destilujTelCislo(telCislo: string): string;
 function destilujMobilCislo(telCislo: string): string;
 function FindInFolder(sFolder, sFile: string; bUseSubfolders: Boolean): string;
-procedure writeToFile(pFileName, pContent : string);
-procedure appendToFile(pFileName, pContent : string);
-function LoadFileToStr(const FileName: TFileName): ansistring;
+procedure writeToFile(FileName, Content : string);
+procedure writeToFileInUTF8(FileName, Content : string);
+procedure appendToFile(FileName, Content : string);
+procedure appendToFileInUTF8(FileName, Content : string);
 function FloatToStrFD (pFloat : extended) : string;
 function RandString(const stringsize: integer): string;
 function debugRozdilCasu(cas01, cas02 : double; textZpravy : string) : string;
@@ -1018,6 +1022,7 @@ begin
 end;
 
 
+
 function TDesU.existujeVAbreDokladSPrazdnymVs() : boolean;
 var
   messagestr: string;
@@ -1284,6 +1289,29 @@ procedure TDesU.syncAbraPdfToRemoteServer(year, month : integer);
 begin
   RunCMD (Format('WinSCP.com /command "option batch abort" "option confirm off" "open AbraPDF" "synchronize remote '
    + '%s%4d\%2.2d /home/abrapdf/%4d" "exit"', [DesU.PDF_PATH, year, month, year]), SW_SHOWNORMAL);
+end;
+
+
+function TDesU.webHttpsGet(endpoint : string) : string;
+var
+  responseContent: TStringStream;
+begin
+  //responseContent := TStringStream.Create('', TEncoding.UTF8);
+  responseContent := TStringStream.Create();
+    IdHTTPweb.Get(endpoint, responseContent);
+    Result := responseContent.DataString;
+
+
+{
+  try
+    IdHTTPweb.Get(endpoint, responseContent);
+    Result := responseContent.DataString;
+  except
+    on E: Exception do
+      ShowMessage('Error on request: '#13#10 + e.Message);
+  end;
+}
+
 end;
 
 
@@ -1636,48 +1664,64 @@ begin
   end;
 end;
 
-procedure writeToFile(pFileName, pContent : string);
+procedure writeToFile(FileName, Content : string);
 var
-    OutputFile : TextFile;
+  OutputFile : TextFile;
 begin
-  AssignFile(OutputFile, pFileName);
-  ReWrite(OutputFile);
-  WriteLn(OutputFile, pContent);
-  CloseFile(OutputFile);
-end;
-
-procedure appendToFile(pFileName, pContent : string);
-var
-    F : TextFile;
-begin
-  AssignFile(F, pFileName);
   try
-    if FileExists(pFileName) = false then
-      Rewrite(F)
-    else
-    begin
-      Append(F);
-    end;
-    Writeln(F, pContent);
-  finally
-    CloseFile(F);
+    AssignFile(OutputFile, FileName);
+    ReWrite(OutputFile);
+    Write(OutputFile, Content);
+    CloseFile(OutputFile);
+  except
+    MessageDlg('Zápis souboru ' + FileName + ' se nezdaøil', mtError, [mbOK], 0);
   end;
 end;
 
-function LoadFileToStr(const FileName: TFileName): ansistring;
-var
-  FileStream : TFileStream;
+procedure writeToFileInUTF8(FileName, Content : string);
 begin
-  FileStream:= TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-    try
-     if FileStream.Size>0 then
-     begin
-      SetLength(Result, FileStream.Size);
-      FileStream.Read(Pointer(Result)^, FileStream.Size);
-     end;
-    finally
-     FileStream.Free;
-    end;
+  TFile.WriteAllText(FileName, Content);
+end;
+
+
+procedure appendToFile(FileName, Content : string);
+var
+  F : TextFile;
+  i : integer;
+begin
+  AssignFile(F, FileName);
+  for i := 0 to 50 do try
+    if FileExists(FileName) = false then
+      Rewrite(F)
+    else
+      Append(F);
+    Writeln(F, Content);
+    CloseFile(F);
+    Exit;
+  except
+    Sleep(50);
+  end;
+
+  MessageDlg('Zápis do souboru ' + FileName + ' se nezdaøil', mtError, [mbOK], 0);
+end;
+
+
+procedure appendToFileInUTF8(FileName, Content : string);
+var
+  i : integer;
+begin
+  for i := 0 to 50 do try
+    if TFile.Exists(FileName) then
+      TFile.AppendAllText(FileName, Content + sLineBreak) // hází error  "No mapping for the Unicode character exists in the target multi-byte code page"
+    else
+      TFile.WriteAllText(FileName, Content + sLineBreak);
+    Exit;
+  except
+    Sleep(50);
+  end;
+
+  MessageDlg('Zápis do souboru ' + FileName + ' se nezdaøil', mtError, [mbOK], 0);
+
 end;
 
 function RandString(const stringsize: integer): string;

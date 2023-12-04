@@ -114,6 +114,7 @@
             <Form>fmSeskupeniVDeniku</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="uTBankUcet.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -170,6 +171,12 @@
                 <Platform value="Win32">True</Platform>
             </Platforms>
             <Deployment Version="3">
+                <DeployFile LocalName="Vypisy.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>Vypisy.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Vypisy.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">

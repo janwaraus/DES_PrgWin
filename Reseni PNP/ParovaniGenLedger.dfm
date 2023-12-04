@@ -53,7 +53,6 @@ object fmSparovaniVDeniku: TfmSparovaniVDeniku
     Top = 48
     Width = 1133
     Height = 431
-    Cursor = crDefault
     Anchors = [akLeft, akTop, akBottom]
     BorderStyle = bsNone
     ColCount = 13
@@ -66,9 +65,7 @@ object fmSparovaniVDeniku: TfmSparovaniVDeniku
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
-    ScrollBars = ssBoth
     TabOrder = 0
-    HoverRowCells = [hcNormal, hcSelected]
     OnGetAlignment = asgSparovaniVDenikuGetAlignment
     OnCanSort = asgSparovaniVDenikuCanSort
     OnClickCell = asgSparovaniVDenikuClickCell
@@ -136,7 +133,8 @@ object fmSparovaniVDeniku: TfmSparovaniVDeniku
     FixedFont.Style = [fsBold]
     FloatFormat = '%.2f'
     HoverButtons.Buttons = <>
-    HoverButtons.Position = hbLeftFromColumnLeft
+    HTMLSettings.ImageFolder = 'images'
+    HTMLSettings.ImageBaseName = 'img'
     PrintSettings.DateFormat = 'dd/mm/yyyy'
     PrintSettings.Font.Charset = DEFAULT_CHARSET
     PrintSettings.Font.Color = clWindowText
@@ -172,10 +170,10 @@ object fmSparovaniVDeniku: TfmSparovaniVDeniku
     SearchFooter.HintFindPrev = 'Find previous occurrence'
     SearchFooter.HintHighlight = 'Highlight occurrences'
     SearchFooter.MatchCaseCaption = 'Match case'
-    SortSettings.DefaultFormat = ssAutomatic
+    SearchFooter.ResultFormat = '(%d of %d)'
     SortSettings.Column = 2
     SortSettings.Show = True
-    Version = '7.4.2.0'
+    Version = '8.7.0.0'
     ColWidths = (
       27
       160
