@@ -61,7 +61,8 @@ type
     function ulozKomunikaci(CommunicationTypeId, CustomerId : integer; Zprava: string): TDesResult;   // typ 2 je mail, typ 23 SMS
     function posliPdfEmailem(FullPdfFileName, emailAddrStr, emailPredmet, emailZprava, emailOdesilatel : string; ExtraPrilohaFileName: string = '') : TDesResult;
     procedure syncAbraPdfToRemoteServer(year, month : integer);
-    function webHttpsGet(endpoint : string) : string;
+    function webHttpsGet(endpoint : string) : TDesResult;
+    function webHttpsGetBezOsetreni(endpoint : string) : string;
 
 
     public
@@ -1292,15 +1293,40 @@ begin
 end;
 
 
-function TDesU.webHttpsGet(endpoint : string) : string;
+
+
+function TDesU.webHttpsGet(endpoint : string) : TDesResult;
+var
+  responseContent: TStringStream;
+  httpResponseContent : string;
+  responseCode : integer;
+begin
+  responseContent := TStringStream.Create();
+  IdHTTPweb.Get(endpoint, responseContent);
+  responseCode := IdHTTPweb.ResponseCode;
+  httpResponseContent := responseContent.DataString;
+
+  if responseCode < 400 then begin // HTTP responsy pod 400 nejsou errorové
+    //self.logJson(jsonString + sLineBreak + sLineBreak + 'response:' + sLineBreak + newAbraBo, 'abraBoCreate - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+    Result := TDesResult.create('ok', httpResponseContent);
+  end
+  else
+  begin
+    //self.logJson(jsonString + sLineBreak + sLineBreak + 'error response HTTP ' + IntToStr(responseCode) + sLineBreak + responseContent.DataString, 'abraBoCreate - WebApi - ' + abraWebApiUrl + abraBoName + 's');
+    //exceptionSO := SO(responseContent.DataString);
+    Result := TDesResult.create('err_http' + IntToStr(responseCode), httpResponseContent);
+  end;
+end;
+
+
+function TDesU.webHttpsGetBezOsetreni(endpoint : string) : string;
 var
   responseContent: TStringStream;
 begin
   //responseContent := TStringStream.Create('', TEncoding.UTF8);
   responseContent := TStringStream.Create();
-    IdHTTPweb.Get(endpoint, responseContent);
-    Result := responseContent.DataString;
-
+  IdHTTPweb.Get(endpoint, responseContent);
+  Result := responseContent.DataString;
 
 {
   try

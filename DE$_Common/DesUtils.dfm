@@ -157,7 +157,7 @@ object DesU: TDesU
     Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
     Request.Ranges.Units = 'bytes'
     Request.Ranges = <>
-    HTTPOptions = [hoForceEncodeParams]
+    HTTPOptions = [hoForceEncodeParams, hoNoProtocolErrorException, hoWantProtocolErrorContent]
     Left = 272
     Top = 216
   end

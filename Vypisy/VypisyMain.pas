@@ -98,9 +98,11 @@ type
     procedure asgMainCellValidate(Sender: TObject; ACol, ARow: Integer;
       var Value: string; var Valid: Boolean);
     procedure btnStahniVypisyClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
 
   public
     procedure nactiGpc(GpcFilename : string);
+    procedure stahniVypisy;
     procedure vyplnNacitaciButtony;
     procedure vyplnPrichoziPlatby;
     procedure vyplnPredchoziPlatby;
@@ -120,17 +122,40 @@ var
   Vypis : TVypis;
   currPlatbaZVypisu : TPlatbaZVypisu;
   Parovatko : TParovatko;
-
   bankUcetFio,
   bankUcetFioSporici,
   bankUcetFiokonto,
   bankUcetCsob,
   bankUcetPayU : TBankUcet;
+  prvniZobrazeni : boolean;
 
 implementation
 uses
   AbraEntities, DesUtils, Superobject, Customers, PrirazeniPNP;
 {$R *.dfm}
+
+procedure TfmMain.FormActivate(Sender: TObject);
+begin
+  if prvniZobrazeni then begin
+    //Memo1.Lines.Add('Pøipojení k databázím...');
+    //DesU.desUtilsInit;
+    Memo1.Lines.Add('Naètení dat...');
+    vyplnNacitaciButtony;
+
+    if DesU.appMode >= 3 then
+    begin
+      btnReconnect.Visible := true;
+      btnSparujPlatby.Visible := true;
+      memo2.Visible := true;
+    end;
+    //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
+    Memo1.Lines.Add('Kontrola dokladù s prázným VS...');
+    DesU.existujeVAbreDokladSPrazdnymVs();
+    Memo1.Lines.Add('Stažení Fio výpisù...');
+    stahniVypisy;
+    prvniZobrazeni := false;
+  end;
+end;
 
 procedure TfmMain.FormShow(Sender: TObject);
 begin
@@ -138,17 +163,11 @@ begin
   //asgMain.CheckFalse := '0';
   //asgMain.CheckTrue := '1';
   lblHlavicka.Caption := '';
-  lblHlavickaVpravo.Caption := '';
   lblVypisOverview.Caption := '';
-  vyplnNacitaciButtony;
-  if DesU.appMode >= 3 then
-  begin
-    btnReconnect.Visible := true;
-    btnSparujPlatby.Visible := true;
-    memo2.Visible := true;
-  end;
-  //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
-  DesU.existujeVAbreDokladSPrazdnymVs();
+  lblHlavickaVpravo.Caption := '';
+  Memo1.Lines.Add('Start programu...');
+  prvniZobrazeni := true;
+
 end;
 
 procedure TfmMain.vyplnNacitaciButtony;
@@ -355,7 +374,13 @@ begin
 
 end;
 
+
 procedure TfmMain.btnStahniVypisyClick(Sender: TObject);
+begin
+  stahniVypisy;
+end;
+
+procedure TfmMain.stahniVypisy;
 var
   wgResponse,
   cisloVypisu,
@@ -365,39 +390,47 @@ var
 begin
 
   // Fio
-  vysledekStazeni := bankUcetFio.stahniVypis;
-  if vysledekStazeni.isOk then begin
-    lblVypisFioGpc.caption := bankUcetFio.gpcSoubor;
-    btnVypisFio.Enabled := true;
-    Memo1.Lines.Add(vysledekStazeni.Messg);
-  end else begin
-    lblVypisFioGpc.caption := 'Výpis è. ' + bankUcetFio.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout';
-    btnVypisFio.Enabled := false;
+  if bankUcetFio.gpcSoubor = '' then begin
+    vysledekStazeni := bankUcetFio.stahniVypis;
+    if vysledekStazeni.isOk then begin
+      lblVypisFioGpc.caption := bankUcetFio.gpcSoubor;
+      btnVypisFio.Enabled := true;
+      Memo1.Lines.Add(vysledekStazeni.Messg);
+    end else begin
+      lblVypisFioGpc.caption := 'Výpis è. ' + bankUcetFio.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      btnVypisFio.Enabled := false;
+      Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+    end;
   end;
 
   // Fio spoøící
-  vysledekStazeni := bankUcetFioSporici.stahniVypis;
-  if vysledekStazeni.isOk then begin
-    lblVypisFioSporiciGpc.caption := bankUcetFioSporici.gpcSoubor;
-    btnVypisFioSporici.Enabled := true;
-    Memo1.Lines.Add(vysledekStazeni.Messg);
-  end else begin
-    lblVypisFioSporiciGpc.caption := 'Výpis è. ' + bankUcetFioSporici.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout';
-    btnVypisFioSporici.Enabled := false;
+  if bankUcetFioSporici.gpcSoubor = '' then begin
+    vysledekStazeni := bankUcetFioSporici.stahniVypis;
+    if vysledekStazeni.isOk then begin
+      lblVypisFioSporiciGpc.caption := bankUcetFioSporici.gpcSoubor;
+      btnVypisFioSporici.Enabled := true;
+      Memo1.Lines.Add(vysledekStazeni.Messg);
+    end else begin
+      lblVypisFioSporiciGpc.caption := 'Výpis è. ' + bankUcetFioSporici.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      btnVypisFioSporici.Enabled := false;
+      Memo1.Lines.Add('Chyba pøi stahování výpisu Fio spoøící: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+    end;
   end;
+
 
   //Fiokonto
-  vysledekStazeni := bankUcetFiokonto.stahniVypis;
-  if vysledekStazeni.isOk then begin
-    lblVypisFiokontoGpc.caption := bankUcetFiokonto.gpcSoubor;
-    btnVypisFiokonto.Enabled := true;
-    Memo1.Lines.Add(vysledekStazeni.Messg);
-  end else begin
-    lblVypisFiokontoGpc.caption := 'Výpis è. ' + bankUcetFiokonto.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout';
-    btnVypisFiokonto.Enabled := false;
+  if bankUcetFiokonto.gpcSoubor = '' then begin
+    vysledekStazeni := bankUcetFiokonto.stahniVypis;
+    if vysledekStazeni.isOk then begin
+      lblVypisFiokontoGpc.caption := bankUcetFiokonto.gpcSoubor;
+      btnVypisFiokonto.Enabled := true;
+      Memo1.Lines.Add(vysledekStazeni.Messg);
+    end else begin
+      lblVypisFiokontoGpc.caption := 'Výpis è. ' + bankUcetFiokonto.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      btnVypisFiokonto.Enabled := false;
+      Memo1.Lines.Add('Chyba pøi stahování výpisu Fiokonto: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+    end;
   end;
-
-
 
 end;
 

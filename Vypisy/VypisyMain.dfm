@@ -13,6 +13,7 @@ object fmMain: TfmMain
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  OnActivate = FormActivate
   OnShow = FormShow
   DesignSize = (
     1379
@@ -125,9 +126,11 @@ object fmMain: TfmMain
   object btnStahniVypisy: TButton
     Left = 128
     Top = 472
-    Width = 75
+    Width = 361
     Height = 22
-    Caption = 'St'#225'hni v'#253'pisy'
+    Caption = 
+      'St'#225'hni v'#253'pisy znovu (automaticky se stahuje jednou po startu pro' +
+      'gramu)'
     TabOrder = 9
     OnClick = btnStahniVypisyClick
   end
@@ -726,10 +729,10 @@ object fmMain: TfmMain
     OnClick = btnVypisPayUClick
   end
   object asgMain: TAdvStringGrid
-    Left = 107
-    Top = 26
-    Width = 822
-    Height = 506
+    Left = 108
+    Top = 24
+    Width = 821
+    Height = 508
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
     DefaultRowHeight = 20
