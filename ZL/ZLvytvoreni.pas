@@ -97,6 +97,7 @@ var
   abraResponseSO : ISuperObject;
   abraWebApiResponse : TDesResult;
   NewInvoice : TNewDesInvoiceAA;
+  newIDI: TNewAbraBo;
 
 begin
   with fmMain, DesU.qrZakos, asgMain do begin
@@ -192,7 +193,7 @@ begin
       + ' AND DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
       + ' ORDER BY OrdNumber DESC';
       Open;
-      if RecordCount > 0 then begin
+      if RecordCount > 100 then begin
         fmMain.Zprava(Format('%s, variabilní symbol %s: %d. zálohový list se stejným datem.',
         [FirmName, CustomerVarSymbol, RecordCount + 1]));
         Dotaz := Application.MessageBox(PChar(Format('Pro variabilní symbol %s existuje zálohový list ZL1-%s s datem %s na èástku %s Kè. Má se vytvoøit další?',
@@ -228,6 +229,17 @@ begin
     end;
 
 
+    //takhle NOVÌ
+        // hlavièka faktury
+        {
+    newIDI := TNewAbraBo.Create('issueddepositinvoice');
+    newIDI.addInvoiceParams(Floor(deDatumDokladu.Date));
+    newIDI.Item['Varsymbol'] := CustomerVarSymbol;
+    newIDI.Item['DocQueue_ID'] := AbraEnt.getDocQueue('Code=ZL1').ID;
+    newIDI.Item['Description'] := Format('Pøipojení %s, %s', [Obdobi, CustomerVarSymbol]);
+    newIDI.Item['Firm_ID'] := Firm_Id;
+    newIDI.Item['DueDate$DATE'] := Floor(deDatumSplatnosti.Date);
+    }
     // vytvoøí se objekt TNewDesInvoiceAA a pak zbytek hlavièky ZL
     NewInvoice := TNewDesInvoiceAA.create(Floor(deDatumDokladu.Date), CustomerVarSymbol, '10');
 
@@ -333,7 +345,7 @@ begin
 
 
     try
-      abraWebApiResponse := DesU.abraBoCreateWebApi(NewInvoice.AA, 'issueddepositinvoice');
+      abraWebApiResponse := DesU.abraBoCreate(NewInvoice.AA.AsJSon, 'issueddepositinvoice');
       if abraWebApiResponse.isOk then begin
         abraResponseSO := SO(abraWebApiResponse.Messg);
         fmMain.Zprava(Format('%s (%s): Vytvoøen zálohový list %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));

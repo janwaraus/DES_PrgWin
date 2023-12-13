@@ -1728,7 +1728,8 @@ begin
     Sleep(50);
   end;
 
-  MessageDlg('Zápis do souboru ' + FileName + ' se nezdaøil', mtError, [mbOK], 0);
+  MessageDlg('Zápis do souboru ' + FileName + ' se nezdaøil' + sLineBreak
+    + 'Zapisovaný text: ' + Content, mtError, [mbOK], 0);
 end;
 
 

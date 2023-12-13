@@ -10,7 +10,8 @@ uses
   AbraEntities in '..\DE$_Common\AbraEntities.pas',
   DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport},
   DesInvoices in '..\DE$_Common\DesInvoices.pas',
-  DesUtils in '..\DE$_Common\DesUtils.pas' {DesU};
+  DesUtils in '..\DE$_Common\DesUtils.pas' {DesU},
+  AArray in '..\DE$_Common\AArray.pas';
 
 {$R *.res}
 

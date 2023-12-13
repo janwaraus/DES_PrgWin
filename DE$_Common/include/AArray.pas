@@ -7,8 +7,8 @@ uses
 
 type TAArray = class
 private
-  procedure PutV (Key, Value: Variant);
-  function GetV (Key: Variant): Variant;
+  procedure PutV (Key: string; Value: Variant);
+  function GetV (Key: string): Variant;
   function JsonEscapeString(const AValue: string): string;
 public
   Values: array of Variant;
@@ -17,8 +17,8 @@ public
   RowList : TList;
 
   constructor Create;
-  property Items [Index : Variant]: Variant read GetV write PutV; default;
-  function IndexByKey (Key: Variant): Integer;
+  property Items [Index : string]: Variant read GetV write PutV; default;
+  function IndexByKey (Key: string): Integer;
   function Count: Integer;
   procedure Reset;
   function CurrKey: Variant;
@@ -47,9 +47,10 @@ function TAArray.Count: Integer;
    Result := Length (Self.Keys)
  end;
 
- procedure TAArray.PutV (Key, Value: Variant);
+ procedure TAArray.PutV (Key: string; Value: Variant);
  var Cursor: Integer;
  begin
+   Key := LowerCase(Key);
    Cursor := Self.IndexByKey(Key);
    if Cursor = -1 then
    begin
@@ -61,9 +62,10 @@ function TAArray.Count: Integer;
    Self.Values[Cursor] := Value;
  end;
 
- function TAArray.GetV (Key: Variant): Variant;
+ function TAArray.GetV (Key: string): Variant;
  var Cursor: Integer;
  begin
+   Key := LowerCase(Key);
    Cursor := Self.IndexByKey (Key);
    if Cursor = -1 then
    begin
@@ -75,7 +77,7 @@ function TAArray.Count: Integer;
    end;
  end;
 
- function TAArray.IndexByKey (Key: Variant): Integer;
+ function TAArray.IndexByKey (Key: string): Integer;
  var Current,Records: Integer;
  begin
    Result := -1;

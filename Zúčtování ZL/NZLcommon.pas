@@ -206,7 +206,9 @@ begin
 
         if pdfFileExists then begin
           Ints[0, Radek] := 0; // odškrtnout 1. checkbox
-          if pdfSendingDateTime > 0 then Ints[2, Radek] := 0; // odškrtnout 2. checkbox, už bylo v minulosti posláno
+          if (pdfSendingDateTime > 0) or
+            (Pos('@', postalMail) <= 0) // když není vyplnìný email
+          then Ints[2, Radek] := 0; // odškrtnout 2. checkbox, už bylo v minulosti posláno
         end
         else begin
           Ints[2, Radek] := 0; // odškrtnout 2. checkbox
