@@ -48,6 +48,7 @@ type
     fePriloha: TAdvFileNameEdit;
     lbxLog: TListBox;
     asgMain: TAdvStringGrid;
+    chbTestVytvoreni: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -79,6 +80,7 @@ type
     procedure btOdeslatClick(Sender: TObject);
     procedure btSablonaClick(Sender: TObject);
     procedure btKonecClick(Sender: TObject);
+    procedure chbTestVytvoreniClick(Sender: TObject);
 
   private
     LogDir : string;
@@ -561,6 +563,11 @@ begin
     btKonec.Caption := '&Konec';
     btVytvorit.Enabled := True;
   end;
+end;
+
+procedure TfmMain.chbTestVytvoreniClick(Sender: TObject);
+begin
+
 end;
 
 // ------------------------------------------------------------------------------------------------

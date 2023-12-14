@@ -51,7 +51,6 @@ object fmMain: TfmMain
     StatusBar.Font.Name = 'Tahoma'
     StatusBar.Font.Style = []
     Text = ''
-    ExplicitWidth = 834
     DesignSize = (
       923
       132)
@@ -107,7 +106,6 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 673
       DesignSize = (
         762
         37)
@@ -161,7 +159,6 @@ object fmMain: TfmMain
         FilterIndex = 0
         DialogOptions = []
         DialogKind = fdOpen
-        ExplicitWidth = 447
       end
     end
     object apnPrevod: TAdvPanel
@@ -191,7 +188,6 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 673
       DesignSize = (
         762
         37)
@@ -223,7 +219,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 1
         OnClick = btOdeslatClick
-        ExplicitLeft = 587
       end
       object btSablona: TButton
         Left = 567
@@ -241,7 +236,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 2
         OnClick = btSablonaClick
-        ExplicitLeft = 478
       end
     end
     object apnTisk: TAdvPanel
@@ -271,12 +265,11 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 673
       FullHeight = 95
     end
     object apnMain: TAdvPanel
-      Left = 168
-      Top = 0
+      Left = 175
+      Top = 1
       Width = 762
       Height = 96
       Anchors = [akLeft, akTop, akRight]
@@ -300,14 +293,13 @@ object fmMain: TfmMain
       StatusBar.Font.Name = 'Tahoma'
       StatusBar.Font.Style = []
       Text = ''
-      ExplicitWidth = 673
       DesignSize = (
         762
         96)
       FullHeight = 200
       object aseRok: TAdvSpinEdit
         Left = 50
-        Top = 62
+        Top = 68
         Width = 55
         Height = 21
         Color = clWindow
@@ -340,7 +332,7 @@ object fmMain: TfmMain
         OnChange = aseRokChange
       end
       object btVytvorit: TButton
-        Left = 676
+        Left = 668
         Top = 20
         Width = 71
         Height = 21
@@ -354,11 +346,10 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 3
         OnClick = btVytvoritClick
-        ExplicitLeft = 587
       end
       object btKonec: TButton
-        Left = 676
-        Top = 54
+        Left = 668
+        Top = 55
         Width = 71
         Height = 21
         Anchors = [akTop, akRight]
@@ -371,7 +362,6 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 4
         OnClick = btKonecClick
-        ExplicitLeft = 587
       end
       object aedOd: TAdvEdit
         Left = 466
@@ -538,6 +528,16 @@ object fmMain: TfmMain
         LabelFont.Height = -11
         LabelFont.Name = 'MS Sans Serif'
         LabelFont.Style = [fsBold]
+      end
+      object chbTestVytvoreni: TCheckBox
+        Left = 565
+        Top = 22
+        Width = 105
+        Height = 17
+        Caption = 'TestVytvoreni'
+        TabOrder = 8
+        Visible = False
+        OnClick = chbTestVytvoreniClick
       end
     end
     object apnVyberCinnosti: TAdvPanel
@@ -719,8 +719,6 @@ object fmMain: TfmMain
     ScrollWidth = 1600
     TabOrder = 0
     OnDblClick = lbxLogDblClick
-    ExplicitWidth = 834
-    ExplicitHeight = 229
   end
   object asgMain: TAdvStringGrid
     Left = 0
@@ -858,11 +856,9 @@ object fmMain: TfmMain
     SortSettings.Column = 2
     SortSettings.Show = True
     Version = '8.7.0.0'
-    ExplicitWidth = 834
-    ExplicitHeight = 229
     ColWidths = (
       28
-      64
+      70
       73
       64
       187

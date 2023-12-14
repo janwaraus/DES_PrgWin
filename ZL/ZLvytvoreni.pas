@@ -93,13 +93,16 @@ var
   CustomerVarSymbol,
   SQLStr : string;
 
-  boRowAA : TAArray;
-  abraResponseSO : ISuperObject;
-  abraWebApiResponse : TDesResult;
-  NewInvoice : TNewDesInvoiceAA;
+  //boRowAA : TAArray;
+  //abraResponseSO : ISuperObject;
+  //abraWebApiResponse : TDesResult;
+  //NewInvoice : TNewDesInvoiceAA;
   newIDI: TNewAbraBo;
+  testVytvoreni : boolean;
 
 begin
+  testVytvoreni := fmMain.chbTestVytvoreni.Checked;
+
   with fmMain, DesU.qrZakos, asgMain do begin
     CustomerVarSymbol := Cells[1, Radek];
 
@@ -185,30 +188,36 @@ begin
       BusTransaction_Id := AbraEnt.getBusTransaction('Code=' + BusTransactionCode).ID;
 
       // kontrola posledního ZL
-      Close;
-      SQL.Text := 'SELECT OrdNumber, DocDate$DATE, Amount FROM IssuedDInvoices'
-      + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=ZL1').ID + Ap
-      + ' AND VarSymbol = ' + Ap + CustomerVarSymbol + Ap
-      + ' AND DocDate$DATE >= ' + FloatToStr(Trunc(VystavenoOd))
-      + ' AND DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
-      + ' ORDER BY OrdNumber DESC';
-      Open;
-      if RecordCount > 100 then begin
-        fmMain.Zprava(Format('%s, variabilní symbol %s: %d. zálohový list se stejným datem.',
-        [FirmName, CustomerVarSymbol, RecordCount + 1]));
-        Dotaz := Application.MessageBox(PChar(Format('Pro variabilní symbol %s existuje zálohový list ZL1-%s s datem %s na èástku %s Kè. Má se vytvoøit další?',
-        [CustomerVarSymbol, FieldByName('OrdNumber').AsString, DateToStr(FieldByName('DocDate$DATE').AsFloat), FieldByName('Amount').AsString])),
-        'Pozor', MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON1);
-        if Dotaz = IDNO then begin
-          fmMain.Zprava('Ruèní zásah - zálohový list nevytvoøen.');
-          Exit;
-        end else if Dotaz = IDCANCEL then begin
-          fmMain.Zprava('Ruèní zásah - program ukonèen.');
-          Prerusit := True;
-          Exit;
-        end else fmMain.Zprava('Ruèní zásah - zálohový list se vytvoøí.');
-      end;  //   RecordCount > 0
+
+      if not testVytvoreni then begin
+
+        Close;
+        SQL.Text := 'SELECT OrdNumber, DocDate$DATE, Amount FROM IssuedDInvoices'
+        + ' WHERE DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=ZL1').ID + Ap
+        + ' AND VarSymbol = ' + Ap + CustomerVarSymbol + Ap
+        + ' AND DocDate$DATE >= ' + FloatToStr(Trunc(VystavenoOd))
+        + ' AND DocDate$DATE <= ' + FloatToStr(Trunc(VystavenoDo))
+        + ' ORDER BY OrdNumber DESC';
+        Open;
+        if RecordCount > 0 then begin
+          fmMain.Zprava(Format('%s, variabilní symbol %s: %d. zálohový list se stejným datem.',
+          [FirmName, CustomerVarSymbol, RecordCount + 1]));
+          Dotaz := Application.MessageBox(PChar(Format('Pro variabilní symbol %s existuje zálohový list ZL1-%s s datem %s na èástku %s Kè. Má se vytvoøit další?',
+          [CustomerVarSymbol, FieldByName('OrdNumber').AsString, DateToStr(FieldByName('DocDate$DATE').AsFloat), FieldByName('Amount').AsString])),
+          'Pozor', MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON1);
+          if Dotaz = IDNO then begin
+            fmMain.Zprava('Ruèní zásah - zálohový list nevytvoøen.');
+            Exit;
+          end else if Dotaz = IDCANCEL then begin
+            fmMain.Zprava('Ruèní zásah - vytváøení zálohových listù ukonèeno.');
+            Prerusit := True;
+            Exit;
+          end else fmMain.Zprava('Ruèní zásah - zálohový list se vytvoøí.');
+        end;  //   RecordCount > 0
+      end;
     end;  // with qrAbra
+
+    if testVytvoreni then Exit;
 
     fmMain.Zprava(Format('%s, variabilní symbol %s.', [FirmName, CustomerVarSymbol]));
 
@@ -229,9 +238,7 @@ begin
     end;
 
 
-    //takhle NOVÌ
-        // hlavièka faktury
-        {
+    // hlavièka faktury
     newIDI := TNewAbraBo.Create('issueddepositinvoice');
     newIDI.addInvoiceParams(Floor(deDatumDokladu.Date));
     newIDI.Item['Varsymbol'] := CustomerVarSymbol;
@@ -239,18 +246,18 @@ begin
     newIDI.Item['Description'] := Format('Pøipojení %s, %s', [Obdobi, CustomerVarSymbol]);
     newIDI.Item['Firm_ID'] := Firm_Id;
     newIDI.Item['DueDate$DATE'] := Floor(deDatumSplatnosti.Date);
-    }
+
     // vytvoøí se objekt TNewDesInvoiceAA a pak zbytek hlavièky ZL
-    NewInvoice := TNewDesInvoiceAA.create(Floor(deDatumDokladu.Date), CustomerVarSymbol, '10');
+    //* NewInvoice := TNewDesInvoiceAA.create(Floor(deDatumDokladu.Date), CustomerVarSymbol, '10');
 
     //ZLObject := AbraOLE.CreateObject('@IssuedDepositInvoice');
     //ZLData := AbraOLE.CreateValues('@IssuedDepositInvoice');
     //ZLObject.PrefillValues(ZLData);
-    NewInvoice.AA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=ZL1').ID;
+    //* NewInvoice.AA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=ZL1').ID;
     //NewInvoice.AA['Period_ID'] := Period_Id; // *HW* automaticky z data dokladu
-    NewInvoice.AA['Description'] := Format('Pøipojení %s, %s', [Obdobi, CustomerVarSymbol]);
-    NewInvoice.AA['Firm_ID'] := Firm_Id;
-    NewInvoice.AA['DueDate$DATE'] := Floor(deDatumSplatnosti.Date);        // 16.9.22 musí být až tady
+    //* NewInvoice.AA['Description'] := Format('Pøipojení %s, %s', [Obdobi, CustomerVarSymbol]);
+    //* NewInvoice.AA['Firm_ID'] := Firm_Id;
+    //* NewInvoice.AA['DueDate$DATE'] := Floor(deDatumSplatnosti.Date);        // 16.9.22 musí být až tady
 
     {  CTU, neni uz potreba
     // 28.6.2018 zakázky pro ÈTÚ - mohou být rùzné podle smlouvy
@@ -279,10 +286,7 @@ begin
 
 
     // 1. øádek s textem
-    boRowAA := NewInvoice.createNew0Row(Format('Úètujeme Vám na období  %s', [Obdobi]));
-    //boRowAA['BusOrder_ID'] := BusOrder_Id;                     // HW nemelo by byt potreba pro 1. radek
-    //boRowAA['BusTransaction_ID'] := BusTransaction_Id;         // HW nemelo by byt potreba pro 1. radek
-    //boRowAA['UnitRate'] := 1; // HW netreba, 1 je default
+    newIDI.createNewInvoiceRow(0, Format('Úètujeme Vám na období  %s', [Obdobi]));
 
     // další øádky faktury se vytvoøí z DesU.qrZakos
     while not EOF do begin
@@ -292,52 +296,52 @@ begin
         CenaPripojeni := FieldByName('bi_price').AsFloat;
       // smlouva na pøipojení
       if CenaPripojeni <> 0 then begin
-        boRowAA := NewInvoice.createNewRow_NoVat(4,
-          Format('podle smlouvy  %s  službu  %s', [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
+        newIDI.createNewInvoiceRow(4,
+          Format('podle smlouvy  %s  službu  %s', [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]), false);
         //boRowAA['BusOrder_ID'] := BusOrder_Id;
-        boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-        boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
+        newIDI.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+        newIDI.rowItem['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
 
         // platba na 6 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
         if (FieldByName('bb_period').AsInteger = 6) and (FieldByName('co_type').AsString = 'InternetContract')
          and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
           //RadkyZL:= AbraOLE.CreateValues('@IssuedDepositInvoiceRow');
-          boRowAA := NewInvoice.createNewRow_NoVat(4, 'slevu');
+          newIDI.createNewInvoiceRow(4, 'slevu', false);
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
-          boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['TAmount'] := Format('%f', [-CenaPripojeni]);
+          newIDI.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+          newIDI.rowItem['TAmount'] := Format('%f', [-CenaPripojeni]);
         end;
 
         // platba na 12 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
         if (FieldByName('bb_period').AsInteger = 12) and (FieldByName('co_type').AsString = 'InternetContract')
          and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
-          boRowAA := NewInvoice.createNewRow_NoVat(4, 'slevu');
+          newIDI.createNewInvoiceRow(4, 'slevu', false);
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
-          boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['TAmount'] := Format('%f', [-2*CenaPripojeni]);
+          newIDI.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+          newIDI.rowItem['TAmount'] := Format('%f', [-2*CenaPripojeni]);
         end;
         CenaPripojeni := 0; // HW asi zbyteèné tady
       end
       // nìco jiného než platba za pøipojení (CenaPripojeni = 0)
       else begin
-        boRowAA := NewInvoice.createNewRow_NoVat(4, FieldByName('bi_description').AsString);
+        newIDI.createNewInvoiceRow(4, FieldByName('bi_description').AsString, false);
         //boRowAA['BusOrder_ID'] := BusOrder_Id;                          // 30.4.21
-        boRowAA['BusTransaction_ID'] := BusTransaction_Id;              // 30.4.21
-        boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
+        newIDI.rowItem['BusTransaction_ID'] := BusTransaction_Id;              // 30.4.21
+        newIDI.rowItem['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
         // platba na 6 mìsícù
         if (FieldByName('bb_period').AsInteger = 6) then
           if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
-            boRowAA['TAmount'] := Format('%f', [6 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
-          else boRowAA['TAmount'] := Format('%f', [5 * FieldByName('bi_price').AsFloat])  // ostatní
+            newIDI.rowItem['TAmount'] := Format('%f', [6 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
+          else newIDI.rowItem['TAmount'] := Format('%f', [5 * FieldByName('bi_price').AsFloat])  // ostatní
         // platba na 12 mìsícù
         else if FieldByName('bb_period').AsInteger = 12 then
           if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
-            boRowAA['TAmount'] := Format('%f', [12 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
-          else boRowAA['TAmount'] := Format('%f', [10 * FieldByName('bi_price').AsFloat])  // ostatní
+            newIDI.rowItem['TAmount'] := Format('%f', [12 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
+          else newIDI.rowItem['TAmount'] := Format('%f', [10 * FieldByName('bi_price').AsFloat])  // ostatní
         // ostatní
-        else boRowAA['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
+        else newIDI.rowItem['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
       end;
       Next;   //  DesU.qrZakos
     end;  //  while not DesU.qrZakos.EOF
@@ -345,18 +349,18 @@ begin
 
 
     try
-      abraWebApiResponse := DesU.abraBoCreate(NewInvoice.AA.AsJSon, 'issueddepositinvoice');
-      if abraWebApiResponse.isOk then begin
-        abraResponseSO := SO(abraWebApiResponse.Messg);
-        fmMain.Zprava(Format('%s (%s): Vytvoøen zálohový list %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));
+      //* abraWebApiResponse := DesU.abraBoCreate(NewInvoice.AA.AsJSon, 'issueddepositinvoice');
+      newIDI.writeToAbra;
+      if newIDI.WriteResult.isOk then begin
+        fmMain.Zprava(Format('%s (%s): Vytvoøen zálohový list %s.', [FirmName, CustomerVarSymbol, newIDI.getCreatedBoItem('displayname')]));
         Ints[0, Radek] := 0;
-        Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
-        Cells[3, Radek] := abraResponseSO.S['amount'];  // èástka
+        Cells[2, Radek] := newIDI.getCreatedBoItem('ordnumber'); // faktura
+        Cells[3, Radek] := newIDI.getCreatedBoItem('amount');  // èástka
         Cells[4, Radek] := FirmName;
       end else begin
-        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, abraWebApiResponse.Code, abraWebApiResponse.Messg]));
-        if Dialogs.MessageDlg( '(' + abraWebApiResponse.Code + ') '
-           + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
+        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, newIDI.WriteResult.Code, newIDI.WriteResult.Messg]));
+        if Dialogs.MessageDlg( '(' + newIDI.WriteResult.Code + ') '
+           + newIDI.WriteResult.Messg + sLineBreak + 'Pokraèovat?',
            mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
       end;
     except on E: exception do
@@ -365,9 +369,13 @@ begin
       end;
     end;
 
+
   end;  // with
 
 end;  // procedury ZLAbra
+
+
+
 
 end.
 
