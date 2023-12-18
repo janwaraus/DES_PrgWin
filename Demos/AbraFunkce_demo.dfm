@@ -62,4 +62,22 @@ object Form1: TForm1
     TabOrder = 4
     OnClick = Button2Click
   end
+  object dbNewVoip: TZConnection
+    ControlsCodePage = cCP_UTF16
+    Catalog = ''
+    HostName = '10.0.2.4'
+    Port = 0
+    Database = 'cdasterisk'
+    User = 'mnisekvoip'
+    Password = 'ssmplfgGHTF'
+    Protocol = 'postgresql'
+    Left = 424
+    Top = 48
+  end
+  object qrNewVoip: TZQuery
+    Connection = dbNewVoip
+    Params = <>
+    Left = 484
+    Top = 48
+  end
 end

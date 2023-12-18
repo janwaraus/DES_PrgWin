@@ -11,7 +11,7 @@ uses
   FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
   FireDAC.Phys.PG, FireDAC.Phys.PGDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param,
   FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client;
+  FireDAC.Comp.Client, ZAbstractConnection, ZConnection;
 
 type
   TForm1 = class(TForm)
@@ -21,6 +21,8 @@ type
     lbl1: TLabel;
     Button1: TButton;
     Button2: TButton;
+    dbNewVoip: TZConnection;
+    qrNewVoip: TZQuery;
     procedure btnDoIt1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -96,8 +98,25 @@ var
 begin
 
 
-text := DesU.ulozKomunikaci('2', '111', 'Ppøíliš žlutý mail''s book!');
- Memo1.Lines.Append(text);
+ //text := DesU.ulozKomunikaci('2', '111', 'Ppøíliš žlutý mail''s book!');
+
+ //dbNewVoIP.HostName := '10.0.250.12';
+ dbNewVoIP.Connect;
+
+ qrNewVoip.SQL.Text := 'SHOW server_version';
+
+ qrNewVoip.SQL.Text := 'SELECT Amount FROM VoIP.Invoices_flat WHERE Num = 20069018';
+ qrNewVoip.Open;
+
+  while not qrNewVoip.Eof do
+  begin
+    // Access the result values using field names or indexes
+    //ShowMessage(FDQuery1.Fields[0].AsString);
+    Memo1.Lines.Add(qrNewVoip.Fields[0].AsString);
+    qrNewVoip.Next;
+  end;
+
+ Memo1.Lines.Append('hh');
 
 end;
 
