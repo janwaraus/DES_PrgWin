@@ -150,7 +150,7 @@ begin
     end;
     //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
     Memo1.Lines.Add('Kontrola dokladù s prázným VS...');
-    DesU.existujeVAbreDokladSPrazdnymVs();
+    DesU.existujeVAbreDokladSPrazdnymVs(); //TODO zaktivovat
     Memo1.Lines.Add('Stažení Fio výpisù...');
     stahniVypisy;
     prvniZobrazeni := false;
@@ -391,42 +391,71 @@ begin
 
   // Fio
   if bankUcetFio.gpcSoubor = '' then begin
-    vysledekStazeni := bankUcetFio.stahniVypis;
+    vysledekStazeni := bankUcetFio.stahniAktualnePotrebnyVypis;
     if vysledekStazeni.isOk then begin
       lblVypisFioGpc.caption := bankUcetFio.gpcSoubor;
       btnVypisFio.Enabled := true;
       Memo1.Lines.Add(vysledekStazeni.Messg);
     end else begin
-      lblVypisFioGpc.caption := 'Výpis è. ' + bankUcetFio.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      lblVypisFioGpc.caption := 'Výpis è. ' + IntToStr(bankUcetFio.aktualniCisloVypisu)  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
       btnVypisFio.Enabled := false;
       Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
     end;
   end;
 
+  {
+  vysledekStazeni := bankUcetFio.stahniVypis(bankUcetFio.aktualniCisloVypisu + 1);
+  if vysledekStazeni.isOk then begin
+    Memo1.Lines.Add(vysledekStazeni.Messg);
+  end else begin
+    Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+  end;
+  vysledekStazeni := bankUcetFio.stahniVypis(bankUcetFio.aktualniCisloVypisu + 2);
+  if vysledekStazeni.isOk then begin
+    Memo1.Lines.Add(vysledekStazeni.Messg);
+  end else begin
+    Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+  end;
+  }
+
   // Fio spoøící
   if bankUcetFioSporici.gpcSoubor = '' then begin
-    vysledekStazeni := bankUcetFioSporici.stahniVypis;
+    vysledekStazeni := bankUcetFioSporici.stahniAktualnePotrebnyVypis;
     if vysledekStazeni.isOk then begin
       lblVypisFioSporiciGpc.caption := bankUcetFioSporici.gpcSoubor;
       btnVypisFioSporici.Enabled := true;
       Memo1.Lines.Add(vysledekStazeni.Messg);
     end else begin
-      lblVypisFioSporiciGpc.caption := 'Výpis è. ' + bankUcetFioSporici.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      lblVypisFioSporiciGpc.caption := 'Výpis è. ' + IntToStr(bankUcetFioSporici.aktualniCisloVypisu)  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
       btnVypisFioSporici.Enabled := false;
       Memo1.Lines.Add('Chyba pøi stahování výpisu Fio spoøící: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
     end;
   end;
 
+  {
+  vysledekStazeni := bankUcetFioSporici.stahniVypis(bankUcetFioSporici.aktualniCisloVypisu + 1);
+  if vysledekStazeni.isOk then begin
+    Memo1.Lines.Add(vysledekStazeni.Messg);
+  end else begin
+    Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+  end;
+  vysledekStazeni := bankUcetFioSporici.stahniVypis(bankUcetFioSporici.aktualniCisloVypisu + 2);
+  if vysledekStazeni.isOk then begin
+    Memo1.Lines.Add(vysledekStazeni.Messg);
+  end else begin
+    Memo1.Lines.Add('Chyba pøi stahování výpisu Fio: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
+  end;
+  }
 
   //Fiokonto
   if bankUcetFiokonto.gpcSoubor = '' then begin
-    vysledekStazeni := bankUcetFiokonto.stahniVypis;
+    vysledekStazeni := bankUcetFiokonto.stahniAktualnePotrebnyVypis;
     if vysledekStazeni.isOk then begin
       lblVypisFiokontoGpc.caption := bankUcetFiokonto.gpcSoubor;
       btnVypisFiokonto.Enabled := true;
       Memo1.Lines.Add(vysledekStazeni.Messg);
     end else begin
-      lblVypisFiokontoGpc.caption := 'Výpis è. ' + bankUcetFiokonto.cisloVypisuKeStazeni  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
+      lblVypisFiokontoGpc.caption := 'Výpis è. ' + IntToStr(bankUcetFiokonto.aktualniCisloVypisu)  + ' se nepodaøilo stáhnout: ' + vysledekStazeni.Messg;
       btnVypisFiokonto.Enabled := false;
       Memo1.Lines.Add('Chyba pøi stahování výpisu Fiokonto: ' + vysledekStazeni.Code + '; ' + vysledekStazeni.Messg);
     end;

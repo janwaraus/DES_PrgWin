@@ -70,6 +70,8 @@ type
     lblPocetKNacteni: TLabel;
     lblPocetOdChanges: TLabel;
     chbFakturyKNacteni: TCheckBox;
+    dbNewVoip: TZConnection;
+    qrNewVoip: TZQuery;
     procedure FormShow(Sender: TObject);
     procedure glbFakturaceClick(Sender: TObject);
     procedure glbPrevodClick(Sender: TObject);
@@ -106,6 +108,7 @@ type
     procedure rbMailClick(Sender: TObject);
     procedure btnTestClick(Sender: TObject);
     procedure chbFakturyKNacteniClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
 
   private
     LogDir : string;
@@ -139,6 +142,7 @@ AArray, DesFastReports;
 // ------------------------------------------------------------------------------------------------
 
 
+
 procedure TfmMain.FormShow(Sender: TObject);
 
 begin
@@ -162,17 +166,41 @@ begin
 
   rbFakturaceClick(nil);
 
-  {
-  if cbSVoIP.Enabled then begin
-    dbVoipConnectResult := DesU.connectDbVoip;
-    Zprava(dbVoipConnectResult.Messg);
-  end;
-  }
-
   // pro test, TODO smazat
   //aedOd.Text := '10200555';
   //aedDo.Text := '10205555';
   if DesU.appMode > 1 then btnTest.Visible := true;
+
+end;
+
+procedure TfmMain.FormActivate(Sender: TObject);
+begin
+  if not dbNewVoIP.Connected and cbSVoIP.Enabled then try
+
+    dbNewVoIP.HostName := DesU.getIniValue('Preferences', 'VoIPHN');
+    dbNewVoIP.Database := DesU.getIniValue('Preferences', 'VoIPDB');
+    dbNewVoIP.User := DesU.getIniValue('Preferences', 'VoIPUN');
+    dbNewVoIP.Password := DesU.getIniValue('Preferences', 'VoIPPW');
+
+    Zprava('Pøipojení databáze VoIP ...');
+    dbNewVoIP.Connect;
+
+    qrNewVoip.SQL.Text := 'SHOW server_version';
+    qrNewVoip.Open;
+
+    while not qrNewVoip.Eof do begin
+      Zprava('Pøipojeno k DB VoIP, verze DB ' + qrNewVoip.Fields[0].AsString);
+      qrNewVoip.Next;
+    end;
+
+  except on E: exception do
+    begin
+      Application.MessageBox(PChar('Nedá se pøipojit k databázi VoIP.' + ^M + E.Message), 'DB VoIP', MB_ICONERROR + MB_OK);
+      Zprava('Nedá se pøipojit k databázi VoIP. ' + #13#10 + 'Chyba: ' + E.Message);
+      cbSVoIP.Checked := False;
+      cbSVoIP.Enabled := False;
+    end;
+  end;
 
 end;
 
@@ -915,41 +943,10 @@ var
   vysledek : TDesResult;
 begin
 
-  with DesU.qrZakosOC do begin
-    SQL.Text := 'SELECT description FROM billing_items'
-              + ' WHERE id = 87693'; //  87693, 19
-    Open;
-    if not Eof then begin
-      Zprava('Táøèždy: ' + FieldByName('description').AsString);
-    end;
-    Close;
-  end;
-
-  with DesU.qrZakosOC do begin
-    SQL.Text := 'SELECT billing_city FROM customers'
-              + ' WHERE id = 5';
-    Open;
-    if not Eof then begin
-      Zprava('Táøèždy: ' + FieldByName('billing_city').AsString);
-    end;
-    Close;
-  end;
-
-  with DesU.qrZakosOC do begin
-    SQL.Text := 'SELECT postal_name FROM customers'
-              + ' WHERE id = 24';
-    Open;
-    if not Eof then begin
-      Zprava('Táøèždy: ' + FieldByName('postal_name').AsString);
-    end;
-    Close;
-  end;
-
+  if DesU.appMode = 1 then Exit;
 
   //Zprava(Format('%s', [vysledek.Messg]));
 
-
-  if DesU.appMode = 1 then Exit;
   //vysledek := dmPrevod.fakturaPrevod('1K6P200101', true);  // pokud zaškrtnuto, pøevádíme fa do PDF
   //  '1K6P200101' '4K6P200101' '7K6P200101'
   //Zprava(Format('%s', [vysledek.Messg]));
@@ -957,7 +954,6 @@ begin
 
   //vysledek := dmTisk.FakturaTisk('6IOQ200101', 'FOseSlozenkou.fr3');    // 7X8P200101
   //Zprava(Format('%s', [vysledek.Messg]));
-
 
 {
 

@@ -9,7 +9,8 @@ uses
   FItisk in 'FItisk.pas' {dmTisk: TDataModule},
   FImain in 'FImain.pas' {fmMain},
   DesInvoices in '..\DE$_Common\DesInvoices.pas',
-  DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport};
+  DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport},
+  AArray in '..\DE$_Common\AArray.pas';
 
 {$R *.res}
 begin

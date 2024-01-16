@@ -68,7 +68,8 @@ begin
         if VysledekPrevedeni.isOk then begin
           asgMain.Ints[0, Radek] := 0;
           FontColors[1, Radek] := $000000;
-          asgMain.Ints[2, Radek] := 1;
+          if Pos('@', asgMain.Cells[12, Radek]) > 0 then // nechybí e-mail
+           asgMain.Ints[2, Radek] := 1;
           ReadOnly[2, Radek] := False;
         end;
       end;

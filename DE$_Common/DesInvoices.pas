@@ -55,6 +55,7 @@ type
     function printByFr3(Fr3FileName : string) : TDesResult;
   end;
 
+  {
   TNewDesInvoiceAA = class
   public
     AA : TAArray;
@@ -63,7 +64,7 @@ type
     function createNew1Row(RowText : string) : TAArray;
     function createNewRow_NoVat(RowType : integer; RowText : string) : TAArray;
   end;
-
+  }
 
 implementation
 
@@ -388,7 +389,7 @@ begin
     Result.Messg := Format('Doklad %s byl odeslán na tiskárnu.', [self.CisloDokladu]);
 end;
 
-
+{
 constructor TNewDesInvoiceAA.create(DocDate : double; VarSymbol : string; DocumentType : string = '03');
 begin
   AA := TAArray.Create;
@@ -446,6 +447,7 @@ begin
   RowAA['Division_ID'] := AbraEnt.getDivisionId;
   Result := RowAA;
 end;
+}
 
 end.
 

@@ -35,7 +35,8 @@ var
   postalMail,
   SQLStr: string;
   pdfSendingDateTime : double;
-  pdfFileExists : boolean;
+  pdfFileExists,
+  postalMailMissing : boolean;
   Faktura : TDesInvoice;
   Zalohac : TDesInvoice;
 
@@ -124,22 +125,7 @@ begin
     if not arbVytvoreni.Checked then begin
       fmMain.Zprava('Naètení vytvoøených faktur.');
       Close;
-      Desu.dbAbra.Reconnect;
-      {
-      SQLStr := 'SELECT DISTINCT DQ.Code ||''-''|| IDI.Ordnumber ||''/''|| P1.Code AS ZL,'
-      + ' IDI.LocalAmount, IDI.LocalPaidAmount, IDI.LocalUsedAmount, F.Name, F.Code AS Abrakod, IDI.Id AS IDId, II.Id AS IId, F.Id AS FId,'
-      + ' ''FO3-''|| II.Ordnumber ||''/''|| P2.Code AS FO'
-      + ' FROM IssuedDInvoices IDI, IssuedInvoices II, DocQueues DQ, Periods P1, Periods P2, Firms F, IssuedDepositUsages IDU'
-      + ' WHERE II.DocDate$Date = ' + FloatToStr(Floor(deDatumDokladu.Date))
-      + ' AND II.DocQueue_ID = ' + Ap + AbraEnt.getDocQueue('Code=FO3').ID + Ap
-      + ' AND II.Period_Id = P2.Id'
-      + ' AND II.Id = IDU.PDocument_ID'
-      + ' AND IDI.Id = IDU.DepositDocument_ID'
-      + ' AND IDI.Firm_Id = F.Id'
-      + ' AND IDI.DocQueue_Id = DQ.Id'
-      + ' AND IDI.Period_Id = P1.Id'
-      + ' ORDER BY II.OrdNumber';
-      }
+      DesU.dbAbra.Reconnect;
 
       SQLStr := 'SELECT II.ID as II_ID, IDI.ID AS IDI_ID '
       + ' FROM IssuedInvoices II '
@@ -188,8 +174,11 @@ begin
 
         pdfSendingDateTime := DesU.pdfToCustomerSendingDateTime(customerId, Faktura.CisloDokladu);
         pdfFileExists := FileExists(Faktura.getFullPdfFileName);
+        postalMailMissing := Pos('@', postalMail) <= 0;  // když není vyplnìný email
 
-        if (pdfFileExists and (pdfSendingDateTime > 0) and cbJenNezpracovaneFOx.Checked) then begin
+        if (pdfFileExists and cbJenNezpracovaneFOx.Checked
+          and ((pdfSendingDateTime > 0) or (postalMailMissing) )
+          ) then begin
           Next;
           Continue;
         end;
@@ -206,8 +195,7 @@ begin
 
         if pdfFileExists then begin
           Ints[0, Radek] := 0; // odškrtnout 1. checkbox
-          if (pdfSendingDateTime > 0) or
-            (Pos('@', postalMail) <= 0) // když není vyplnìný email
+          if (pdfSendingDateTime > 0) or (postalMailMissing)
           then Ints[2, Radek] := 0; // odškrtnout 2. checkbox, už bylo v minulosti posláno
         end
         else begin

@@ -10,7 +10,6 @@ interface
 
 uses
   Windows, Messages, Dialogs, Classes, Forms, Controls, SysUtils, DateUtils, StrUtils, Variants, ComObj, Math,
-  Superobject, AArray,
   FImain;
 
 type
@@ -29,7 +28,7 @@ implementation
 
 {$R *.dfm}
 
-uses DesUtils, AbraEntities, DesInvoices;
+uses DesUtils, AbraEntities, DesInvoices; // Superobject, AArray,
 
 // ------------------------------------------------------------------------------------------------
 
@@ -100,10 +99,11 @@ var
   CustomerVarSymbol,
   SQLStr: string;
 
-  boRowAA: TAArray;
-  abraResponseSO : ISuperObject;
-  abraWebApiResponse : TDesResult;
-  NewInvoice : TNewDesInvoiceAA;
+  //boRowAA: TAArray;
+  //abraResponseSO : ISuperObject;
+  //abraWebApiResponse : TDesResult;
+  //NewInvoice : TNewDesInvoiceAA;
+  newII: TNewAbraBo;
 
   cas01, cas02, cas03: double;
 
@@ -230,23 +230,26 @@ begin
     Description := Format('pøipojení %d/%d, ', [aseMesic.Value, aseRok.Value-2000]);
 
 
-    // vytvoøí se objekt TNewDesInvoiceAA a pak zbytek hlavièky faktury
-    NewInvoice := TNewDesInvoiceAA.create(Floor(deDatumDokladu.Date), CustomerVarSymbol);
+    // hlavièka faktury
+    newII := TNewAbraBo.Create('issuedinvoice');
+    newII.addInvoiceParams(Floor(deDatumDokladu.Date));
+    newII.Item['Varsymbol'] := CustomerVarSymbol;
 
-    NewInvoice.AA['VATDate$DATE'] := Floor(deDatumPlneni.Date);
-    NewInvoice.AA['DueTerm'] := aedSplatnost.Text;
-    NewInvoice.AA['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO1').ID; //VarToStr(globalAA['abraIiDocQueue_Id'])
-    NewInvoice.AA['Firm_ID'] := Firm_Id;
+
+    newII.Item['VATDate$DATE'] := Floor(deDatumPlneni.Date);
+    newII.Item['DueTerm'] := aedSplatnost.Text;
+    newII.Item['DocQueue_ID'] := AbraEnt.getDocQueue('Code=FO1').ID; //VarToStr(globalAA['abraIiDocQueue_Id'])
+    newII.Item['Firm_ID'] := Firm_Id;
     // boAA['FirmOffice_ID'] := FirmOffice_Id; // ABRA si vytvoøí sama
     // boAA['CreatedBy_ID'] := MyUser_Id; // vytvoøí se podle uživatele, který se hlásí k ABRA WebApi
     if isDRC then begin
-      NewInvoice.AA['IsReverseChargeDeclared'] := True;
-      NewInvoice.AA['VATFromAbovePrecision'] := 0; // pro jistotu, default je stejnì 0
-      NewInvoice.AA['TotalRounding'] := 0;
+      newII.Item['IsReverseChargeDeclared'] := True;
+      newII.Item['VATFromAbovePrecision'] := 0; // pro jistotu, default je stejnì 0
+      newII.Item['TotalRounding'] := 0;
     end;
 
     // 1. øádek
-    boRowAA := NewInvoice.createNew0Row(
+    newII.createNewInvoiceRow(0,
       Format('Fakturujeme Vám za období od 1.%d.%d do %d.%d.%d',
        [aseMesic.Value, aseRok.Value, DayOfTheMonth(EndOfAMonth(aseRok.Value, aseMesic.Value)), aseMesic.Value, aseRok.Value])
     );
@@ -301,25 +304,22 @@ begin
         if not ContainsText(Description, 'VoIP,') then // zabránìní vícenásobnému vložení VoIP do Description
           Description := Description + 'VoIP, ';
 
-        {
-        if DesU.dbVoIP.Connected then with DesU.qrVoIP do begin
+        if dbNewVoIP.Connected then begin
           SQLStr := 'SELECT SUM(Amount) FROM VoIP.Invoices_flat'
           + ' WHERE Num = ' + DesU.qrZakos.FieldByName('co_number').AsString
           + ' AND Year = ' + aseRok.Text
           + ' AND Month = ' + aseMesic.Text;
-          SQL.Text := SQLStr;
-          Open;
-          HovorneVoIP := DesU.VAT_MULTIPLIER * Fields[0].AsFloat;
-          Close;
+          qrNewVoip.SQL.Text := SQLStr;
+          qrNewVoip.Open;
+          HovorneVoIP := DesU.VAT_MULTIPLIER * qrNewVoip.Fields[0].AsFloat;
+          qrNewVoip.Close;
 
         end else begin
-          HovorneVoIP := 10;
-          fmMain.Zprava('Není pøipojena DB VoIP, hovorné nastaveno na 10 Kè');
+          //HovorneVoIP := 10;
+          fmMain.Zprava('Není pøipojena DB VoIP, faktura se nevytvoøí');
+          Prerusit := True;
+          Exit;
         end;
-        }
-        HovorneVoIP := 10;
-        fmMain.Zprava('Jen test! Není pøipojena DB VoIP! Hovorné nastaveno na 10 Kè');
-
       end;
 
       {  CTU, neni uz potreba
@@ -349,18 +349,19 @@ begin
         if not SmlouvaVoIP then begin
 
           // pøipojení k Internetu
-          boRowAA := NewInvoice.createNew1Row( Format('podle smlouvy  %s  službu  %s',
+          newII.createNewInvoiceRow(1, Format('podle smlouvy  %s  službu  %s',
               [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
-          // boRowAA['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
+
+          // newII.rowItem['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
           if DesU.qrZakos.FieldByName('co_type').AsString = 'TvContract' then
-            boRowAA['BusOrder_ID'] := '1700000101';
-          boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
+            newII.rowItem['BusOrder_ID'] := '1700000101';
+          newII.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+          newII.rowItem['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
           if isDRC then begin
-            boRowAA['VATMode'] := 1;
-            boRowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=VýstR' + DesU.VAT_RATE).ID;
-            boRowAA['DRCArticle_ID'] := AbraEnt.getDrcArticle('Code=21').ID;          // typ plnìní 21, nemá spojitost s DPH
-            boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / DesU.VAT_MULTIPLIER ]);
+            newII.rowItem['VATMode'] := 1;
+            newII.rowItem['VATIndex_ID'] := AbraEnt.getVatIndex('Code=VýstR' + DesU.VAT_RATE).ID;
+            newII.rowItem['DRCArticle_ID'] := AbraEnt.getDrcArticle('Code=21').ID;          // typ plnìní 21, nemá spojitost s DPH
+            newII.rowItem['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / DesU.VAT_MULTIPLIER ]);
           end;
 
         end else begin  // smlouva je VoIP
@@ -368,45 +369,45 @@ begin
           if HovorneVoIP > 0 then begin
 
             // hovorné
-            boRowAA := NewInvoice.createNew1Row('hovorné VoIP');
-            boRowAA['BusOrder_ID'] := '1500000101';
-            boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-            boRowAA['TotalPrice'] := Format('%f', [HovorneVoIP]);
+            newII.createNewInvoiceRow(1, 'hovorné VoIP');
+            newII.rowItem['BusOrder_ID'] := '1500000101';
+            newII.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+            newII.rowItem['TotalPrice'] := Format('%f', [HovorneVoIP]);
             HovorneVoIP := 0;
           end;
 
           /// paušál
-          boRowAA := NewInvoice.createNew1Row(Format('podle smlouvy  %s  mìsíèní platbu VoIP %s',
+          newII.createNewInvoiceRow(1, Format('podle smlouvy  %s  mìsíèní platbu VoIP %s',
               [FieldByName('co_number').AsString, FieldByName('bi_description').AsString]));
-          boRowAA['BusOrder_ID'] := '2000000101';
-          boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-          boRowAA['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
+          newII.rowItem['BusOrder_ID'] := '2000000101';
+          newII.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+          newII.rowItem['TotalPrice'] := Format('%f', [CenaTarifu * Redukce]);
 
         end;  // tarif VoIP
 
       // nìco jiného než tarif
       end else begin
 
-        boRowAA := NewInvoice.createNew1Row(FieldByName('bi_description').AsString);
-        // boRowAA['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
+        newII.createNewInvoiceRow(1, FieldByName('bi_description').AsString);
+        // newII.rowItem['BusOrder_ID'] := BusOrder_Id; // CTU, neni uz potreba
         if DesU.qrZakos.FieldByName('co_type').AsString = 'TvContract' then
-          boRowAA['BusOrder_ID'] := '1700000101';
-        boRowAA['BusTransaction_ID'] := BusTransaction_Id;
+          newII.rowItem['BusOrder_ID'] := '1700000101';
+        newII.rowItem['BusTransaction_ID'] := BusTransaction_Id;
         if Pos('auce', FieldByName('bi_description').AsString) > 0 then
-          boRowAA['IncomeType_ID'] := '1000000101';    // kauce
-        boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce]);
+          newII.rowItem['IncomeType_ID'] := '1000000101';    // kauce
+        newII.rowItem['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce]);
         if FieldByName('bi_vat_name').AsString = '21%' then begin                  // 4.1.2013, DPH je 21%
           if isDRC then begin                                              // 19.10.2016
-            boRowAA['VATMode'] := 1;
-            boRowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=VýstR' + DesU.VAT_RATE).ID;
-            boRowAA['DRCArticle_ID'] := AbraEnt.getDrcArticle('Code=21').ID;          // typ plnìní 21, nemá spojitost s DPH
-            boRowAA['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / DesU.VAT_MULTIPLIER]);
+            newII.rowItem['VATMode'] := 1;
+            newII.rowItem['VATIndex_ID'] := AbraEnt.getVatIndex('Code=VýstR' + DesU.VAT_RATE).ID;
+            newII.rowItem['DRCArticle_ID'] := AbraEnt.getDrcArticle('Code=21').ID;          // typ plnìní 21, nemá spojitost s DPH
+            newII.rowItem['TotalPrice'] := Format('%f', [FieldByName('bi_price').AsFloat * Redukce / DesU.VAT_MULTIPLIER]);
           end;
         end else begin // DPH je 0%
-          boRowAA['VATRate_ID'] := AbraEnt.getVatIndex('Code=Mevd').VATRate_ID; // 00000X0000
-          boRowAA['VATIndex_ID'] := AbraEnt.getVatIndex('Code=Mevd').ID; // 7000000000
+          newII.rowItem['VATRate_ID'] := AbraEnt.getVatIndex('Code=Mevd').VATRate_ID; // 00000X0000
+          newII.rowItem['VATIndex_ID'] := AbraEnt.getVatIndex('Code=Mevd').ID; // 7000000000
           if Pos('dar ', FieldByName('bi_description').AsString) > 0 then
-            boRowAA['IncomeType_ID'] := '3000000000';  // OS - Ostatní
+            newII.rowItem['IncomeType_ID'] := '3000000000';  // OS - Ostatní
         end;
 
       end; // if tarif else
@@ -416,12 +417,12 @@ begin
     if (FieldByName('cu_invoice_sending_method_name').AsString = 'Poštou')
      or (FieldByName('cu_invoice_sending_method_name').AsString = 'Se složenkou') then begin    // pošta, složenka
 
-      boRowAA := NewInvoice.createNew1Row('manipulaèní poplatek');
-      boRowAA['BusOrder_ID'] := '1000000101';  // internet Mníšek (Code=1)
-      boRowAA['BusTransaction_ID'] := BusTransaction_Id;
-      boRowAA['TotalPrice'] := '62';
+      newII.createNewInvoiceRow(1, 'manipulaèní poplatek');
+      newII.rowItem['BusOrder_ID'] := '1000000101';  // internet Mníšek (Code=1)
+      newII.rowItem['BusTransaction_ID'] := BusTransaction_Id;
+      newII.rowItem['TotalPrice'] := '62';
     end;
-    NewInvoice.AA['Description'] := Description + CustomerVarSymbol;
+    newII.Item['Description'] := Description + CustomerVarSymbol;
 
     if isDebugMode then begin
       cas02 := Now;
@@ -431,18 +432,19 @@ begin
 
 // vytvoøení faktury
     try
-      abraWebApiResponse := DesU.abraBoCreateWebApi(NewInvoice.AA, 'issuedinvoice');
-      if abraWebApiResponse.isOk then begin
-        abraResponseSO := SO(abraWebApiResponse.Messg);
-        fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [FirmName, CustomerVarSymbol, abraResponseSO.S['displayname']]));
+      //abraWebApiResponse := DesU.abraBoCreateWebApi(NewInvoice.AA, 'issuedinvoice');
+      newII.writeToAbra;
+      if newII.WriteResult.isOk then begin
+        //abraResponseSO := SO(abraWebApiResponse.Messg);
+        fmMain.Zprava(Format('%s (%s): Vytvoøena faktura %s.', [FirmName, CustomerVarSymbol, newII.getCreatedBoItem('displayname')]));
         Ints[0, Radek] := 0;
-        Cells[2, Radek] := abraResponseSO.S['ordnumber']; // faktura
-        Cells[3, Radek] := abraResponseSO.S['amount'];  // èástka
+        Cells[2, Radek] := newII.getCreatedBoItem('ordnumber'); // faktura
+        Cells[3, Radek] := newII.getCreatedBoItem('amount');  // èástka
         Cells[4, Radek] := FirmName;
       end else begin
-        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, abraWebApiResponse.Code, abraWebApiResponse.Messg]));
-        if Dialogs.MessageDlg( '(' + abraWebApiResponse.Code + ') '
-           + abraWebApiResponse.Messg + sLineBreak + 'Pokraèovat?',
+        fmMain.Zprava(Format('%s (%s): Chyba %s: %s', [FirmName, CustomerVarSymbol, newII.WriteResult.Code, newII.WriteResult.Messg]));
+        if Dialogs.MessageDlg( '(' + newII.WriteResult.Code + ') '
+           + newII.WriteResult.Messg + sLineBreak + 'Pokraèovat?',
            mtConfirmation, [mbYes, mbNo], 0 ) = mrNo then Prerusit := True;
       end;
     except on E: exception do
