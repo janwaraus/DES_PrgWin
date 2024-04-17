@@ -63,7 +63,7 @@ var
   newID: string;
   //abraResponseSO : ISuperObject;
   //abraWebApiResponse : TDesResult;
-  NewInvoice : TNewDesInvoiceAA;
+  //NewInvoice : TNewDesInvoiceAA;
   newIDU, newII: TNewAbraBo;
 
 begin
