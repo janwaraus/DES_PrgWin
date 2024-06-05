@@ -1,6 +1,6 @@
 // 1.6.2024 automatizace placení faktur technikù. Nìkolika technikùm se vystavují faktury nejèastìji za televizi, které tito
 // neplatí, a faktury se hradí hotovì s vystavením pøíjmového dokladu a následným odeètením v souboru W:\techniciYY.xls.
-// Program celý postup automatizuje. uuu
+// Program celý postup automatizuje.
 
 unit FO;
 
