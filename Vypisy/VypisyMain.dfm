@@ -729,9 +729,9 @@ object fmMain: TfmMain
     OnClick = btnVypisPayUClick
   end
   object asgMain: TAdvStringGrid
-    Left = 108
+    Left = 488
     Top = 24
-    Width = 821
+    Width = 441
     Height = 508
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9

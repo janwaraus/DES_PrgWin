@@ -7,11 +7,13 @@ uses
   System.Classes, Vcl.Graphics, System.Generics.Collections,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB,
   ZAbstractRODataset, ZAbstractDataset, ZDataset, FireDAC.Stan.Intf,
+  ComObj,
   FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf,
   FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
   FireDAC.Phys.PG, FireDAC.Phys.PGDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param,
   FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client, ZAbstractConnection, ZConnection;
+  FireDAC.Comp.Client, ZAbstractConnection, ZConnection, AdvUtil, Vcl.Grids,
+  AdvObj, BaseGrid, AdvGrid, AdvSprd, tmsAdvGridExcel;
 
 type
   TForm1 = class(TForm)
@@ -23,10 +25,17 @@ type
     Button2: TButton;
     dbNewVoip: TZConnection;
     qrNewVoip: TZQuery;
+    AdvSpreadGrid1: TAdvSpreadGrid;
+    AdvStringGrid1: TAdvStringGrid;
+    AdvGridExcelIO1: TAdvGridExcelIO;
     procedure btnDoIt1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure CreateExcelFile;
+    procedure CreateExcelFileUsingTAdvSpreadGrid;
+    procedure ExportGridDataToExcel;
+    procedure CopyFileToNetworkDrive(const SourceFile, DestIP, DestShare, DestFileName: string);
 
   private
     { Private declarations }
@@ -52,10 +61,17 @@ var
   abraBankaccount : TAbraBankaccount;
   doklad1 : TDoklad;
 begin
-
+  try
+    // Example usage
+    CopyFileToNetworkDrive('C:\data\VypisX.txt', '192.168.0.7', 'public', 'Vypis_test.txt');
+    Memo1.Lines.Add('File copied successfully.');
+  except
+    on E: Exception do
+      Memo1.Lines.Add('An error occurred: ' + E.Message);
+  end;
 
   // DesU.opravRadekVypisuPomociPDocument_ID('2UF2000101', '9M6E000101', 'KQ0U000101', '03');
-  // Memo1.Lines.Add('Radek opraveeen:');
+  // Memo1.Lines.Add('Radek opraveeen:');                .
   //DesU.dbAbra.Reconnect;
   {
   abraBankAccount := TAbraBankaccount.create();
@@ -98,6 +114,130 @@ var
 begin
 
 
+  //text := DesU.ulozKomunikaci('2', '111', 'Ppøíliš žlutý mail''s book!');
+
+  //CreateExcelFile;
+  //CreateExcelFileUsingTAdvSpreadGrid;
+  ExportGridDataToExcel;
+  Memo1.Lines.Add('xlsx aa');
+
+
+end;
+
+procedure TForm1.CreateExcelFile;
+var
+  ExcelApp, Workbook, Worksheet: OleVariant;
+  FileName: string;
+begin
+  // Create an instance of the Excel application
+  ExcelApp := CreateOleObject('Excel.Application');
+  try
+    // Add a new workbook
+    Workbook := ExcelApp.Workbooks.Add;
+    // Access the first worksheet
+    Worksheet := Workbook.Worksheets[1];
+
+    // Write data to the cells
+    Worksheet.Cells[1, 1] := 'Name';
+    Worksheet.Cells[1, 2] := 'Age';
+    Worksheet.Cells[2, 1] := 'Alice';
+    Worksheet.Cells[2, 2] := 25;
+    Worksheet.Cells[3, 1] := 'Bob';
+    Worksheet.Cells[3, 2] := 30;
+
+    // Define a filename
+    FileName := ExtractFilePath(ParamStr(0)) + 'TestExcel.xlsx';
+    // Save the workbook to a file
+    Workbook.SaveAs(FileName);
+
+    // Optionally display the Excel application to view the result
+    ExcelApp.Visible := True;
+  finally
+    // Cleanup: Close the workbook without saving further changes
+    Workbook.Close(False);
+    // Quit Excel application
+    ExcelApp.Quit;
+  end;
+end;
+
+
+procedure TForm1.CreateExcelFileUsingTAdvSpreadGrid;
+var
+  //G/id: TAdvStringGrid;
+  //ExcelIO: TAdvGridExcelIO;
+  a: integer;
+begin
+  // Create an instance of the grid
+  //Grid := TAdvStringGrid.Create(Self);
+  try
+    //Grid.Parent := Self;  // Optional: for visual representation in a Form
+    AdvStringGrid1.ColCount := 3;   // Set the number of columns
+    AdvStringGrid1.RowCount := 3;   // Set the number of rows
+
+    // Populate the grid with some data
+    AdvStringGrid1.Cells[0, 0] := 'Name';
+    AdvStringGrid1.Cells[1, 0] := 'Age';
+    AdvStringGrid1.Cells[2, 0] := 'Country';
+
+    AdvStringGrid1.Cells[0, 1] := 'Alice';
+    AdvStringGrid1.Cells[1, 1] := '30';
+    AdvStringGrid1.Cells[2, 1] := 'USA';
+
+    AdvStringGrid1.Cells[0, 2] := 'Bob';
+    AdvStringGrid1.Cells[1, 2] := '25';
+    AdvStringGrid1.Cells[2, 2] := 'UK';
+
+    // Create an Excel IO handler for TAdvStringGrid
+    //ExcelIO := TAdvGridExcelIO.Create(Self);
+    try
+      AdvGridExcelIO1.XLSExport(ExtractFilePath(ParamStr(0)) + 'GridData.xlsx', 'sesit123');
+
+    //AdvGridExcelIO1.SheetNames;
+      //AdvGridExcelIO1.xls
+    finally
+      //ExcelIO.Free;
+    end;
+  finally
+    //Grid.Free;
+  end;
+end;
+
+
+procedure TForm1.ExportGridDataToExcel;
+begin
+  // Populate the grid with some data
+  AdvStringGrid1.ColCount := 3;   // Set number of columns
+  AdvStringGrid1.RowCount := 3;   // Set number of rows
+
+  // Setting headers
+  AdvStringGrid1.Cells[0, 0] := 'Name';
+  AdvStringGrid1.Cells[1, 0] := 'Age';
+  AdvStringGrid1.Cells[2, 0] := 'Country';
+
+  // Adding data
+  AdvStringGrid1.Cells[0, 1] := 'Alice';
+  AdvStringGrid1.Cells[1, 1] := '30';
+  AdvStringGrid1.Cells[2, 1] := 'USA';
+
+  AdvStringGrid1.Cells[0, 2] := 'Bob';
+  AdvStringGrid1.Cells[1, 2] := '25';
+  AdvStringGrid1.Cells[2, 2] := 'UK';
+
+  // Export to Excel
+  try
+    AdvGridExcelIO1.XLSExport('C:\Data\GridDataa.xlsx');
+  except
+    on E: Exception do
+      ShowMessage('Failed to export to Excel: ' + E.Message);
+  end;
+end;
+
+
+
+
+{ *** DB VoIP spojení ***
+
+
  //text := DesU.ulozKomunikaci('2', '111', 'Ppøíliš žlutý mail''s book!');
 
  //dbNewVoIP.HostName := '10.0.250.12';
@@ -118,15 +258,7 @@ begin
 
  Memo1.Lines.Append('hh');
 
-end;
-
-
-
-
-
-
-
-{ *** DB VoIP spojení ***
+---
 
 FDConnection1 := TFDConnection.Create(Self);
   FDConnection1.DriverName := 'PG';
@@ -193,6 +325,22 @@ FDConnection1 := TFDConnection.Create(Self);
   FDQuery1.Close; // Close the dataset
 
 }
+
+procedure TForm1.CopyFileToNetworkDrive(const SourceFile, DestIP, DestShare, DestFileName: string);
+var
+  DestPath: string;
+  Success: Boolean;
+begin
+  // Construct the destination path using IP address and share name
+  DestPath := Format('\\%s\%s\%s', [DestIP, DestShare, DestFileName]);
+
+  // Use CopyFile to copy the file
+  Success := CopyFile(PChar(SourceFile), PChar(DestPath), False);
+
+  // Check if the copy was successful
+  if not Success then
+    raise Exception.CreateFmt('Failed to copy file to %s. Error code: %d', [DestPath, GetLastError]);
+end;
 
 
 

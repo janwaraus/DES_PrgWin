@@ -71,6 +71,7 @@ type
       LOG_PATH,
       LOG_FILENAME,
       GPC_PATH,
+      GPC_PATH_NETWORK,
       PDF_PATH,
       VAT_RATE,
       abraDefaultCommMethod,
@@ -217,6 +218,7 @@ begin
     IdHTTPAbra.ReadTimeout := Round (600 * 1000); // ReadTimeout je v milisekundách
 
     GPC_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'GpcPath', ''));
+    GPC_PATH_NETWORK := IncludeTrailingPathDelimiter(ReadString('Preferences', 'GpcPathNetwork', ''));
     PDF_PATH := IncludeTrailingPathDelimiter(ReadString('Preferences', 'PDFDir', ''));
 
     dbAbra.HostName := ReadString('Preferences', 'AbraHN', '');
