@@ -1,4 +1,5 @@
 unit AArray;
+// test poznamka
 
 interface
 
