@@ -151,8 +151,10 @@ begin
     //fmPrirazeniPnp.Show;  //pøi programování kvùli zrychlení práce (DEVEL)
     Memo1.Lines.Add('Kontrola dokladù s prázným VS...');
     DesU.existujeVAbreDokladSPrazdnymVs(); //TODO zaktivovat
+    { *** stažení výpisù po startu programu, zakomentováno 06-2024 ***
     Memo1.Lines.Add('Stažení Fio výpisù...');
     stahniVypisy;
+    }
     prvniZobrazeni := false;
   end;
 end;

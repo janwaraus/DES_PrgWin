@@ -63,10 +63,10 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object AdvSpreadGrid1: TAdvSpreadGrid
-    Left = 48
-    Top = 296
-    Width = 400
-    Height = 250
+    Left = 618
+    Top = 304
+    Width = 321
+    Height = 137
     ColCount = 5
     DrawingStyle = gdsClassic
     FixedColor = clWhite
@@ -188,10 +188,10 @@ object Form1: TForm1
     CellFormat = '%.2f'
   end
   object AdvStringGrid1: TAdvStringGrid
-    Left = 472
-    Top = 296
-    Width = 400
-    Height = 250
+    Left = 648
+    Top = 458
+    Width = 225
+    Height = 169
     DrawingStyle = gdsClassic
     FixedColor = clWhite
     TabOrder = 6
@@ -305,6 +305,143 @@ object Form1: TForm1
     SortSettings.HeaderMirrorColorTo = clWhite
     Version = '8.7.0.0'
   end
+  object AdvGridWorkbook1: TAdvGridWorkbook
+    Left = 8
+    Top = 291
+    Width = 585
+    Height = 336
+    ActiveSheet = 0
+    Sheets = <
+      item
+        Name = 'Sheet 1'
+        Tag = 0
+      end
+      item
+        Name = 'Sheet 2'
+        Tag = 0
+      end
+      item
+        Name = 'Sheet 3'
+        Tag = 0
+      end>
+    TabLook.Font.Charset = DEFAULT_CHARSET
+    TabLook.Font.Color = clWindowText
+    TabLook.Font.Height = -11
+    TabLook.Font.Name = 'Tahoma'
+    TabLook.Font.Style = []
+    TabOrder = 7
+    Version = '3.3.3.1'
+    object TAdvStringGrid
+      Left = 0
+      Top = 0
+      Width = 581
+      Height = 311
+      Align = alClient
+      BorderStyle = bsNone
+      DrawingStyle = gdsClassic
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
+      TabOrder = 0
+      ActiveCellFont.Charset = DEFAULT_CHARSET
+      ActiveCellFont.Color = clWindowText
+      ActiveCellFont.Height = -11
+      ActiveCellFont.Name = 'Tahoma'
+      ActiveCellFont.Style = [fsBold]
+      ControlLook.FixedGradientHoverFrom = clGray
+      ControlLook.FixedGradientHoverTo = clWhite
+      ControlLook.FixedGradientDownFrom = clGray
+      ControlLook.FixedGradientDownTo = clSilver
+      ControlLook.DropDownHeader.Font.Charset = DEFAULT_CHARSET
+      ControlLook.DropDownHeader.Font.Color = clWindowText
+      ControlLook.DropDownHeader.Font.Height = -11
+      ControlLook.DropDownHeader.Font.Name = 'Tahoma'
+      ControlLook.DropDownHeader.Font.Style = []
+      ControlLook.DropDownHeader.Visible = True
+      ControlLook.DropDownHeader.Buttons = <>
+      ControlLook.DropDownFooter.Font.Charset = DEFAULT_CHARSET
+      ControlLook.DropDownFooter.Font.Color = clWindowText
+      ControlLook.DropDownFooter.Font.Height = -11
+      ControlLook.DropDownFooter.Font.Name = 'Tahoma'
+      ControlLook.DropDownFooter.Font.Style = []
+      ControlLook.DropDownFooter.Visible = True
+      ControlLook.DropDownFooter.Buttons = <>
+      Filter = <>
+      FilterDropDown.Font.Charset = DEFAULT_CHARSET
+      FilterDropDown.Font.Color = clWindowText
+      FilterDropDown.Font.Height = -11
+      FilterDropDown.Font.Name = 'Tahoma'
+      FilterDropDown.Font.Style = []
+      FilterDropDown.TextChecked = 'Checked'
+      FilterDropDown.TextUnChecked = 'Unchecked'
+      FilterDropDownClear = '(All)'
+      FilterEdit.TypeNames.Strings = (
+        'Starts with'
+        'Ends with'
+        'Contains'
+        'Not contains'
+        'Equal'
+        'Not equal'
+        'Larger than'
+        'Smaller than'
+        'Clear')
+      FixedRowHeight = 22
+      FixedFont.Charset = DEFAULT_CHARSET
+      FixedFont.Color = clWindowText
+      FixedFont.Height = -11
+      FixedFont.Name = 'Tahoma'
+      FixedFont.Style = [fsBold]
+      FloatFormat = '%.2f'
+      HoverButtons.Buttons = <>
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
+      PrintSettings.DateFormat = 'dd/mm/yyyy'
+      PrintSettings.Font.Charset = DEFAULT_CHARSET
+      PrintSettings.Font.Color = clWindowText
+      PrintSettings.Font.Height = -11
+      PrintSettings.Font.Name = 'Tahoma'
+      PrintSettings.Font.Style = []
+      PrintSettings.FixedFont.Charset = DEFAULT_CHARSET
+      PrintSettings.FixedFont.Color = clWindowText
+      PrintSettings.FixedFont.Height = -11
+      PrintSettings.FixedFont.Name = 'Tahoma'
+      PrintSettings.FixedFont.Style = []
+      PrintSettings.HeaderFont.Charset = DEFAULT_CHARSET
+      PrintSettings.HeaderFont.Color = clWindowText
+      PrintSettings.HeaderFont.Height = -11
+      PrintSettings.HeaderFont.Name = 'Tahoma'
+      PrintSettings.HeaderFont.Style = []
+      PrintSettings.FooterFont.Charset = DEFAULT_CHARSET
+      PrintSettings.FooterFont.Color = clWindowText
+      PrintSettings.FooterFont.Height = -11
+      PrintSettings.FooterFont.Name = 'Tahoma'
+      PrintSettings.FooterFont.Style = []
+      PrintSettings.PageNumSep = '/'
+      SearchFooter.FindNextCaption = 'Find &next'
+      SearchFooter.FindPrevCaption = 'Find &previous'
+      SearchFooter.Font.Charset = DEFAULT_CHARSET
+      SearchFooter.Font.Color = clWindowText
+      SearchFooter.Font.Height = -11
+      SearchFooter.Font.Name = 'Tahoma'
+      SearchFooter.Font.Style = []
+      SearchFooter.HighLightCaption = 'Highlight'
+      SearchFooter.HintClose = 'Close'
+      SearchFooter.HintFindNext = 'Find next occurrence'
+      SearchFooter.HintFindPrev = 'Find previous occurrence'
+      SearchFooter.HintHighlight = 'Highlight occurrences'
+      SearchFooter.MatchCaseCaption = 'Match case'
+      SearchFooter.ResultFormat = '(%d of %d)'
+      Version = '8.7.0.0'
+      ExplicitWidth = 400
+      ExplicitHeight = 250
+    end
+  end
+  object ListBox1: TListBox
+    Left = 704
+    Top = 40
+    Width = 201
+    Height = 225
+    ItemHeight = 13
+    TabOrder = 8
+  end
   object dbNewVoip: TZConnection
     ControlsCodePage = cCP_UTF16
     Catalog = ''
@@ -324,7 +461,7 @@ object Form1: TForm1
     Top = 48
   end
   object AdvGridExcelIO1: TAdvGridExcelIO
-    AdvStringGrid = AdvSpreadGrid1
+    AdvGridWorkbook = AdvGridWorkbook1
     Options.ExportOverwrite = omWarn
     Options.ExportOverwriteMessage = 'File %s already exists'#13'Ok to overwrite ?'
     Options.ExportRawRTF = False
@@ -332,5 +469,14 @@ object Form1: TForm1
     Version = '3.14'
     Left = 640
     Top = 216
+  end
+  object AdvGridExcelIO2: TAdvGridExcelIO
+    AdvStringGrid = AdvSpreadGrid1
+    Options.ExportOverwriteMessage = 'File %s already exists'#13'Ok to overwrite ?'
+    Options.ExportRawRTF = False
+    UseUnicode = False
+    Version = '3.14'
+    Left = 360
+    Top = 403
   end
 end

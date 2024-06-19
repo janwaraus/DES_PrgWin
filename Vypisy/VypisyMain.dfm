@@ -124,14 +124,13 @@ object fmMain: TfmMain
     Layout = tlBottom
   end
   object btnStahniVypisy: TButton
-    Left = 128
+    Left = 121
     Top = 472
-    Width = 361
+    Width = 196
     Height = 22
-    Caption = 
-      'St'#225'hni v'#253'pisy znovu (automaticky se stahuje jednou po startu pro' +
-      'gramu)'
+    Caption = 'St'#225'hni v'#253'pisy (automaticky nestahuje)'
     TabOrder = 9
+    Visible = False
     OnClick = btnStahniVypisyClick
   end
   object pnRight: TPanel

@@ -13,7 +13,7 @@ uses
   FireDAC.Phys.PG, FireDAC.Phys.PGDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param,
   FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet,
   FireDAC.Comp.Client, ZAbstractConnection, ZConnection, AdvUtil, Vcl.Grids,
-  AdvObj, BaseGrid, AdvGrid, AdvSprd, tmsAdvGridExcel;
+  AdvObj, BaseGrid, AdvGrid, AdvSprd, tmsAdvGridExcel, AdvGridWorkbook;
 
 type
   TForm1 = class(TForm)
@@ -28,6 +28,9 @@ type
     AdvSpreadGrid1: TAdvSpreadGrid;
     AdvStringGrid1: TAdvStringGrid;
     AdvGridExcelIO1: TAdvGridExcelIO;
+    AdvGridWorkbook1: TAdvGridWorkbook;
+    AdvGridExcelIO2: TAdvGridExcelIO;
+    ListBox1: TListBox;
     procedure btnDoIt1Click(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure Button1Click(Sender: TObject);
@@ -36,6 +39,7 @@ type
     procedure CreateExcelFileUsingTAdvSpreadGrid;
     procedure ExportGridDataToExcel;
     procedure CopyFileToNetworkDrive(const SourceFile, DestIP, DestShare, DestFileName: string);
+    procedure LoadExcelFileAndListSheets(const FileName: string);
 
   private
     { Private declarations }
@@ -112,16 +116,45 @@ var
   text: string;
 
 begin
+  Memo1.Lines.Add('Nacitam xls');
+  LoadExcelFileAndListSheets('technici24.xls');
+
+end;
 
 
-  //text := DesU.ulozKomunikaci('2', '111', 'Ppøíliš žlutý mail''s book!');
+procedure TForm1.LoadExcelFileAndListSheets(const FileName: string);
+var
+  i: integer;
+begin
+{
+  SheetNames := TStringList.Create;
+  try
+    AdvGridExcelIO1.LoadSheetName ('technici24.xls', SheetNames);
 
-  //CreateExcelFile;
-  //CreateExcelFileUsingTAdvSpreadGrid;
-  ExportGridDataToExcel;
-  Memo1.Lines.Add('xlsx aa');
+    // Display sheet names in a list box or any other control
+    ListBox1.Items.Assign(SheetNames);
+  finally
+    SheetNames.Free;
+  end;
+  }
 
 
+
+  try
+
+    AdvGridExcelIO1.XLSImport(FileName);
+
+    //AdvGridExcelIO1.LoadSheetNames();
+
+     for i := 0 to AdvGridExcelIO1.SheetNamesCount - 1 do
+  begin
+    ListBox1.Items.Add(AdvGridExcelIO1.SheetNames[i]);
+  end;
+
+
+  finally
+
+  end;
 end;
 
 procedure TForm1.CreateExcelFile;
