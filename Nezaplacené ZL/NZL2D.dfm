@@ -2,8 +2,8 @@ object fmZLDetail: TfmZLDetail
   Left = 403
   Top = 206
   Caption = 'Detail'
-  ClientHeight = 256
-  ClientWidth = 347
+  ClientHeight = 266
+  ClientWidth = 355
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,15 +11,16 @@ object fmZLDetail: TfmZLDetail
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  Position = poOwnerFormCenter
+  Visible = True
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object asgDetail: TAdvStringGrid
     Left = 0
     Top = 0
-    Width = 347
-    Height = 256
-    Cursor = crDefault
+    Width = 355
+    Height = 266
     Align = alClient
     BorderStyle = bsNone
     Ctl3D = True
@@ -37,7 +38,6 @@ object fmZLDetail: TfmZLDetail
     ParentFont = False
     ScrollBars = ssVertical
     TabOrder = 0
-    HoverRowCells = [hcNormal, hcSelected]
     OnGetAlignment = asgDetailGetAlignment
     ActiveCellFont.Charset = DEFAULT_CHARSET
     ActiveCellFont.Color = clWindowText
@@ -102,7 +102,8 @@ object fmZLDetail: TfmZLDetail
     FixedFont.Style = []
     FloatFormat = '%.2f'
     HoverButtons.Buttons = <>
-    HoverButtons.Position = hbLeftFromColumnLeft
+    HTMLSettings.ImageFolder = 'images'
+    HTMLSettings.ImageBaseName = 'img'
     Look = glTMS
     PrintSettings.DateFormat = 'dd/mm/yyyy'
     PrintSettings.Font.Charset = DEFAULT_CHARSET
@@ -135,11 +136,11 @@ object fmZLDetail: TfmZLDetail
     SearchFooter.Font.Height = -11
     SearchFooter.Font.Name = 'Tahoma'
     SearchFooter.Font.Style = []
-    SortSettings.DefaultFormat = ssAutomatic
+    SearchFooter.ResultFormat = '(%d of %d)'
     SortSettings.Column = 0
     SortSettings.Show = True
     VAlignment = vtaCenter
-    Version = '7.4.2.0'
+    Version = '8.6.2.0'
     ColWidths = (
       64
       76
