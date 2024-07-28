@@ -1,6 +1,7 @@
 // od 19.12.2014 - Zálohové listy na pøipojení se generují v Abøe podle databáze iQuest. Podle Mìsíèní fakturace.
 // 29.7.2019 slevy za 6 a 12 mìsícù neplatí ani pro tarify Lahovská
 // 30.4.2020 BusOrder a BusTransaction do všech øádkù ZL
+// 28.7.2024 další tarify bez slev, trochu upraveno
 
 unit ZLvytvoreni;
 
@@ -74,6 +75,12 @@ end;
 
 procedure TdmVytvoreni.ZLAbra(Radek: integer);
 // pro další období vytvoøí ZL na pøipojení k internetu
+
+type
+  TTarify = set of byte;     // 28.7.2024 seznam tarifù, které nemají slevu pøi placení na 6 nebo 12 mìsícù
+// Protože nejnižší dotèený tarif má Id 202, bude se od Id tarifu odeèítat 200, aby i nejvyšší Id
+// (dnes 330) byl ještì byte
+
 var
   OrgIdentNumber,
   Firm_Id,
@@ -100,7 +107,18 @@ var
   newIDI: TNewAbraBo;
   testVytvoreni : boolean;
 
+  Tarify_bez_slevy: TTarify;
+
 begin
+// 28.7.2024
+  Tarify_bez_slevy := [
+    2..24,             // Misauer
+    25..34,            // Harna
+    42,                // Lahovská
+    45..47,            // Cukrák
+    119, 123..126,     // DSL*
+    127..130           // optical*
+  ];
   testVytvoreni := fmMain.chbTestVytvoreni.Checked;
 
   with fmMain, DesU.qrZakos, asgMain do begin
@@ -304,8 +322,11 @@ begin
 
         // platba na 6 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
+        // 28.7.2024 slevy neplatí ani pro tarify DSL* a optical*
         if (FieldByName('bb_period').AsInteger = 6) and (FieldByName('co_type').AsString = 'InternetContract')
-         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+        // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247, DSL* 319 a 323-326, optical* 327-330
+//         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+         and not (FieldByName('co_tariff_id').AsInteger - 200 in Tarify_bez_slevy) then begin        // 28.7.24
           //RadkyZL:= AbraOLE.CreateValues('@IssuedDepositInvoiceRow');
           newIDI.createNewInvoiceRow(4, 'slevu', false);
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
@@ -315,8 +336,11 @@ begin
 
         // platba na 12 mìsícù (sleva jen za internet) - neplatí pro tarify Misauer a Harna 30.3.20 a Cukrák
         // 29.7.2019 slevy neplatí ani pro tarif Lahovská
+        // 28.7.2024 slevy neplatí ani pro tarify DSL* a optical*
         if (FieldByName('bb_period').AsInteger = 12) and (FieldByName('co_type').AsString = 'InternetContract')
-         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+        // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247, DSL* 319 a 323-326, optical* 327-330
+//         and not (FieldByName('co_tariff_id').AsInteger in [202..234, 242, 245..247]) then begin   // Misauer 202 - 224, Harna 225 - 234, Lahovská 242, Cukrák 245 - 247
+         and not (FieldByName('co_tariff_id').AsInteger - 200 in Tarify_bez_slevy) then begin        // 28.7.24
           newIDI.createNewInvoiceRow(4, 'slevu', false);
           //boRowAA['BusOrder_ID'] := BusOrder_Id;
           newIDI.rowItem['BusTransaction_ID'] := BusTransaction_Id;
@@ -332,13 +356,14 @@ begin
         newIDI.rowItem['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
         // platba na 6 mìsícù
         if (FieldByName('bb_period').AsInteger = 6) then
-          if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
-            newIDI.rowItem['TAmount'] := Format('%f', [6 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
+//          if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
+          if (FieldByName('co_tariff_id').AsInteger - 200 in Tarify_bez_slevy) then                    // 28.7.24 tarify bez slevy
+            newIDI.rowItem['TAmount'] := Format('%f', [6 * FieldByName('bi_price').AsFloat])
           else newIDI.rowItem['TAmount'] := Format('%f', [5 * FieldByName('bi_price').AsFloat])  // ostatní
         // platba na 12 mìsícù
         else if FieldByName('bb_period').AsInteger = 12 then
-          if (FieldByName('co_tariff_id').AsInteger in [202..234]) then
-            newIDI.rowItem['TAmount'] := Format('%f', [12 * FieldByName('bi_price').AsFloat])   // tarify Misauer a Harna
+          if (FieldByName('co_tariff_id').AsInteger - 200 in Tarify_bez_slevy) then                     // 28.7.24 tarify bez slevy
+            newIDI.rowItem['TAmount'] := Format('%f', [12 * FieldByName('bi_price').AsFloat])
           else newIDI.rowItem['TAmount'] := Format('%f', [10 * FieldByName('bi_price').AsFloat])  // ostatní
         // ostatní
         else newIDI.rowItem['TAmount'] := Format('%f', [FieldByName('bb_period').AsInteger * FieldByName('bi_price').AsFloat]);
