@@ -165,6 +165,8 @@ begin
     end;
   end;
   acbDruhSmlouvy.ItemIndex := 1;
+
+  btVyber.SetFocus;
 end;
 
 procedure TfmZL.asgPohledavkyGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
@@ -388,7 +390,7 @@ end;
 
 procedure TfmZL.btMailClick(Sender: TObject);
 var
-  FIIni: TIniFile;
+
   RadekDo,
   Radek,
   CommId: integer;
@@ -413,14 +415,13 @@ begin
     Writeln (F, FormatDateTime(sLineBreak + 'dd.mm.yy hh:nn  ', Now) + 'Odeslání zprávy: ' + sLineBreak + mmMail.Text + sLineBreak);
     CloseFile(F);
 
+    Screen.Cursor := crHourGlass;
     for Radek := 1 to RadekDo do
       if Ints[8, Radek] = 1 then begin
-        Zprava := StringReplace(mmMail.Text, 'XXX', Cells[12, Radek], []);
-        Zprava := StringReplace(Zprava, 'YYY', Cells[3, Radek], []);
+
         Clear;
         ContentType := 'multipart/mixed';
-//        Charset := 'utf-8';
-//        From.Address := 'kontrola@eurosignal.cz';
+
         From.Address := 'uctarna@eurosignal.cz';
         MailStr := Cells[9, Radek];
         MailStr := StringReplace(MailStr, ',', ';', [rfReplaceAll]);    // èárky za støedníky
@@ -430,10 +431,12 @@ begin
         end;
         Recipients.Add.Address := Trim(MailStr);
         Subject := 'Kontrola plateb smlouvy ' + Cells[6, Radek];
+        Zprava := StringReplace(mmMail.Text, 'XXX', Cells[12, Radek], []);
+        Zprava := StringReplace(Zprava, 'YYY', Cells[3, Radek], []);
         with TIdText.Create(idMessage.MessageParts, nil) do begin
           Body.Text := UTF8Encode(Zprava + #13#10#10
-          + 'S pozdravem' + #13#10#10
-          + 'Váš Eurosignal');
+           + 'S pozdravem' + #13#10#10
+           + 'Váš Eurosignal');
           ContentType := 'text/plain';
           Charset := 'utf-8';
         end;
