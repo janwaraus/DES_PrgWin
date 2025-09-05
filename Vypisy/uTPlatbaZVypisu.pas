@@ -148,12 +148,14 @@ begin
   if kredit AND (self.cisloUctu = '2602372070/2010') then setZnamyPripad('z Fio Sp.Ú');
   if kredit AND (self.cisloUctu = '2800098383/2010') then setZnamyPripad('z Fioonto');
   if kredit AND (self.cisloUctu = '171336270/0300') then setZnamyPripad('z ÈSOB');
+  if kredit AND (self.cisloUctu = '2921537004/5500') then setZnamyPripad('z RB');
   if kredit AND (self.cisloUctu = '2107333410/2700') then setZnamyPripad('z PayU');
   if debet AND (self.cisloUctu = '2100098382/2010') then setZnamyPripad('na Fio BÚ');
   if debet AND (self.cisloUctu = '2602372070/2010') then setZnamyPripad('na Fio Sp.Ú');
   if debet AND (self.cisloUctu = '2800098383/2010') then setZnamyPripad('na Fiokonto');
   if debet AND (self.cisloUctu = '171336270/0300') then setZnamyPripad('na ÈSOB');
-  if debet AND (self.cisloUctuVlastni = '2389210008000000') AND (AnsiContainsStr(nazevProtistrany, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
+  if debet AND (self.cisloUctu = '2921537004/5500') then setZnamyPripad('na RB');
+  if debet AND (self.cisloUctuVlastni = '4003292157000000') AND (AnsiContainsStr(nazevProtistrany, 'illing')) then setZnamyPripad('z PayU na BÚ'); //položka PayU výpisu, která znamená výbìr z PayU, obsahuje slovo "Billing"
 
   self.cisloUctuKZobrazeni := DesU.prevedCisloUctuNaText(self.cisloUctu);
 

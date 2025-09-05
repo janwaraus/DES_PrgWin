@@ -54,6 +54,9 @@ type
     lblZobrazit: TLabel;
     lblHlavickaVpravo: TLabel;
     btnStahniVypisy: TButton;
+    lblVypisRbInfo: TLabel;
+    lblVypisRbGpc: TLabel;
+    btnVypisRb: TButton;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -90,6 +93,7 @@ type
     procedure btnVypisFioSporiciClick(Sender: TObject);
     procedure btnVypisFiokontoClick(Sender: TObject);
     procedure btnVypisCsobClick(Sender: TObject);
+    procedure btnVypisRbClick(Sender: TObject);
     procedure btnZavritVypisClick(Sender: TObject);
     procedure btnCustomersClick(Sender: TObject);
     procedure asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
@@ -348,9 +352,36 @@ begin
   else
     lblVypisCsobInfo.Font.Color := $0000A0;
 
+
+  /// RB
+  abraBankAccount := TAbraBankaccount.create();
+  abraBankaccount.loadByNumber('2921537004/5500');
+  maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(rokVypisu);
+  hledanyGpcSoubor := 'Vypis_2921537004_CZK_' + rokVypisu + '*' + IntToStr(maxCisloVypisu + 1) + '.gpc';
+  nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
+  if nalezenyGpcSoubor = '' then begin //nenašel se
+    lblVypisRbGpc.caption := hledanyGpcSoubor + ' nenalezen';
+    btnVypisRb.Enabled := false;
+  end else begin
+    lblVypisRbGpc.caption := nalezenyGpcSoubor;
+    btnVypisRb.Enabled := true;
+  end;
+    i1 := abraBankaccount.getPocetVypisu(rokVypisu);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(rokVypisu);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(rokVypisu);
+  lblVypisRbInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, rokVypisu, i2, i3,
+    DateToStr(abraBankaccount.getDatumMaxVypisu(rokVypisu))
+    ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisRbInfo.Font.Color := $008000
+  else
+    lblVypisRbInfo.Font.Color := $0000A0;
+
   //Pay U
   abraBankAccount := TAbraBankaccount.create();
-  abraBankaccount.loadByNumber('2389210008000000/0300');
+  //abraBankaccount.loadByNumber('2389210008000000/0300'); //zmìnìno 08-2025
+  abraBankaccount.loadByNumber('4003292157000000/0300');
   posledniDatum := abraBankaccount.getPosledniDatumVypisu(rokVypisu);
   hledanePayuDatumVypisu := FormatDateTime('yyyy-mm-dd', posledniDatum + 1);
   hledanyGpcSoubor := 'vypis_Eurosignal_' + hledanePayuDatumVypisu + '_*.gpc';
@@ -1141,6 +1172,12 @@ procedure TfmMain.btnVypisCsobClick(Sender: TObject);
 begin
   nactiGpc(lblVypisCsobGpc.caption);
 end;
+
+procedure TfmMain.btnVypisRbClick(Sender: TObject);
+begin
+  nactiGpc(lblVypisRbGpc.caption);
+end;
+
 
 procedure TfmMain.btnZavritVypisClick(Sender: TObject);
 begin

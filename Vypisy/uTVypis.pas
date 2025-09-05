@@ -72,7 +72,8 @@ end;
 
 function TVypis.isPayuVypis() : boolean;
 begin
-  if self.cisloUctuVlastni = '2389210008000000' then
+  //if self.cisloUctuVlastni = '2389210008000000' then
+  if self.cisloUctuVlastni = '4003292157000000' then
     Result := true
   else
     Result := false;

@@ -79,15 +79,15 @@ object fmMain: TfmMain
     Caption = 'lblVypisCsobGpc'
   end
   object lblVypisPayuGpc: TLabel
-    Left = 238
-    Top = 357
+    Left = 240
+    Top = 435
     Width = 79
     Height = 13
     Caption = 'lblVypisPayuGpc'
   end
   object lblVypisPayuInfo: TLabel
     Left = 240
-    Top = 391
+    Top = 466
     Width = 77
     Height = 13
     Caption = 'lblVypisPayuInfo'
@@ -107,10 +107,10 @@ object fmMain: TfmMain
     Caption = 'lblVypisFiokontoInfo'
   end
   object lblHlavickaVpravo: TLabel
-    Left = 819
+    Left = 814
     Top = 8
-    Width = 107
-    Height = 15
+    Width = 112
+    Height = 13
     Alignment = taRightJustify
     Caption = 'lbl Hlavicka Vpravo'
     Color = clSkyBlue
@@ -123,9 +123,32 @@ object fmMain: TfmMain
     ParentFont = False
     Layout = tlBottom
   end
+  object lblVypisRbInfo: TLabel
+    Left = 240
+    Top = 389
+    Width = 67
+    Height = 13
+    Caption = 'lblVypisRbInfo'
+  end
+  object lblVypisRbGpc: TLabel
+    Left = 240
+    Top = 355
+    Width = 69
+    Height = 13
+    Caption = 'lblVypisRbGpc'
+  end
+  object btnVypisRb: TButton
+    Left = 128
+    Top = 350
+    Width = 99
+    Height = 25
+    Caption = 'RB v'#253'pis'
+    TabOrder = 10
+    OnClick = btnVypisRbClick
+  end
   object btnStahniVypisy: TButton
-    Left = 121
-    Top = 472
+    Left = 108
+    Top = 488
     Width = 196
     Height = 22
     Caption = 'St'#225'hni v'#253'pisy (automaticky nestahuje)'
@@ -143,7 +166,7 @@ object fmMain: TfmMain
     object lblPrechoziPlatbyZUctu: TLabel
       Left = 10
       Top = 16
-      Width = 137
+      Width = 136
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby z '#250#269'tu'
       Enabled = False
@@ -164,7 +187,7 @@ object fmMain: TfmMain
     object lblPrechoziPlatbySVs: TLabel
       Left = 8
       Top = 176
-      Width = 128
+      Width = 127
       Height = 13
       Caption = 'P'#345'edchoz'#237' platby s VS'
       Enabled = False
@@ -463,7 +486,7 @@ object fmMain: TfmMain
   end
   object btnVypisFiokonto: TButton
     Left = 128
-    Top = 188
+    Top = 190
     Width = 97
     Height = 25
     Caption = 'Fiokonto v'#253'pis'
@@ -513,8 +536,8 @@ object fmMain: TfmMain
       OnClick = btnNactiClick
     end
     object btnZapisDoAbry: TButton
-      Left = 10
-      Top = 233
+      Left = 8
+      Top = 230
       Width = 91
       Height = 23
       Caption = '&Do Abry'
@@ -713,7 +736,7 @@ object fmMain: TfmMain
   end
   object btnVypisPayU: TButton
     Left = 128
-    Top = 352
+    Top = 430
     Width = 97
     Height = 25
     Caption = 'PayU v'#253'pis'
@@ -728,9 +751,9 @@ object fmMain: TfmMain
     OnClick = btnVypisPayUClick
   end
   object asgMain: TAdvStringGrid
-    Left = 488
-    Top = 24
-    Width = 441
+    Left = 107
+    Top = 26
+    Width = 822
     Height = 508
     Anchors = [akLeft, akTop, akBottom]
     ColCount = 9
