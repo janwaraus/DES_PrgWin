@@ -153,11 +153,14 @@ end;
 
 
 function TDesInvoice.getPdfFileName : string;
-begin
-  if self.DocQueueCode = 'FO1' then //FO1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
+begin        // 4.1.2025 FO1, FO3 a ZL1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
+//  if self.DocQueueCode = 'FO1' then //FO1 mají pìtimístné èíslo dokladu, ostatní ètyømístné
+// 13.3.2025 všechny doklady pìtimístné
+
+//  if (self.DocQueueCode = 'FO1') or (self.DocQueueCode = 'FO3') or (self.DocQueueCode = 'ZL1') then
     Result := Format('%s-%5.5d.pdf', [self.DocQueueCode, self.OrdNumber]) // pro test 'new-%s-%5.5d.pdf'
-  else
-    Result := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
+//  else
+//    Result := Format('%s-%4.4d.pdf', [self.DocQueueCode, self.OrdNumber]);
 end;
 
 function TDesInvoice.getExportSubDir : string;

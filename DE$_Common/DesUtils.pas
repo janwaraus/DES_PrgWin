@@ -1248,13 +1248,18 @@ begin
 
     // více mailových adres oddìlených støedníky se rozdìlí
     while Pos(';', emailAddrStr) > 0 do begin
-      Recipients.Add.Address := Trim(Copy(emailAddrStr, 1, Pos(';', emailAddrStr)-1));
+      Recipients.Add.Address := Trim(Copy(emailAddrStr, 1, Pos(';', emailAddrStr)-1));+
       emailAddrStr := Copy(emailAddrStr, Pos(';', emailAddrStr)+1, Length(emailAddrStr));
     end;
     Recipients.Add.Address := Trim(emailAddrStr);
 
     Subject := emailPredmet;
     ContentType := 'multipart/mixed';
+
+// 30.8.2025 Message-ID
+    MsgId := FormatDateTime('dd.mm.yyyy-hh:nn:ss', Now) 
+		+ '-' + ChangeFileExt(ExtractFileName(FullPdfFileName), '') + '@eurosignal.cz';
+
 
     with TIdText.Create(idMessage.MessageParts, nil) do begin
       Body.Text := emailZprava;
@@ -1430,7 +1435,7 @@ begin
   idHTTP.Request.ContentType := 'text/plain';
   idHTTP.Request.CharSet := 'ASCII';
 
-  sHTTPtext := SmsUrl + '?login=' + SmsUN + '&password=' + SmsPW + '&action=send_sms&delivery_report=0&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
+  sHTTPtext := SmsUrl + '?login=' + SmsUN + '&password=' + SmsPW + '&action=send_sms&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
 
   try
     try
