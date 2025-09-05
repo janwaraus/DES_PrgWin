@@ -1248,7 +1248,7 @@ begin
 
     // více mailových adres oddìlených støedníky se rozdìlí
     while Pos(';', emailAddrStr) > 0 do begin
-      Recipients.Add.Address := Trim(Copy(emailAddrStr, 1, Pos(';', emailAddrStr)-1));+
+      Recipients.Add.Address := Trim(Copy(emailAddrStr, 1, Pos(';', emailAddrStr)-1));
       emailAddrStr := Copy(emailAddrStr, Pos(';', emailAddrStr)+1, Length(emailAddrStr));
     end;
     Recipients.Add.Address := Trim(emailAddrStr);
@@ -1257,8 +1257,8 @@ begin
     ContentType := 'multipart/mixed';
 
 // 30.8.2025 Message-ID
-    MsgId := FormatDateTime('dd.mm.yyyy-hh:nn:ss', Now) 
-		+ '-' + ChangeFileExt(ExtractFileName(FullPdfFileName), '') + '@eurosignal.cz';
+    ExtraHeaders.Values['Message-ID'] := FormatDateTime('ddmmyyyyhhnnss', Now)
+		 + '-' + LowerCase(ChangeFileExt(ExtractFileName(FullPdfFileName), '')) + '@eurosignal.cz';
 
 
     with TIdText.Create(idMessage.MessageParts, nil) do begin
