@@ -84,15 +84,15 @@ var
 begin
   with fmMain, fmMain.asgMain do begin
     CisloZL := Copy(Cells[2, Radek], 0, Pos('/', Cells[2, Radek])-1);
-    FullPdfFileName := Format('%s%4d\%2.2d\ZL1-%4.4d.pdf',
+    FullPdfFileName := Format('%s%4d\%2.2d\ZL1-%5.5d.pdf',
      [DesU.PDF_PATH, YearOf(Floats[7, Radek]), MonthOf(Floats[7, Radek]), StrToInt(CisloZL)]);
 
     emailAddrStr := Cells[5, Radek];
 
     emailOdesilatel := 'uctarna@eurosignal.cz';
-    emailPredmet := Format('Družstvo EUROSIGNAL, zálohový list na internetovou konektivitu ZL1-%4.4d/%d', [StrToInt(CisloZL), aseRok.Value]);
+    emailPredmet := Format('Družstvo EUROSIGNAL, zálohový list na internetovou konektivitu ZL1-%d/%d', [StrToInt(CisloZL), aseRok.Value]);
 
-    emailZprava := Format('Zálohový list ZL1-%4.4d/%d na pøipojení k internetu v dalším období je v pøiloženém PDF dokumentu.',
+    emailZprava := Format('Zálohový list ZL1-%d/%d na pøipojení k internetu v dalším období je v pøiloženém PDF dokumentu.',
          [StrToInt(CisloZL), aseRok.Value])
       + sLineBreak + sLineBreak
       + 'Pøejeme pìkný den'
