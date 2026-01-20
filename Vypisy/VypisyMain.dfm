@@ -2,7 +2,7 @@ object fmMain: TfmMain
   Left = 141
   Top = 0
   Caption = 'Na'#269'ten'#237', oprava a ulo'#382'en'#237' bankovn'#237'ho v'#253'pisu'
-  ClientHeight = 675
+  ClientHeight = 760
   ClientWidth = 1379
   Color = clBtnFace
   Constraints.MinHeight = 714
@@ -17,7 +17,7 @@ object fmMain: TfmMain
   OnShow = FormShow
   DesignSize = (
     1379
-    675)
+    760)
   PixelsPerInch = 96
   TextHeight = 13
   object lblHlavicka: TLabel
@@ -80,14 +80,14 @@ object fmMain: TfmMain
   end
   object lblVypisPayuGpc: TLabel
     Left = 240
-    Top = 435
+    Top = 522
     Width = 79
     Height = 13
     Caption = 'lblVypisPayuGpc'
   end
   object lblVypisPayuInfo: TLabel
     Left = 240
-    Top = 466
+    Top = 553
     Width = 77
     Height = 13
     Caption = 'lblVypisPayuInfo'
@@ -137,6 +137,20 @@ object fmMain: TfmMain
     Height = 13
     Caption = 'lblVypisRbGpc'
   end
+  object lblVypisRbSporiciInfo: TLabel
+    Left = 238
+    Top = 469
+    Width = 99
+    Height = 13
+    Caption = 'lblVypisRbSporiciInfo'
+  end
+  object lblVypisRbSporiciGpc: TLabel
+    Left = 238
+    Top = 435
+    Width = 101
+    Height = 13
+    Caption = 'lblVypisRbSporiciGpc'
+  end
   object btnVypisRb: TButton
     Left = 128
     Top = 350
@@ -147,8 +161,8 @@ object fmMain: TfmMain
     OnClick = btnVypisRbClick
   end
   object btnStahniVypisy: TButton
-    Left = 108
-    Top = 488
+    Left = 115
+    Top = 576
     Width = 196
     Height = 22
     Caption = 'St'#225'hni v'#253'pisy (automaticky nestahuje)'
@@ -160,9 +174,10 @@ object fmMain: TfmMain
     Left = 932
     Top = 0
     Width = 447
-    Height = 675
+    Height = 760
     Align = alRight
     TabOrder = 1
+    ExplicitHeight = 675
     object lblPrechoziPlatbyZUctu: TLabel
       Left = 10
       Top = 16
@@ -497,7 +512,7 @@ object fmMain: TfmMain
     Left = 0
     Top = 0
     Width = 109
-    Height = 531
+    Height = 618
     TabOrder = 2
     object lblPomocPrg: TLabel
       Left = 10
@@ -553,7 +568,7 @@ object fmMain: TfmMain
     end
     object btnSparujPlatby: TButton
       Left = 14
-      Top = 500
+      Top = 555
       Width = 75
       Height = 23
       Caption = 'Sp'#225'ruj platby'
@@ -563,7 +578,7 @@ object fmMain: TfmMain
     end
     object btnReconnect: TButton
       Left = 14
-      Top = 471
+      Top = 519
       Width = 75
       Height = 23
       Caption = 'Reconnect'
@@ -736,7 +751,7 @@ object fmMain: TfmMain
   end
   object btnVypisPayU: TButton
     Left = 128
-    Top = 430
+    Top = 517
     Width = 97
     Height = 25
     Caption = 'PayU v'#253'pis'
@@ -750,151 +765,11 @@ object fmMain: TfmMain
     TabOrder = 6
     OnClick = btnVypisPayUClick
   end
-  object asgMain: TAdvStringGrid
-    Left = 107
-    Top = 26
-    Width = 822
-    Height = 508
-    Anchors = [akLeft, akTop, akBottom]
-    ColCount = 9
-    DefaultRowHeight = 20
-    DrawingStyle = gdsClassic
-    Enabled = False
-    FixedCols = 0
-    RowCount = 5
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing]
-    ParentFont = False
-    TabOrder = 0
-    Visible = False
-    OnClick = asgMainClick
-    OnKeyUp = asgMainKeyUp
-    OnGetCellColor = asgMainGetCellColor
-    OnGetAlignment = asgMainGetAlignment
-    OnCanEditCell = asgMainCanEditCell
-    OnCellValidate = asgMainCellValidate
-    OnCellsChanged = asgMainCellsChanged
-    OnButtonClick = asgMainButtonClick
-    OnCheckBoxClick = asgMainCheckBoxClick
-    ActiveCellFont.Charset = DEFAULT_CHARSET
-    ActiveCellFont.Color = clWindowText
-    ActiveCellFont.Height = -11
-    ActiveCellFont.Name = 'Tahoma'
-    ActiveCellFont.Style = [fsBold]
-    ColumnHeaders.Strings = (
-      ''
-      #268#225'stka'
-      'VS'
-      'SS'
-      #268'. '#250#269'tu'
-      'Protistrana / popis'
-      'Datum'
-      ''
-      'pozn.')
-    ControlLook.FixedGradientHoverFrom = clGray
-    ControlLook.FixedGradientHoverTo = clWhite
-    ControlLook.FixedGradientDownFrom = clGray
-    ControlLook.FixedGradientDownTo = clSilver
-    ControlLook.DropDownHeader.Font.Charset = DEFAULT_CHARSET
-    ControlLook.DropDownHeader.Font.Color = clWindowText
-    ControlLook.DropDownHeader.Font.Height = -11
-    ControlLook.DropDownHeader.Font.Name = 'Tahoma'
-    ControlLook.DropDownHeader.Font.Style = []
-    ControlLook.DropDownHeader.Visible = True
-    ControlLook.DropDownHeader.Buttons = <>
-    ControlLook.DropDownFooter.Font.Charset = DEFAULT_CHARSET
-    ControlLook.DropDownFooter.Font.Color = clWindowText
-    ControlLook.DropDownFooter.Font.Height = -11
-    ControlLook.DropDownFooter.Font.Name = 'MS Sans Serif'
-    ControlLook.DropDownFooter.Font.Style = []
-    ControlLook.DropDownFooter.Visible = True
-    ControlLook.DropDownFooter.Buttons = <>
-    Filter = <>
-    FilterDropDown.Font.Charset = DEFAULT_CHARSET
-    FilterDropDown.Font.Color = clWindowText
-    FilterDropDown.Font.Height = -11
-    FilterDropDown.Font.Name = 'MS Sans Serif'
-    FilterDropDown.Font.Style = []
-    FilterDropDown.TextChecked = 'Checked'
-    FilterDropDown.TextUnChecked = 'Unchecked'
-    FilterDropDownClear = '(All)'
-    FilterEdit.TypeNames.Strings = (
-      'Starts with'
-      'Ends with'
-      'Contains'
-      'Not contains'
-      'Equal'
-      'Not equal'
-      'Clear')
-    FixedColWidth = 80
-    FixedRowHeight = 20
-    FixedFont.Charset = DEFAULT_CHARSET
-    FixedFont.Color = clWindowText
-    FixedFont.Height = -11
-    FixedFont.Name = 'Tahoma'
-    FixedFont.Style = [fsBold]
-    FloatFormat = '%.2f'
-    HoverButtons.Buttons = <>
-    HTMLSettings.ImageFolder = 'images'
-    HTMLSettings.ImageBaseName = 'img'
-    PrintSettings.DateFormat = 'dd/mm/yyyy'
-    PrintSettings.Font.Charset = DEFAULT_CHARSET
-    PrintSettings.Font.Color = clWindowText
-    PrintSettings.Font.Height = -11
-    PrintSettings.Font.Name = 'MS Sans Serif'
-    PrintSettings.Font.Style = []
-    PrintSettings.FixedFont.Charset = DEFAULT_CHARSET
-    PrintSettings.FixedFont.Color = clWindowText
-    PrintSettings.FixedFont.Height = -11
-    PrintSettings.FixedFont.Name = 'MS Sans Serif'
-    PrintSettings.FixedFont.Style = []
-    PrintSettings.HeaderFont.Charset = DEFAULT_CHARSET
-    PrintSettings.HeaderFont.Color = clWindowText
-    PrintSettings.HeaderFont.Height = -11
-    PrintSettings.HeaderFont.Name = 'MS Sans Serif'
-    PrintSettings.HeaderFont.Style = []
-    PrintSettings.FooterFont.Charset = DEFAULT_CHARSET
-    PrintSettings.FooterFont.Color = clWindowText
-    PrintSettings.FooterFont.Height = -11
-    PrintSettings.FooterFont.Name = 'MS Sans Serif'
-    PrintSettings.FooterFont.Style = []
-    PrintSettings.PageNumSep = '/'
-    ScrollWidth = 16
-    SearchFooter.FindNextCaption = 'Find &next'
-    SearchFooter.FindPrevCaption = 'Find &previous'
-    SearchFooter.Font.Charset = DEFAULT_CHARSET
-    SearchFooter.Font.Color = clWindowText
-    SearchFooter.Font.Height = -11
-    SearchFooter.Font.Name = 'MS Sans Serif'
-    SearchFooter.Font.Style = []
-    SearchFooter.HighLightCaption = 'Highlight'
-    SearchFooter.HintClose = 'Close'
-    SearchFooter.HintFindNext = 'Find next occurrence'
-    SearchFooter.HintFindPrev = 'Find previous occurrence'
-    SearchFooter.HintHighlight = 'Highlight occurrences'
-    SearchFooter.MatchCaseCaption = 'Match case'
-    SearchFooter.ResultFormat = '(%d of %d)'
-    Version = '8.7.0.0'
-    ColWidths = (
-      80
-      82
-      79
-      22
-      132
-      135
-      64
-      22
-      184)
-  end
   object pnBottom: TPanel
     Left = 0
-    Top = 532
+    Top = 616
     Width = 932
-    Height = 143
+    Height = 144
     TabOrder = 7
     object lblNalezeneDoklady: TLabel
       Left = 108
@@ -1053,6 +928,155 @@ object fmMain: TfmMain
       TabOrder = 1
       OnClick = chbVsechnyDokladyClick
     end
+  end
+  object btnVypisRbSporici: TButton
+    Left = 128
+    Top = 430
+    Width = 99
+    Height = 25
+    Caption = 'RB spo'#345#237'c'#237' v'#253'pis'
+    TabOrder = 11
+    OnClick = btnVypisRbSporiciClick
+  end
+  object asgMain: TAdvStringGrid
+    Left = 107
+    Top = 26
+    Width = 822
+    Height = 592
+    Anchors = [akLeft, akTop, akBottom]
+    ColCount = 9
+    DefaultRowHeight = 20
+    DrawingStyle = gdsClassic
+    Enabled = False
+    FixedCols = 0
+    RowCount = 5
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing]
+    ParentFont = False
+    TabOrder = 0
+    Visible = False
+    OnClick = asgMainClick
+    OnKeyUp = asgMainKeyUp
+    OnGetCellColor = asgMainGetCellColor
+    OnGetAlignment = asgMainGetAlignment
+    OnCanEditCell = asgMainCanEditCell
+    OnCellValidate = asgMainCellValidate
+    OnCellsChanged = asgMainCellsChanged
+    OnButtonClick = asgMainButtonClick
+    OnCheckBoxClick = asgMainCheckBoxClick
+    ActiveCellFont.Charset = DEFAULT_CHARSET
+    ActiveCellFont.Color = clWindowText
+    ActiveCellFont.Height = -11
+    ActiveCellFont.Name = 'Tahoma'
+    ActiveCellFont.Style = [fsBold]
+    ColumnHeaders.Strings = (
+      ''
+      #268#225'stka'
+      'VS'
+      'SS'
+      #268'. '#250#269'tu'
+      'Protistrana / popis'
+      'Datum'
+      ''
+      'pozn.')
+    ControlLook.FixedGradientHoverFrom = clGray
+    ControlLook.FixedGradientHoverTo = clWhite
+    ControlLook.FixedGradientDownFrom = clGray
+    ControlLook.FixedGradientDownTo = clSilver
+    ControlLook.DropDownHeader.Font.Charset = DEFAULT_CHARSET
+    ControlLook.DropDownHeader.Font.Color = clWindowText
+    ControlLook.DropDownHeader.Font.Height = -11
+    ControlLook.DropDownHeader.Font.Name = 'Tahoma'
+    ControlLook.DropDownHeader.Font.Style = []
+    ControlLook.DropDownHeader.Visible = True
+    ControlLook.DropDownHeader.Buttons = <>
+    ControlLook.DropDownFooter.Font.Charset = DEFAULT_CHARSET
+    ControlLook.DropDownFooter.Font.Color = clWindowText
+    ControlLook.DropDownFooter.Font.Height = -11
+    ControlLook.DropDownFooter.Font.Name = 'MS Sans Serif'
+    ControlLook.DropDownFooter.Font.Style = []
+    ControlLook.DropDownFooter.Visible = True
+    ControlLook.DropDownFooter.Buttons = <>
+    Filter = <>
+    FilterDropDown.Font.Charset = DEFAULT_CHARSET
+    FilterDropDown.Font.Color = clWindowText
+    FilterDropDown.Font.Height = -11
+    FilterDropDown.Font.Name = 'MS Sans Serif'
+    FilterDropDown.Font.Style = []
+    FilterDropDown.TextChecked = 'Checked'
+    FilterDropDown.TextUnChecked = 'Unchecked'
+    FilterDropDownClear = '(All)'
+    FilterEdit.TypeNames.Strings = (
+      'Starts with'
+      'Ends with'
+      'Contains'
+      'Not contains'
+      'Equal'
+      'Not equal'
+      'Clear')
+    FixedColWidth = 80
+    FixedRowHeight = 20
+    FixedFont.Charset = DEFAULT_CHARSET
+    FixedFont.Color = clWindowText
+    FixedFont.Height = -11
+    FixedFont.Name = 'Tahoma'
+    FixedFont.Style = [fsBold]
+    FloatFormat = '%.2f'
+    HoverButtons.Buttons = <>
+    HTMLSettings.ImageFolder = 'images'
+    HTMLSettings.ImageBaseName = 'img'
+    PrintSettings.DateFormat = 'dd/mm/yyyy'
+    PrintSettings.Font.Charset = DEFAULT_CHARSET
+    PrintSettings.Font.Color = clWindowText
+    PrintSettings.Font.Height = -11
+    PrintSettings.Font.Name = 'MS Sans Serif'
+    PrintSettings.Font.Style = []
+    PrintSettings.FixedFont.Charset = DEFAULT_CHARSET
+    PrintSettings.FixedFont.Color = clWindowText
+    PrintSettings.FixedFont.Height = -11
+    PrintSettings.FixedFont.Name = 'MS Sans Serif'
+    PrintSettings.FixedFont.Style = []
+    PrintSettings.HeaderFont.Charset = DEFAULT_CHARSET
+    PrintSettings.HeaderFont.Color = clWindowText
+    PrintSettings.HeaderFont.Height = -11
+    PrintSettings.HeaderFont.Name = 'MS Sans Serif'
+    PrintSettings.HeaderFont.Style = []
+    PrintSettings.FooterFont.Charset = DEFAULT_CHARSET
+    PrintSettings.FooterFont.Color = clWindowText
+    PrintSettings.FooterFont.Height = -11
+    PrintSettings.FooterFont.Name = 'MS Sans Serif'
+    PrintSettings.FooterFont.Style = []
+    PrintSettings.PageNumSep = '/'
+    ScrollWidth = 16
+    SearchFooter.FindNextCaption = 'Find &next'
+    SearchFooter.FindPrevCaption = 'Find &previous'
+    SearchFooter.Font.Charset = DEFAULT_CHARSET
+    SearchFooter.Font.Color = clWindowText
+    SearchFooter.Font.Height = -11
+    SearchFooter.Font.Name = 'MS Sans Serif'
+    SearchFooter.Font.Style = []
+    SearchFooter.HighLightCaption = 'Highlight'
+    SearchFooter.HintClose = 'Close'
+    SearchFooter.HintFindNext = 'Find next occurrence'
+    SearchFooter.HintFindPrev = 'Find previous occurrence'
+    SearchFooter.HintHighlight = 'Highlight occurrences'
+    SearchFooter.MatchCaseCaption = 'Match case'
+    SearchFooter.ResultFormat = '(%d of %d)'
+    Version = '8.7.0.0'
+    ColWidths = (
+      80
+      82
+      79
+      22
+      132
+      135
+      64
+      22
+      184)
   end
   object NactiGpcDialog: TOpenDialog
     Left = 1292

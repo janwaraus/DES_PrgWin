@@ -57,6 +57,9 @@ type
     lblVypisRbInfo: TLabel;
     lblVypisRbGpc: TLabel;
     btnVypisRb: TButton;
+    lblVypisRbSporiciInfo: TLabel;
+    lblVypisRbSporiciGpc: TLabel;
+    btnVypisRbSporici: TButton;
     procedure btnNactiClick(Sender: TObject);
     procedure btnZapisDoAbryClick(Sender: TObject);
     procedure asgMainGetAlignment(Sender: TObject; ARow, ACol: Integer;
@@ -94,6 +97,7 @@ type
     procedure btnVypisFiokontoClick(Sender: TObject);
     procedure btnVypisCsobClick(Sender: TObject);
     procedure btnVypisRbClick(Sender: TObject);
+    procedure btnVypisRbSporiciClick(Sender: TObject);
     procedure btnZavritVypisClick(Sender: TObject);
     procedure btnCustomersClick(Sender: TObject);
     procedure asgMainCheckBoxClick(Sender: TObject; ACol, ARow: Integer;
@@ -175,6 +179,7 @@ begin
   prvniZobrazeni := true;
 
 end;
+
 
 procedure TfmMain.vyplnNacitaciButtony;
 var
@@ -377,6 +382,31 @@ begin
     lblVypisRbInfo.Font.Color := $008000
   else
     lblVypisRbInfo.Font.Color := $0000A0;
+
+  /// RB spoøící
+  abraBankAccount := TAbraBankaccount.create();
+  abraBankaccount.loadByNumber('2921537012/5500');
+  maxCisloVypisu := abraBankaccount.getPoradoveCisloMaxVypisu(rokVypisu);
+  hledanyGpcSoubor := 'Vypis_2921537012_CZK_' + rokVypisu + '*' + IntToStr(maxCisloVypisu + 1) + '.gpc';
+  nalezenyGpcSoubor := FindInFolder(DesU.GPC_PATH, hledanyGpcSoubor, true);
+  if nalezenyGpcSoubor = '' then begin //nenašel se
+    lblVypisRbSporiciGpc.caption := hledanyGpcSoubor + ' nenalezen';
+    btnVypisRbSporici.Enabled := false;
+  end else begin
+    lblVypisRbSporiciGpc.caption := nalezenyGpcSoubor;
+    btnVypisRbSporici.Enabled := true;
+  end;
+    i1 := abraBankaccount.getPocetVypisu(rokVypisu);
+    i2 := abraBankaccount.getPoradoveCisloMaxVypisu(rokVypisu);
+    i3 := abraBankaccount.getExtPoradoveCisloMaxVypisu(rokVypisu);
+  lblVypisRbSporiciInfo.Caption := format('%d výpisù v roce %s. Max. èíslo výpisu %d, externí èíslo %d, datum posledního výpisu %s', [
+    i1, rokVypisu, i2, i3,
+    DateToStr(abraBankaccount.getDatumMaxVypisu(rokVypisu))
+    ]);
+  if (i1 = i2) and (i1 = i3) then
+    lblVypisRbSporiciInfo.Font.Color := $008000
+  else
+    lblVypisRbSporiciInfo.Font.Color := $0000A0;
 
   //Pay U
   abraBankAccount := TAbraBankaccount.create();
@@ -1176,6 +1206,11 @@ end;
 procedure TfmMain.btnVypisRbClick(Sender: TObject);
 begin
   nactiGpc(lblVypisRbGpc.caption);
+end;
+
+procedure TfmMain.btnVypisRbSporiciClick(Sender: TObject);
+begin
+  nactiGpc(lblVypisRbSporiciGpc.caption);
 end;
 
 
