@@ -16,6 +16,9 @@
 // 18.1.2022 úprava pro netypické smlouvy (nemají Tariff_Id)
 // 4.3.2023 maily s TLS
 // 28.3.2024 oprava posílání mailù
+// 27.3.2025 možnost aktivace vybraných zákazníkù
+// 25.7. okna nepùjdou maximalizovat
+// 15.9. Message-ID do hlavièky mailu
 
 unit NZL;
 
@@ -44,7 +47,7 @@ type
     lbOd: TLabel;
     deDatumOd: TDateEdit;
     deDatumDo: TDateEdit;
-    btKonec: TButton;
+    btAktivovat: TButton;
     asgPohledavky: TAdvStringGrid;
     acbRada: TAdvComboBox;
     btVyber: TButton;
@@ -56,6 +59,7 @@ type
     rgText: TRadioGroup;
     btSMS: TButton;
     btOmezit: TButton;
+    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure asgPohledavkyGetAlignment(Sender: TObject; ARow, ACol: Integer; var HAlign: TAlignment; var VAlign: TVAlignment);
     procedure asgPohledavkyGetFormat(Sender: TObject; ACol: Integer; var AStyle: TSortStyle; var aPrefix, aSuffix: string);
@@ -73,6 +77,7 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure asgPohledavkyClickCell(Sender: TObject; ARow, ACol: Integer);
     procedure btSMSClick(Sender: TObject);
+    procedure btAktivovatClick(Sender: TObject);
   public
     F: TextFile;
     Radek: integer;
@@ -206,6 +211,8 @@ begin
     end;
 end;
 
+// --------------------------------------------------------------------------------------------------------------------
+
 procedure TfmZL.asgPohledavkyClickCell(Sender: TObject; ARow, ACol: Integer);
 var
   Radek: integer;
@@ -215,11 +222,15 @@ begin
     else for Radek := 1 to RowCount-2 do Ints[8, Radek] := 0;
 end;
 
+// --------------------------------------------------------------------------------------------------------------------
+
 procedure TfmZL.asgPohledavkyDblClickCell(Sender: TObject; ARow, ACol: Integer);
 begin
   Radek := ARow;
   fmZLDetail.ShowModal;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.rgTextClick(Sender: TObject);
 begin
@@ -239,6 +250,8 @@ begin
   end;
   mmMail.Text := MailText;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.btVyberClick(Sender: TObject);
 var
@@ -383,20 +396,24 @@ begin
   end;
 end;
 
+// --------------------------------------------------------------------------------------------------------------------
+
 procedure TfmZL.btExportClick(Sender: TObject);
 begin
   if dlgExport.Execute then asgPohledavky.SaveToXLS(dlgExport.FileName);
 end;
 
+// --------------------------------------------------------------------------------------------------------------------
+
 procedure TfmZL.btMailClick(Sender: TObject);
 var
-
   RadekDo,
   Radek,
   CommId: integer;
   Zprava,
   MailStr,
   SQLStr: string;
+
 begin
   Screen.Cursor := crHourGlass;
 // 4.3.2023 pøesunutí pøihlašovacíc údajù sem umožní mìnit jejich nastavení bez restartování programu
@@ -421,7 +438,6 @@ begin
 
         Clear;
         ContentType := 'multipart/mixed';
-
         From.Address := 'uctarna@eurosignal.cz';
         MailStr := Cells[9, Radek];
         MailStr := StringReplace(MailStr, ',', ';', [rfReplaceAll]);    // èárky za støedníky
@@ -433,6 +449,11 @@ begin
         Subject := 'Kontrola plateb smlouvy ' + Cells[6, Radek];
         Zprava := StringReplace(mmMail.Text, 'XXX', Cells[12, Radek], []);
         Zprava := StringReplace(Zprava, 'YYY', Cells[3, Radek], []);
+
+// 15.9.2025 Message-ID
+        ExtraHeaders.Values['Message-ID'] := FormatDateTime('ddmmyyyyhhnnss', Now)
+         + '-' + Cells[6, Radek] + '@eurosignal.cz';
+
         with TIdText.Create(idMessage.MessageParts, nil) do begin
           Body.Text := UTF8Encode(Zprava + #13#10#10
            + 'S pozdravem' + #13#10#10
@@ -440,6 +461,7 @@ begin
           ContentType := 'text/plain';
           Charset := 'utf-8';
         end;
+
         try
           if not idSMTP.Connected then idSMTP.Connect;
           idSMTP.Send(idMessage);
@@ -451,14 +473,15 @@ begin
 
 // 28.3.24  Zprava := UlozKomunikaci('2', Cells[10, Radek], MailStr);          // v DesU
 // 28.7.24       Zprava := UlozKomunikaci('2', Cells[10, Radek], Zprava);          // v DesU
-        if not DesU.UlozKomunikaci(2, Ints[10, Radek], Zprava).isOk then
-//        if Zprava <> 'ok' then
-          ShowMessage('Mail se nepodaøilo uložit do tabulky "communications"')
-        else begin
+        if DesU.UlozKomunikaci(2, Ints[10, Radek], Zprava).isOk then begin
+          Sleep(100);
           System.Append(F);
-          Writeln (F, Format('%s (%s) email %s', [Cells[0, Radek], Cells[6, Radek], Cells[9, Radek]]));
+          Writeln (F, Format('%s (%s) mail %s', [Cells[0, Radek], Cells[6, Radek], Cells[9, Radek]]));
           Writeln (F, FormatDateTime(#13#10 + 'dd.mm.yy hh:nn  ', Now) + 'Odeslání zprávy: ' + #13#10 + Zprava + #13#10);
           CloseFile(F);
+        end else begin
+//        if Zprava <> 'ok' then
+          ShowMessage('Mail se nepodaøilo uložit do tabulky "communications"')
         end;
       end;
 
@@ -467,6 +490,8 @@ begin
     Screen.Cursor := crDefault;
   end;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.btSMSClick(Sender: TObject);
 // 9.8.2022 poskytovatelem služby je SMSbrána
@@ -484,14 +509,14 @@ begin
   with asgPohledavky do try
     if RowCount > 2 then RadekDo := RowCount - 2 else RadekDo := 1;
     Radek := Trunc(ColumnSum (8, 1, RadekDo));             // poèet vybraných øádkù
+
     if Application.MessageBox(PChar(Format('Opravdu poslat %d SMS?', [Radek])),
-     'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then begin
-      Screen.Cursor := crDefault;
-      Exit;
-    end;
+     'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then Exit;
+
     Append(F);
     Writeln (F, FormatDateTime(#13#10 + 'dd.mm.yy hh:nn  ', Now) + 'Odeslání SMS zprávy: ' + #13#10 + mmMail.Text + #13#10);
     CloseFile(F);
+
     for Radek := 1 to RadekDo do
 //      if Ints[8, Radek] = 1 then begin
       if (Ints[8, Radek] = 1) and (Cells[13, Radek] <> '') then begin    // 2.12.18 musí být èíslo pro SMS
@@ -500,54 +525,125 @@ begin
         callResult := DesU.sendSms(Cells[13, Radek], StringReplace(smsText, ' ', '+', [rfReplaceAll]));
         if (Colors[8, Radek] <> clSilver) then Colors[8, Radek] := clSilver
         else Colors[8, Radek] := clWhite;
+
 // 28.7.2024
-        if not DesU.UlozKomunikaci(23, Ints[10, Radek], smsText).isOk then
+        if DesU.UlozKomunikaci(23, Ints[10, Radek], smsText).isOk then begin
 //        if Zprava <> '' then
-          ShowMessage('SMS se nepodaøilo uložit do tabulky "communications"')
-        else begin
+          Sleep(100);
           System.Append(F);
           Writeln (F, Format('%s (%s) - %s - %s', [Cells[0, Radek], Cells[7, Radek], Cells[13, Radek], callResult]));
           CloseFile(F);
-        end;
+        end else ShowMessage('SMS se nepodaøilo uložit do tabulky "communications"');
       end;
+
     Append(F);
     Writeln (F, #13#10);
     CloseFile(F);
-{
-        with DesU.qrZakos do try                               // 15.3.2011
-          Close;
-          SQL.Text := 'SELECT MAX(Id) FROM communications';
-          Open;
-          CommId := Fields[0].AsInteger + 1;
-          Close;
-          SQLStr := 'INSERT INTO communications ('
-          + ' Id,'
-          + ' Customer_id,'
-          + ' User_id,'
-          + ' Communication_type_id,'
-          + ' Content,'
-          + ' Created_at,'
-          + ' Updated_at) VALUES ('
-          + IntToStr(CommId) + ', '
-          + Cells[10, Radek] + ', '
-          + '1, '                                        // admin
-          + '23, '                                        // SMS
-          + Ap + mmMail.Text + ApC
-          + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
-          + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApZ;
-          SQL.Text := SQLStr;
-          ExecSQL;
-          System.Append(F);
-          Writeln (F, Format('%s (%s) - %s - %s', [Cells[0, Radek], Cells[7, Radek], Cells[13, Radek], callResult]));
-          CloseFile(F);
-        except on E: exception do
-          ShowMessage('SMS se nepodaøilo uložit do tabulky communications: ' + E.Message);
-        end;
-}
+
   finally
     Screen.Cursor := crDefault;
   end;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
+
+procedure TfmZL.btAktivovatClick(Sender: TObject);
+// 27.3.2025
+var
+  RadekDo,
+  Radek,
+  NotesId,
+  SinId: integer;
+  SQLStr: AnsiString;
+
+  begin
+  Screen.Cursor := crHourGlass;
+
+  with asgPohledavky, DesU.qrZakos do try
+    if RowCount > 2 then RadekDo := RowCount - 2 else RadekDo := 1;
+    Radek := Trunc(ColumnSum (8, 1, RadekDo));             // poèet vybraných øádkù
+    if Application.MessageBox(PChar(Format('Opravdu aktivovat %d zákazníkù?', [Radek])),
+     'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then Exit;
+
+    System.Append(F);
+    Writeln (F);
+    Writeln (F, FormatDateTime('dd.mm.yy hh:nn  ', Now) + 'Aktivace:');
+    CloseFile(F);
+
+    idHTTP.IOHandler := idSSLHandler;
+    idHTTP.Request.Clear;
+    idHTTP.Request.BasicAuthentication := True;
+    idHTTP.Request.Username := 'NFO';
+    idHTTP.Request.Password := 'NFO2014';
+
+    for Radek := 1 to RadekDo do
+      if Ints[8, Radek] = 1 then try
+        if idHTTP.Get(Format('https://aplikace.eurosignal.cz/api/contracts/change_state?number=%s&state=active', [Cells[6, Radek]])) <> 'OK' then
+          if Application.MessageBox(PChar('Aktivaci se nepodaøilo uložit do databáze. Pokraèovat?'),
+           'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then Exit
+          else Continue;
+        if (Colors[8, Radek] <> clSilver) then Colors[8, Radek] := clSilver
+        else Colors[8, Radek] := clWhite;
+
+        System.Append(F);
+        Writeln (F, Format('%s (%s)', [Cells[0, Radek], Cells[6, Radek]]));
+        CloseFile(F);
+
+        try
+          SQL.Text := 'SELECT MAX(Id) FROM sinners';
+          Open;
+          SinId := Fields[0].AsInteger + 1;
+          SQLStr := 'SELECT Invoice_debt, Account_debt, Enforcement_state FROM sinners'
+          + ' WHERE Customer_id = ' + Cells[10, Radek]
+          + ' AND Id = (SELECT MAX(Id) FROM sinners'
+            + ' WHERE Customer_id = ' + Cells[10, Radek] + ')';
+          Close;
+          SQL.Text := SQLStr;
+          Open;
+          SQLStr := 'INSERT INTO sinners ('
+          + ' Id,'
+          + ' Customer_id,'
+          + ' Contract_id,'
+          + ' Date,'
+          + ' Contract_state,'
+          + ' Due_invoice_no,'
+          + ' Invoice_debt,'
+          + ' Account_debt,'
+          + ' Enforcement_state,'
+          + ' Event,'
+          + ' Comment) VALUES ('
+          + IntToStr(SinId) + ', '
+          + Cells[10, Radek] + ', '
+          + Cells[11, Radek] + ', '
+          + Ap + FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ApC
+          + Ap + 'active' + ApC                         // stav smlouvy
+          + Cells[1, Radek] + ', '                         // poèet ZL
+          + Ap + FieldByName('Invoice_debt').AsString + ApC
+          + Ap + FieldByName('Account_debt').AsString + ApC
+          + Ap + FieldByName('Enforcement_state').AsString + ApC              // stav vymáhání
+          + Ap + 'aktivace' + ApC
+          + Ap + 'program NezaplaceneFaktury' + ApZ;
+          Close;
+          SQL.Text := SQLStr;
+          ExecSQL;
+        except on E: exception do
+          ShowMessage('Aktivaci se nepodaøilo uložit do sinners: ' + E.Message);
+        end;
+
+      except on E: exception do
+        if Application.MessageBox(PChar(E.Message + #13#10 + 'Aktivaci se nepodaøilo uložit do databáze. Pokraèovat?'),
+         'Pozor', MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON1) = IDNO then Exit
+        else Continue;
+      end;
+
+  finally
+    Close;
+    Screen.Cursor := crDefault;
+  end;
+
+end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.btOmezitClick(Sender: TObject);
 var
@@ -634,6 +730,8 @@ begin
     Screen.Cursor := crDefault;
   end;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.btOdpojitClick(Sender: TObject);
 var
@@ -781,10 +879,14 @@ begin
   end;
 end;
 
+// --------------------------------------------------------------------------------------------------------------------
+
 procedure TfmZL.btKonecClick(Sender: TObject);
 begin
   Close;
 end;
+
+// --------------------------------------------------------------------------------------------------------------------
 
 procedure TfmZL.FormClose(Sender: TObject; var Action: TCloseAction);
 begin

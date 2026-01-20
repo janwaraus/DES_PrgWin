@@ -146,12 +146,15 @@ begin
   // pøedvyplnìní formuláøe
   aseRok.Value := YearOf(Date); // aktuální rok
 
-  // 2.-4. mìsíc = index 0; 5.-7. mìsíc = index 1; 8.-10. mìsíc = index 2; 11.-1. mìsíc = index 3;
+   // 2.-4. mìsíc = index 0; 5.-7. mìsíc = index 1; 8.-10. mìsíc = index 2; 11.-1. mìsíc = index 3;
   Month := MonthOf(Date);
   if Month = 1 then begin
     Month := 13;
     aseRok.Value := aseRok.Value - 1;
   end;
+  // 3.12.2025 - v prosinci další rok
+//  if MonthOf(Date) = 12 then aseRok.Value := aseRok.Value + 1;
+
   argMesic.ItemIndex := Floor((Month+1)/3) - 1;             // tolerance -2 / +1 mìsíc
 
   //deDatumDokladu.Date := Trunc(StrToDate(Format('15.%d.%d', [3*(argMesic.ItemIndex + 1), aseRok.Value])));

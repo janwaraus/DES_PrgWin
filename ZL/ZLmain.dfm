@@ -34,7 +34,7 @@ object fmMain: TfmMain
     ParentFont = False
     TabOrder = 2
     UseDockManager = True
-    Version = '2.6.3.2'
+    Version = '2.6.0.0'
     BorderColor = clBlack
     Caption.Color = clHighlight
     Caption.ColorTo = clNone
@@ -76,7 +76,7 @@ object fmMain: TfmMain
       Level2Perc = 101
       Position = 50
       ShowBorder = True
-      Version = '1.3.2.3'
+      Version = '1.3.2.0'
       Visible = False
     end
     object apnMail: TAdvPanel
@@ -89,7 +89,7 @@ object fmMain: TfmMain
       TabOrder = 3
       UseDockManager = True
       Visible = False
-      Version = '2.6.3.2'
+      Version = '2.6.0.0'
       BorderColor = clBlack
       Caption.Color = clHighlight
       Caption.ColorTo = clNone
@@ -142,7 +142,7 @@ object fmMain: TfmMain
         TabOrder = 0
         Text = ''
         Visible = True
-        Version = '1.7.1.3'
+        Version = '1.7.0.0'
         ButtonStyle = bsButton
         ButtonWidth = 18
         Flat = False
@@ -171,7 +171,7 @@ object fmMain: TfmMain
       TabOrder = 1
       UseDockManager = True
       Visible = False
-      Version = '2.6.3.2'
+      Version = '2.6.0.0'
       BorderColor = clBlack
       Caption.Color = clHighlight
       Caption.ColorTo = clNone
@@ -248,7 +248,7 @@ object fmMain: TfmMain
       TabOrder = 2
       UseDockManager = True
       Visible = False
-      Version = '2.6.3.2'
+      Version = '2.6.0.0'
       BorderColor = clBlack
       Caption.Color = clHighlight
       Caption.ColorTo = clNone
@@ -276,7 +276,7 @@ object fmMain: TfmMain
       ParentColor = True
       TabOrder = 0
       UseDockManager = True
-      Version = '2.6.3.2'
+      Version = '2.6.0.0'
       BorderColor = clBlack
       Caption.Color = clHighlight
       Caption.ColorTo = clNone
@@ -328,7 +328,7 @@ object fmMain: TfmMain
         ParentFont = False
         TabOrder = 0
         Visible = True
-        Version = '2.0.1.2'
+        Version = '2.0.0.0'
         OnChange = aseRokChange
       end
       object btVytvorit: TButton
@@ -398,7 +398,7 @@ object fmMain: TfmMain
         OnChange = aedOdChange
         OnExit = aedOdExit
         OnKeyUp = aedOdKeyUp
-        Version = '4.0.3.6'
+        Version = '4.0.1.0'
       end
       object aedDo: TAdvEdit
         Left = 466
@@ -435,16 +435,16 @@ object fmMain: TfmMain
         OnChange = aedDoChange
         OnExit = aedDoExit
         OnKeyUp = aedDoKeyUp
-        Version = '4.0.3.6'
+        Version = '4.0.1.0'
       end
       object deDatumDokladu: TAdvDateTimePicker
         Left = 292
         Top = 20
         Width = 92
         Height = 21
-        Date = 41908.472326388890000000
+        Date = 41908.000000000000000000
         Format = 'dd.MM.yyyy'
-        Time = 41908.472326388890000000
+        Time = 0.472326388888177500
         DoubleBuffered = True
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
@@ -459,7 +459,7 @@ object fmMain: TfmMain
         BorderStyle = bsSingle
         Ctl3D = True
         DateTime = 41908.472326388890000000
-        Version = '1.3.6.5'
+        Version = '1.3.6.0'
         LabelCaption = 'datum dokladu'
         LabelPosition = lpLeftCenter
         LabelMargin = 8
@@ -481,7 +481,7 @@ object fmMain: TfmMain
         CaptionFont.Name = 'Tahoma'
         CaptionFont.Style = []
         Transparent = False
-        Version = '1.8.1.2'
+        Version = '1.8.0.5'
         Caption = 'm'#283's'#237'c'
         ParentBackground = False
         ParentCtl3D = True
@@ -502,9 +502,9 @@ object fmMain: TfmMain
         Top = 56
         Width = 92
         Height = 21
-        Date = 41908.472326388890000000
+        Date = 41908.000000000000000000
         Format = 'dd.MM.yyyy'
-        Time = 41908.472326388890000000
+        Time = 0.472326388888177500
         DoubleBuffered = True
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
@@ -519,7 +519,7 @@ object fmMain: TfmMain
         BorderStyle = bsSingle
         Ctl3D = True
         DateTime = 41908.472326388890000000
-        Version = '1.3.6.5'
+        Version = '1.3.6.0'
         LabelCaption = 'datum splatnosti'
         LabelPosition = lpLeftCenter
         LabelMargin = 8
@@ -555,7 +555,7 @@ object fmMain: TfmMain
       ParentFont = False
       TabOrder = 4
       UseDockManager = True
-      Version = '2.6.3.2'
+      Version = '2.6.0.0'
       BorderColor = clBlack
       Caption.Color = clHighlight
       Caption.ColorTo = clNone
@@ -669,7 +669,7 @@ object fmMain: TfmMain
         Caption = 'TAdvOfficeRadioButton'
         Checked = True
         ReturnIsTab = False
-        Version = '1.8.1.2'
+        Version = '1.8.0.5'
       end
       object arbPrevod: TAdvOfficeRadioButton
         Left = 11
@@ -681,7 +681,7 @@ object fmMain: TfmMain
         Alignment = taLeftJustify
         Caption = 'TAdvOfficeRadioButton'
         ReturnIsTab = False
-        Version = '1.8.1.2'
+        Version = '1.8.0.5'
       end
       object arbTisk: TAdvOfficeRadioButton
         Left = 11
@@ -693,7 +693,7 @@ object fmMain: TfmMain
         Alignment = taLeftJustify
         Caption = ''
         ReturnIsTab = False
-        Version = '1.8.1.2'
+        Version = '1.8.0.5'
       end
       object arbMail: TAdvOfficeRadioButton
         Left = 11
@@ -705,7 +705,7 @@ object fmMain: TfmMain
         Alignment = taLeftJustify
         Caption = ''
         ReturnIsTab = False
-        Version = '1.8.1.2'
+        Version = '1.8.0.5'
       end
     end
   end
@@ -855,7 +855,7 @@ object fmMain: TfmMain
     SearchFooter.ResultFormat = '(%d of %d)'
     SortSettings.Column = 2
     SortSettings.Show = True
-    Version = '8.7.0.0'
+    Version = '8.6.2.0'
     ColWidths = (
       28
       70

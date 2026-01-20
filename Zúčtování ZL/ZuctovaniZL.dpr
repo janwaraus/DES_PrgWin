@@ -12,7 +12,11 @@ uses
   DesFastReports in '..\DE$_Common\DesFastReports.pas' {DesFastReport},
   DesInvoices in '..\DE$_Common\DesInvoices.pas',
   DesUtils in '..\DE$_Common\DesUtils.pas' {DesU},
-  AArray in '..\DE$_Common\AArray.pas';
+  AArray in '..\DE$_Common\include\AArray.pas',
+  Superobject in '..\DE$_Common\include\Superobject.pas',
+  Supertypes in '..\DE$_Common\include\Supertypes.pas',
+  Superdate in '..\DE$_Common\include\Superdate.pas',
+  Supertimezone in '..\DE$_Common\include\Supertimezone.pas';
 
 {$R *.res}
 

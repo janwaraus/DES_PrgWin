@@ -28,10 +28,6 @@ object frxExportSynPDF: TfrxExportSynPDF
     TabOrder = 0
     object ExportPage: TTabSheet
       Caption = 'Export'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object OpenCB: TCheckBox
         Left = 16
         Top = 224
@@ -156,10 +152,6 @@ object frxExportSynPDF: TfrxExportSynPDF
     object InfoPage: TTabSheet
       Caption = 'Information'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object DocInfoGB: TGroupBox
         Left = 4
         Top = 4
@@ -247,10 +239,6 @@ object frxExportSynPDF: TfrxExportSynPDF
     object ViewerPage: TTabSheet
       Caption = 'Viewer'
       ImageIndex = 3
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       object ViewerGB: TGroupBox
         Left = 4
         Top = 4

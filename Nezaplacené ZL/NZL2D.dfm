@@ -1,6 +1,7 @@
 object fmZLDetail: TfmZLDetail
   Left = 403
   Top = 206
+  BorderIcons = [biSystemMenu]
   Caption = 'Detail'
   ClientHeight = 266
   ClientWidth = 355

@@ -1,11 +1,12 @@
 object fmZL: TfmZL
   Left = 755
   Top = 98
+  BorderIcons = [biSystemMenu, biMinimize]
   Caption = 'Nezaplacen'#233' ZL'
-  ClientHeight = 674
+  ClientHeight = 649
   ClientWidth = 786
   Color = clBtnFace
-  Constraints.MinHeight = 615
+  Constraints.MinHeight = 688
   Constraints.MinWidth = 590
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,7 +21,7 @@ object fmZL: TfmZL
   TextHeight = 13
   object pnBottom: TPanel
     Left = 0
-    Top = 554
+    Top = 529
     Width = 786
     Height = 120
     Align = alBottom
@@ -48,7 +49,7 @@ object fmZL: TfmZL
     Left = 0
     Top = 0
     Width = 786
-    Height = 554
+    Height = 529
     Align = alClient
     TabOrder = 1
     object lbDo: TLabel
@@ -85,20 +86,20 @@ object fmZL: TfmZL
       YearDigits = dyFour
       TabOrder = 1
     end
-    object btKonec: TButton
+    object btAktivovat: TButton
       Left = 22
       Top = 462
       Width = 65
       Height = 21
-      Caption = '&Konec'
+      Caption = '&Aktivovat'
       TabOrder = 3
-      OnClick = btKonecClick
+      OnClick = btAktivovatClick
     end
     object asgPohledavky: TAdvStringGrid
       Left = 102
       Top = 1
       Width = 683
-      Height = 552
+      Height = 527
       Align = alRight
       Anchors = [akLeft, akTop, akRight, akBottom]
       BorderStyle = bsNone
@@ -417,6 +418,15 @@ object fmZL: TfmZL
       Caption = '&Omezit'
       TabOrder = 13
       OnClick = btOmezitClick
+    end
+    object Button1: TButton
+      Left = 22
+      Top = 494
+      Width = 65
+      Height = 21
+      Caption = '&Konec'
+      TabOrder = 14
+      OnClick = btKonecClick
     end
   end
   object dlgExport: TSaveDialog

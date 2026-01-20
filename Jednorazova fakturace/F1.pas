@@ -18,8 +18,10 @@ uses
 }
   Windows, Messages, Dialogs, SysUtils, Variants, Classes, Graphics, Controls, StdCtrls, ExtCtrls, Forms, Mask, ComObj, ComCtrls,
   AdvObj, AdvPanel, AdvEdit, AdvSpin, AdvDateTimePicker, AdvEdBtn, AdvFileNameEdit, AdvProgressBar, GradientLabel,
-  Grids, BaseGrid, AdvGrid, pCore2D, pBarcode2D, IniFiles, DateUtils, Math,
-  DB, ZAbstractConnection, ZConnection, ZAbstractRODataset, ZAbstractDataset, ZDataset;
+  Grids, BaseGrid, AdvGrid, IniFiles, DateUtils, Math,
+  DB, ZAbstractConnection, ZConnection, ZAbstractRODataset, ZAbstractDataset, ZDataset, AdvUtil,
+  frxClass, frxDBSet, frxDesgn;
+
 
 type
   TfmMain = class(TForm)
@@ -76,13 +78,15 @@ const
   ApZ = char(39) + ')';
 
   MyAddress_Id: string[10] = '7000000101';
-  MyAccount_Id: string[10] = '1400000101';       // Fio
+// 21.7.2025 platby na RB
+//  MyAccount_Id: string[10] = '1400000101';       // Fio
+  MyAccount_Id: string[10] = '2A30000101';       // RB
   MyPayment_Id: string[10] = '1000000101';       // typ platby: na bankovní úèet
 
 
 implementation
 
-uses DesUtils, DesFrxUtils, AbraEntities, AArray,
+uses DesUtils, DesFastReports, AbraEntities, AArray,
   Login, Code;
 
 {$R *.DFM}
@@ -132,7 +136,6 @@ begin
   with qrAbra do begin
 
     SQL.Text := 'SELECT Id FROM DocQueues WHERE Code = ''FO'' AND DocumentType = ''03'' AND Hidden = ''N'' ';
-
     Open;
     FO_Id := FieldByName('Id').AsString;
     Close;
@@ -149,6 +152,7 @@ begin
     PR_Id := FieldByName('Id').AsString;
     Close;
   end;
+
   dmCode.Zprava('OK');
 
 end;

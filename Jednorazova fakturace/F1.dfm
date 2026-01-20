@@ -32,8 +32,6 @@ object fmMain: TfmMain
     ItemHeight = 13
     ScrollWidth = 1600
     TabOrder = 0
-    ExplicitLeft = 24
-    ExplicitWidth = 956
   end
   object pnTop: TPanel
     Left = 0
@@ -43,7 +41,6 @@ object fmMain: TfmMain
     Align = alTop
     Constraints.MinHeight = 280
     TabOrder = 1
-    ExplicitWidth = 885
     DesignSize = (
       980
       280)
@@ -56,7 +53,6 @@ object fmMain: TfmMain
       Caption = '&Start'
       TabOrder = 8
       OnClick = btStartClick
-      ExplicitLeft = 720
     end
     object aedTechnik: TAdvEdit
       Left = 891
@@ -85,8 +81,7 @@ object fmMain: TfmMain
       TabOrder = 11
       Text = ''
       Visible = True
-      Version = '3.3.2.3'
-      ExplicitLeft = 796
+      Version = '4.0.1.0'
     end
     object aedHotovost: TAdvEdit
       Left = 891
@@ -118,15 +113,13 @@ object fmMain: TfmMain
       TabOrder = 12
       Text = '0,00'
       Visible = True
-      Version = '3.3.2.3'
-      ExplicitLeft = 796
+      Version = '4.0.1.0'
     end
     object asgMain: TAdvStringGrid
       Left = 1
       Top = 0
       Width = 698
       Height = 220
-      Cursor = crDefault
       TabStop = False
       Anchors = [akLeft, akTop, akRight]
       ColCount = 11
@@ -135,9 +128,7 @@ object fmMain: TfmMain
       FixedCols = 0
       RowCount = 12
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing]
-      ScrollBars = ssBoth
       TabOrder = 10
-      HoverRowCells = [hcNormal, hcSelected]
       OnCanClickCell = asgMainCanClickCell
       OnCanEditCell = asgMainCanEditCell
       OnCheckBoxClick = asgMainCheckBoxClick
@@ -209,7 +200,8 @@ object fmMain: TfmMain
       FixedFont.Style = []
       FloatFormat = '%.2f'
       HoverButtons.Buttons = <>
-      HoverButtons.Position = hbLeftFromColumnLeft
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
       Navigation.AdvanceOnEnterLoop = False
       Navigation.AdvanceAutoEdit = False
       Navigation.AdvanceSkipReadOnlyCells = False
@@ -249,12 +241,11 @@ object fmMain: TfmMain
       SearchFooter.Font.Height = -11
       SearchFooter.Font.Name = 'MS Sans Serif'
       SearchFooter.Font.Style = []
+      SearchFooter.ResultFormat = '(%d of %d)'
       ShowSelection = False
       ShowDesignHelper = False
-      SortSettings.DefaultFormat = ssAutomatic
       SortSettings.Column = 0
-      Version = '7.4.2.0'
-      ExplicitWidth = 603
+      Version = '8.6.2.0'
       ColWidths = (
         19
         55
@@ -277,7 +268,6 @@ object fmMain: TfmMain
       Caption = '&Import z'#225'kazn'#237'ka do Abry'
       Enabled = False
       TabOrder = 3
-      ExplicitLeft = 620
     end
     object cbDoklad: TCheckBox
       Left = 715
@@ -288,7 +278,6 @@ object fmMain: TfmMain
       Caption = 'Vytvo'#345'en'#237' &PP/FO '
       Enabled = False
       TabOrder = 4
-      ExplicitLeft = 620
     end
     object cbXLS: TCheckBox
       Left = 715
@@ -299,7 +288,6 @@ object fmMain: TfmMain
       Caption = '&Hotovost do Technici.xls'
       Enabled = False
       TabOrder = 6
-      ExplicitLeft = 620
     end
     object cbClear: TCheckBox
       Left = 715
@@ -309,7 +297,6 @@ object fmMain: TfmMain
       Anchors = [akTop, akRight]
       Caption = '&Vymaz'#225'n'#237' '#382#225'dosti o fakturaci'
       TabOrder = 7
-      ExplicitLeft = 620
     end
     object cbDL: TCheckBox
       Left = 715
@@ -320,7 +307,6 @@ object fmMain: TfmMain
       Caption = 'Vytvo'#345'en'#237' &DL/PR'
       Enabled = False
       TabOrder = 5
-      ExplicitLeft = 620
     end
     object cbOprava: TCheckBox
       Left = 715
@@ -331,14 +317,12 @@ object fmMain: TfmMain
       Caption = '&Oprava z'#225'kazn'#237'ka v datab'#225'zi'
       Enabled = False
       TabOrder = 2
-      ExplicitLeft = 620
     end
     object asgItems: TAdvStringGrid
       Left = -5
       Top = 226
       Width = 985
       Height = 59
-      Cursor = crDefault
       TabStop = False
       Anchors = [akLeft, akTop, akRight, akBottom]
       ColCount = 16
@@ -348,9 +332,7 @@ object fmMain: TfmMain
       FixedCols = 0
       RowCount = 2
       Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing]
-      ScrollBars = ssBoth
       TabOrder = 13
-      HoverRowCells = [hcNormal, hcSelected]
       OnEditingDone = asgItemsEditingDone
       ActiveCellFont.Charset = DEFAULT_CHARSET
       ActiveCellFont.Color = clWindowText
@@ -425,7 +407,8 @@ object fmMain: TfmMain
       FixedFont.Style = []
       FloatFormat = '%.2f'
       HoverButtons.Buttons = <>
-      HoverButtons.Position = hbLeftFromColumnLeft
+      HTMLSettings.ImageFolder = 'images'
+      HTMLSettings.ImageBaseName = 'img'
       Look = glTMS
       Navigation.AlwaysEdit = True
       Navigation.AdvanceOnEnterLoop = False
@@ -467,10 +450,10 @@ object fmMain: TfmMain
       SearchFooter.Font.Height = -11
       SearchFooter.Font.Name = 'MS Sans Serif'
       SearchFooter.Font.Style = []
+      SearchFooter.ResultFormat = '(%d of %d)'
       ShowDesignHelper = False
-      SortSettings.DefaultFormat = ssAutomatic
       SortSettings.Column = 0
-      Version = '7.4.2.0'
+      Version = '8.6.2.0'
       ColWidths = (
         18
         91
@@ -495,9 +478,9 @@ object fmMain: TfmMain
       Width = 82
       Height = 21
       Anchors = [akTop, akRight]
-      Date = 41908.472326388890000000
+      Date = 41908.000000000000000000
       Format = 'dd.MM.yyyy'
-      Time = 41908.472326388890000000
+      Time = 0.472326388888177500
       DoubleBuffered = True
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -508,11 +491,10 @@ object fmMain: TfmMain
       ParentDoubleBuffered = False
       ParentFont = False
       TabOrder = 0
-      TabStop = True
       BorderStyle = bsSingle
       Ctl3D = True
       DateTime = 41908.472326388890000000
-      Version = '1.2.1.0'
+      Version = '1.3.6.0'
       LabelCaption = 'Datum dokladu'
       LabelPosition = lpTopLeft
       LabelMargin = 2
@@ -521,7 +503,6 @@ object fmMain: TfmMain
       LabelFont.Height = -11
       LabelFont.Name = 'MS Sans Serif'
       LabelFont.Style = []
-      ExplicitLeft = 620
     end
     object adeDatumPlneni: TAdvDateTimePicker
       Left = 715
@@ -529,9 +510,9 @@ object fmMain: TfmMain
       Width = 82
       Height = 21
       Anchors = [akTop, akRight]
-      Date = 41908.472326388890000000
+      Date = 41908.000000000000000000
       Format = 'dd.MM.yyyy'
-      Time = 41908.472326388890000000
+      Time = 0.472326388888177500
       DoubleBuffered = True
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -542,11 +523,10 @@ object fmMain: TfmMain
       ParentDoubleBuffered = False
       ParentFont = False
       TabOrder = 1
-      TabStop = True
       BorderStyle = bsSingle
       Ctl3D = True
       DateTime = 41908.472326388890000000
-      Version = '1.2.1.0'
+      Version = '1.3.6.0'
       LabelCaption = 'Datum pln'#283'n'#237
       LabelPosition = lpTopLeft
       LabelMargin = 2
@@ -555,7 +535,6 @@ object fmMain: TfmMain
       LabelFont.Height = -11
       LabelFont.Name = 'MS Sans Serif'
       LabelFont.Style = []
-      ExplicitLeft = 620
     end
     object aedDL: TAdvEdit
       Left = 891
@@ -584,8 +563,7 @@ object fmMain: TfmMain
       TabOrder = 15
       Text = ''
       Visible = True
-      Version = '3.3.2.3'
-      ExplicitLeft = 796
+      Version = '4.0.1.0'
     end
     object aedDoklad: TAdvEdit
       Left = 891
@@ -614,8 +592,7 @@ object fmMain: TfmMain
       TabOrder = 14
       Text = ''
       Visible = True
-      Version = '3.3.2.3'
-      ExplicitLeft = 796
+      Version = '4.0.1.0'
     end
     object btReload: TButton
       Left = 815
@@ -626,7 +603,6 @@ object fmMain: TfmMain
       Caption = '&Reload'
       TabOrder = 9
       OnClick = btReloadClick
-      ExplicitLeft = 720
     end
   end
   object qrItems: TZQuery

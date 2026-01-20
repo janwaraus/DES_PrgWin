@@ -11,8 +11,10 @@ object fmMain: TfmMain
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  OldCreateOrder = True
   Position = poDesktopCenter
   OnShow = FormShow
+  PixelsPerInch = 96
   TextHeight = 13
   object pnTop: TPanel
     Left = 0
@@ -96,14 +98,6 @@ object fmMain: TfmMain
       ControlLook.DropDownFooter.Font.Style = []
       ControlLook.DropDownFooter.Visible = True
       ControlLook.DropDownFooter.Buttons = <>
-      ControlLook.ToggleSwitch.BackgroundBorderWidth = 1.000000000000000000
-      ControlLook.ToggleSwitch.ButtonBorderWidth = 1.000000000000000000
-      ControlLook.ToggleSwitch.CaptionFont.Charset = DEFAULT_CHARSET
-      ControlLook.ToggleSwitch.CaptionFont.Color = clWindowText
-      ControlLook.ToggleSwitch.CaptionFont.Height = -12
-      ControlLook.ToggleSwitch.CaptionFont.Name = 'Segoe UI'
-      ControlLook.ToggleSwitch.CaptionFont.Style = []
-      ControlLook.ToggleSwitch.Shadow = False
       Filter = <>
       FilterDropDown.Font.Charset = DEFAULT_CHARSET
       FilterDropDown.Font.Color = clWindowText
@@ -168,7 +162,7 @@ object fmMain: TfmMain
       SearchFooter.MatchCaseCaption = 'Match case'
       SearchFooter.ResultFormat = '(%d of %d)'
       SelectionTextColor = clWindowText
-      Version = '9.1.0.1'
+      Version = '8.6.2.0'
       ColWidths = (
         64)
       RowHeights = (
@@ -194,7 +188,6 @@ object fmMain: TfmMain
     ParentFont = False
     TabOrder = 1
     OnGetCellColor = asgMainGetCellColor
-    OnGetAlignment = asgMainGetAlignment
     ActiveCellFont.Charset = DEFAULT_CHARSET
     ActiveCellFont.Color = clWindowText
     ActiveCellFont.Height = -11
@@ -228,14 +221,6 @@ object fmMain: TfmMain
     ControlLook.DropDownFooter.Font.Style = []
     ControlLook.DropDownFooter.Visible = True
     ControlLook.DropDownFooter.Buttons = <>
-    ControlLook.ToggleSwitch.BackgroundBorderWidth = 1.000000000000000000
-    ControlLook.ToggleSwitch.ButtonBorderWidth = 1.000000000000000000
-    ControlLook.ToggleSwitch.CaptionFont.Charset = DEFAULT_CHARSET
-    ControlLook.ToggleSwitch.CaptionFont.Color = clWindowText
-    ControlLook.ToggleSwitch.CaptionFont.Height = -12
-    ControlLook.ToggleSwitch.CaptionFont.Name = 'Segoe UI'
-    ControlLook.ToggleSwitch.CaptionFont.Style = []
-    ControlLook.ToggleSwitch.Shadow = False
     Filter = <>
     FilterDropDown.Font.Charset = DEFAULT_CHARSET
     FilterDropDown.Font.Color = clWindowText
@@ -314,7 +299,7 @@ object fmMain: TfmMain
     ShowSelection = False
     ShowDesignHelper = False
     SortSettings.Column = 0
-    Version = '9.1.0.1'
+    Version = '8.6.2.0'
     ColWidths = (
       48
       60
@@ -344,9 +329,10 @@ object fmMain: TfmMain
     ControlsCodePage = cCP_UTF16
     Catalog = ''
     Properties.Strings = (
-      'controls_cp=CP_UTF16')
+      'controls_cp=GET_ACP'
+      'AutoEncodeStrings=ON')
+    ReadOnly = True
     AfterConnect = cnMainAfterConnect
-    DisableSavepoints = False
     HostName = ''
     Port = 0
     Database = ''
@@ -358,8 +344,9 @@ object fmMain: TfmMain
   end
   object qrMain: TZReadOnlyQuery
     Connection = cnMain
+    IsUniDirectional = True
     Params = <>
-    Options = [doSmartOpen]
+    Options = [doOemTranslate, doSmartOpen]
     Left = 126
     Top = 90
   end
@@ -370,7 +357,6 @@ object fmMain: TfmMain
       'controls_cp=GET_ACP')
     ReadOnly = True
     SQLHourGlass = True
-    DisableSavepoints = False
     HostName = ''
     Port = 0
     Database = 'eurosignal'
@@ -381,8 +367,8 @@ object fmMain: TfmMain
     Top = 90
   end
   object qrAbra: TZQuery
-    SortType = stIgnored
     Connection = cnAbra
+    SortType = stIgnored
     CachedUpdates = True
     ReadOnly = True
     SQL.Strings = (
