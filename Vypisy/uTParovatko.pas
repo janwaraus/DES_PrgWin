@@ -358,7 +358,8 @@ begin
     if iPDPar.Platba.Debet then
       newBo.rowItem['VarSymbol'] := iPDPar.Platba.VS; //pro debety aby vždy zùstal VS
 
-    if (iPDPar.Platba.cisloUctuVlastni = '2389210008000000') AND iPDPar.Platba.kredit then begin //PayU platba, rušíme peníze na cestì
+    //if (iPDPar.Platba.cisloUctuVlastni = '2389210008000000') AND iPDPar.Platba.kredit then begin //PayU platba, rušíme peníze na cestì
+    if (iPDPar.Platba.cisloUctuVlastni = '4003292157000000') AND iPDPar.Platba.kredit then begin //PayU platba, rušíme peníze na cestì
       DesU.zrusPenizeNaCeste(iPDPar.Platba.VS);
     end;
 

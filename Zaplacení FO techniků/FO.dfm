@@ -1,8 +1,8 @@
 object fmMain: TfmMain
   Left = 0
   Top = 0
-  ClientHeight = 347
-  ClientWidth = 397
+  ClientHeight = 488
+  ClientWidth = 767
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,15 +17,16 @@ object fmMain: TfmMain
   object pnTop: TPanel
     Left = 0
     Top = 0
-    Width = 397
+    Width = 767
     Height = 47
     Align = alTop
     TabOrder = 0
+    ExplicitWidth = 397
     DesignSize = (
-      397
+      767
       47)
     object btNacist: TButton
-      Left = 227
+      Left = 597
       Top = 14
       Width = 65
       Height = 21
@@ -39,9 +40,10 @@ object fmMain: TfmMain
       ParentFont = False
       TabOrder = 0
       OnClick = btNacistClick
+      ExplicitLeft = 227
     end
     object btZaplatit: TButton
-      Left = 313
+      Left = 683
       Top = 14
       Width = 65
       Height = 21
@@ -56,6 +58,7 @@ object fmMain: TfmMain
       ParentFont = False
       TabOrder = 1
       OnClick = btZaplatitClick
+      ExplicitLeft = 313
     end
     object cbxRok: TComboBox
       Left = 16
@@ -69,8 +72,8 @@ object fmMain: TfmMain
   object asgMain: TAdvStringGrid
     Left = 0
     Top = 47
-    Width = 397
-    Height = 300
+    Width = 767
+    Height = 441
     Align = alClient
     DrawingStyle = gdsClassic
     FixedCols = 0
@@ -80,7 +83,6 @@ object fmMain: TfmMain
     Font.Height = -11
     Font.Name = 'Arial'
     Font.Style = []
-    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goEditing, goFixedRowDefAlign]
     ParentFont = False
     TabOrder = 1
     GridLineColor = 15855083
@@ -196,7 +198,10 @@ object fmMain: TfmMain
     SelectionColor = 6210033
     ShowSelection = False
     UIStyle = tsOffice2007Luna
-    Version = '8.6.2.0'
+    Version = '8.7.0.0'
+    ExplicitTop = 53
+    ExplicitWidth = 397
+    ExplicitHeight = 300
     ColWidths = (
       22
       48

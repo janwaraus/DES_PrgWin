@@ -1256,6 +1256,11 @@ begin
     Subject := emailPredmet;
     ContentType := 'multipart/mixed';
 
+// 30.8.2025 Message-ID
+    ExtraHeaders.Values['Message-ID'] := FormatDateTime('ddmmyyyyhhnnss', Now)
+		 + '-' + LowerCase(ChangeFileExt(ExtractFileName(FullPdfFileName), '')) + '@eurosignal.cz';
+
+
     with TIdText.Create(idMessage.MessageParts, nil) do begin
       Body.Text := emailZprava;
       ContentType := 'text/plain';
@@ -1430,7 +1435,7 @@ begin
   idHTTP.Request.ContentType := 'text/plain';
   idHTTP.Request.CharSet := 'ASCII';
 
-  sHTTPtext := SmsUrl + '?login=' + SmsUN + '&password=' + SmsPW + '&action=send_sms&delivery_report=0&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
+  sHTTPtext := SmsUrl + '?login=' + SmsUN + '&password=' + SmsPW + '&action=send_sms&number=' + telCislo + '&message=' + odstranDiakritiku(smsText);
 
   try
     try
